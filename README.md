@@ -11,4 +11,7 @@ However, for a fully functional modeler certain elements are missing.
 
 The architecture consists of the following:
 
-a d3.js component for generating svg based on the model. A general application script (app.js) and archimate_configuration.js that is readable and interpretable by the general application. Ultimately, the architecture requires ArchiMate models in the xml standard.
+1. a d3.js component for generating svg based on the model. 
+2. A general application script (app.js) 
+3. The archimate_configuration.js, which specifies the behaviour of different ArchiMate elements for the viewer. It is also readable and interpretable by the general application. 
+4. Ultimately, the architecture requires ArchiMate models in the xml standard.
