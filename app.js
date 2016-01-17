@@ -130,11 +130,28 @@ function prepare(url,after,lang){
     .on('mouseup',
     function(d){
       if(d3.event.ctrlKey) return;
+      view_node.selectAll("#selector").remove();
+
+      view_node
+      .select("svg")
+      .selectAll("g.connection[selected=true]").selectAll("circle[selected=true]").each(function(d){
+        /* calculate new position */
+        drawEdge(d3.select(this.parentElement));
+      });
+      view_node
+      .select("svg").selectAll("g.node[selected=true]").each(function(d){
+        d3.select(this).attr("selected", false);
+        var x = $(d3.select(this).data()).attr("x");
+        var y = $(d3.select(this).data()).attr("y");
+        //drawNode(d3.select(this));
+        //functions.updateNode(d3.select(this),x,y);
+      });
       view_node
       .select("svg")
       .selectAll("g[selected=true]").each(function(d){
         d3.select(this).attr("selected", false);
       });
+
 
     }).on('mousemove',
     function(d){
@@ -147,7 +164,31 @@ function prepare(url,after,lang){
         var sel_y = d3.select(this).attr('selected_y');
         var x = d3.event.x-sel_x;
         var y = d3.event.y-sel_y;
+        $(d3.select(this).data()).attr("x",x)
+        $(d3.select(this).data()).attr("x",y)
+
         functions.updateNode(d3.select(this),x,y);
+
+      });
+
+      view_node
+      .select("svg")
+      .selectAll("g.connection[selected=true]").selectAll("circle[selected=true]").each(function(d){
+        /* calculate new position */
+        var sel_x = d3.select(this).attr('selected_x');
+        var sel_y = d3.select(this).attr('selected_y');
+        var x = d3.event.x-sel_x;
+        var y = d3.event.y-sel_y;
+        var bendpointindex = d3.select(this).attr("class").split(":")[2];
+        if(bendpointindex){
+          $(d3.select(this.parentElement).data()).children("bendpoint").eq(bendpointindex).attr("x",x)
+          $(d3.select(this.parentElement).data()).children("bendpoint").eq(bendpointindex).attr("y",y);
+          view_node.selectAll("#selector")
+          .attr("cx",x)
+          .attr("cy",y);
+        }
+        //drawEdge(d3.select(this.parentElement));
+
       });
 
 
@@ -168,7 +209,23 @@ function prepare(url,after,lang){
         d3.select(this).attr('selected',true);
         d3.select(this).attr('selected_x',d3.event.x-$(d3.select(this)[0]).attr("x"));
         d3.select(this).attr('selected_y',d3.event.y-$(d3.select(this)[0]).attr("y"));
-        //check if near the borders
+      }).on('click',function(d){
+        //TODO:select
+        var bbox = d3.select(this)[0][0].getBBox();
+        var x = bbox.x;
+        var y = bbox.y;
+        //var x = d3.transform(d3.select(this).attr("transform")).translate[0];
+        //var y = d3.transform(d3.select(this).attr("transform")).translate[1];
+        d3.select(this)
+          .append("rect")
+          .attr("x",x-configuration.edgedistance/2)
+          .attr("y",y-configuration.edgedistance/2)
+          .attr("width",bbox.width+configuration.edgedistance)
+          .attr("height",bbox.height+configuration.edgedistance)
+          .attr("fill","none")
+          .attr("stroke","black")
+          .attr("stroke-dasharray","2,2")
+          .attr("id","selector");
       })
       .attr('class',function(d){
         return 'node '+configuration.nodetype(d)
@@ -435,22 +492,49 @@ function prepare(url,after,lang){
 
         g.enter().append('svg:g');
 
-        g.on('mousedown',function(d){
-          d3.select(this).attr('selected',true);
-          var lines = d3.select(this).selectAll("line").each(function(d,i){
-            if(i == 0){
-              return;
+        g.on('dblclick',function(d){
+          var found = false;
+          var lines = d3.select(this).selectAll("circle").each(function(d,i){
+            if(functions.getNearToPoint(parseInt(d3.select(this).attr("cx")),parseInt(d3.select(this).attr("cy")),d3.event.offsetX,d3.event.offsetY,configuration.edgedistance)){
+              //delete bendpoint
+              $(d).children("bendpoint").eq(d3.select(this).attr("class").split(":")[2]).remove();
+              drawEdge(d3.select(this.parentElement));
+              found =true;
             }
 
-            if(functions.getNearToPoint(parseInt(d.x1),parseInt(d.y1),d3.event.x,d3.event.y,50)){
+          });
+          if(!found){
+            $(d).append("<bendpoint x='"+d3.event.offsetX+"' y='"+d3.event.offsetY+"' ></bendpoint>");
+            drawEdge(d3.select(this));
+          }
+        });
+
+        g.on('mousedown',function(d){
+          d3.select(this).attr('selected',true);
+          var lines = d3.select(this).selectAll("circle").each(function(d,i){
+            if(functions.getNearToPoint(parseInt(d3.select(this).attr("cx")),parseInt(d3.select(this).attr("cy")),d3.event.offsetX,d3.event.offsetY,configuration.edgedistance)){
               d3.select(this).attr("selected","true");
+              d3.select(this).attr('selected_x',d3.event.x-$(d3.select(this)[0]).attr("cx"));
+              d3.select(this).attr('selected_y',d3.event.y-$(d3.select(this)[0]).attr("cy"));
+
+              d3.select(this.parentElement.parentElement)
+                .append("circle")
+                .attr("cx",$(d3.select(this)[0]).attr("cx"))
+                .attr("cy",$(d3.select(this)[0]).attr("cy"))
+                .attr("r",configuration.edgedistance)
+                .attr("fill","none")
+                .attr("stroke","black")
+                .attr("stroke-dasharray","2,2")
+                .attr("id","selector");
+
+
             }else{
               d3.select(this).attr("selected","false");
             }
           });
-          //d3.select(this).attr('selected_x',d3.event.x-$(d3.select(this)[0]).attr("x"));
-          //d3.select(this).attr('selected_y',d3.event.y-$(d3.select(this)[0]).attr("y"));
         });
+
+
 
 
         this.drawEdge = function (edge) {
@@ -466,6 +550,8 @@ function prepare(url,after,lang){
             if(typeconf){
               currentedge.selectAll("path").remove();
               currentedge.selectAll("text").remove();
+              currentedge.selectAll("circle").remove();
+              currentedge.selectAll("rect").remove();
 
               currentedge
               .attr("id",function(d){
@@ -500,7 +586,6 @@ function prepare(url,after,lang){
 
                     result += pointsset.x1+","+pointsset.y1+" L ";
                     result += pointsset.x2+","+pointsset.y2+" L ";
-
                     current = current + 1;
                     points1 = points2;
                   })
@@ -512,6 +597,7 @@ function prepare(url,after,lang){
                   functions.getPointArrayFromString(points2))
                   result += pointsset.x1+","+pointsset.y1+" L ";
                   result += pointsset.x2+","+pointsset.y2;
+
                   return result;
               }).attr("stroke-dasharray",function(d){
                 return functions.getValueFromData(typeconf["stroke-dasharray"],d);
@@ -556,16 +642,48 @@ function prepare(url,after,lang){
               });
 
               //TODO:attach a box to enwiden the frame of a connection
+              var bbox = d3.select(this).select("path")[0][0].getBBox();
+              currentedge
+                .append("rect")
+                .attr("x",bbox.x-configuration.edgedistance)
+                .attr("y",bbox.y-configuration.edgedistance)
+                .attr("width",bbox.width+configuration.edgedistance)
+                .attr("height",bbox.height+configuration.edgedistance)
+                .attr("fill","transparent")
+                .attr("stroke","none");
 
-              /*edge.each(function(e,i){
-                  var outline = this.getBBox();
-                  d3.select(this).append("svg\\:rect")
-                    .attr("x",outline.x-configuration.globalDelimiter)
-                    .attr("y",outline.y-configuration.globalDelimiter)
-                    .attr("width",outline.x+configuration.globalDelimiter)
-                    .attr("height",outline.y+configuration.globalDelimiter);
-                  })*/
-                }
+
+              //var d_line = currentedge.select("path").attr("d").split("L");
+              var d_line = $(currentedge.data()).find("bendpoint");
+              for(var i = 0; i < d_line.length;i++){
+                var current = $(d_line[i]);
+                currentedge
+                  .append("circle")
+                  .attr("cx",current.attr("x"))
+                  .attr("cy",current.attr("y"))
+                  .attr("r",configuration.edgedistance)
+                  .attr("fill","transparent")
+                  .attr("stroke","none")
+                  .attr("class","bendpoint:"+currentedge.attr("id")+":"+i)
+                  .on("mouseover",function(d){
+                    d3.select(this.parentElement)
+                      .append("circle")
+                      .attr("cx",$(d3.select(this)[0]).attr("cx"))
+                      .attr("cy",$(d3.select(this)[0]).attr("cy"))
+                      .attr("r",configuration.edgedistance)
+                      .attr("fill","none")
+                      .attr("stroke","black")
+                      .attr("stroke-dasharray","2,2")
+                      .attr("id","hover"+d3.select(this).attr("id"));
+                  }).on("mouseout",function(d){
+                    d3.select(this.parentElement).select("#hover"+d3.select(this).attr("id")).remove();
+                  }).on('mouseup',function(d){
+                      //delete bendpoint
+                      $(d).children("bendpoint").eq(d3.select(this).attr("class").split(":")[2]).remove();
+                      drawEdge(d3.select(this.parentElement));
+                  });
+                };
+              }
             })
 
         }
