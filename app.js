@@ -13,21 +13,14 @@ function prepare(url,after,lang){
       async: true,
       url:  url,
     }).done(function(xml){
+      window.xml = xml;
       //prepare xml file.
       //I need all data for each connection and each node!
-      var view = configuration.views(xml);//.children().eq(view_sel)
+      window.xml = xml;
 
-      view.find('node').each(
-        function(i,e){
-          var eref = $(e).attr("elementref");
-          if(eref){
-            var element_ref = $(xml).children().children("elements").children('element[identifier="'+eref+'"]');
-            $(e).append(element_ref.clone());
-          }
-        }
-      );
+      var views = configuration.view_extraction(xml);
 
-      view.find('connection').each(
+      configuration.edge_extraction(views,xml).each(
         function(i,e){
           var relref = $(e).attr("relationshipref");
           //references to nodes
@@ -46,11 +39,11 @@ function prepare(url,after,lang){
             $(e).append(relationship_ref.clone());
           }
           if(srcref_nd){
-            var sourceref_node = $(view).find('node[identifier="'+srcref_nd+'"]');
+            var sourceref_node = $(views).find('node[identifier="'+srcref_nd+'"]');
             $(e).append("<source/>");
           }
           if(tarref_nd){
-            var targetref_node = $(view).find('node[identifier="'+tarref_nd+'"]');
+            var targetref_node = $(views).find('node[identifier="'+tarref_nd+'"]');
             $(e).append("<target/>");
           }
         }
@@ -58,35 +51,68 @@ function prepare(url,after,lang){
       //preparation done;
 
       //create tabs;
-      var views = $(xml).children().children('views').children();
+      var view_ids = [];
+      for(var i = 0; i < views.children().size();i++){
+        view_ids.push(i);
+      }
+
       d3.select("body")
       .select("iron-pages.tabcontents")
       .selectAll("div")
-      .data(views).enter()
+      .data(view_ids).enter()
       .append("div")
       .attr("id",function(d){
-        return $(d).attr("identifier");
+        return "div"+d;
+        //return $(d).attr("identifier");
       });
 
       d3.select("body")
       .select("paper-tabs.tabs")
       .selectAll("paper-tab")
-      .data(views).enter()
+      .data(views.children()).enter()
       .append("paper-tab")
-      /*.attr("href",function(d){
-        return "#"+$(d).attr("identifier");
-      })*/.text(function(d){
+      .text(function(d){
         return $(d).children('label[xml\\:lang="'+lang+'"]').text();
       });
 
 
-      for(var i = 0; i < views.size();i++){
+      for(var i = 0; i < views.children().size();i++){
+        var view = views.children().eq(i);
+
+        //prepare data structure
+        var viewdata = {};
+        viewdata.self = view[0];
+        viewdata.nodes = [];
+        viewdata.edges  = [];
+
+        var nodes_ofview = configuration.node_extraction(view,xml)
+        for(var j = 0;j< nodes_ofview.size();j++){
+          var nodedata = {};
+          if(configuration.node_datacollector){
+              nodedata = configuration.node_datacollector(nodes_ofview[j],xml);
+          }
+          nodedata.self = nodes_ofview[j];
+          viewdata.nodes.push(nodedata);
+        }
+
+        var edges_ofview = configuration.edge_extraction(view,xml);
+        for(var j = 0;j< edges_ofview.size();j++){
+          var edgedata = {};
+          if(configuration.edge_datacollector){
+              edgedata = configuration.edge_datacollector(edges_ofview[j],xml);
+          }
+          edgedata.self = edges_ofview[j];
+          viewdata.edges.push(edgedata);
+        }
+
+
+
         var node = d3.select("body")
         .select("iron-pages.tabcontents")
-        .select("div#"+$(views[i]).attr("identifier"));
-        after(node,views[i],lang)
+        //.select("div#"+view.attr("identifier"));
+        .select("div#div"+i);
+        after(node,viewdata,lang)
       }
-
     });
   }
 
@@ -94,35 +120,40 @@ function prepare(url,after,lang){
 
     //SETUP CANVAS
 
-    view_node.append("svg");
+    var svg = view_node.append("svg");//.data(view_xml).enter();
 
     var svg = view_node.select("svg");
     var defs = svg.append("defs");
     //attach defs from configuration
-    for(var i = 0;i<configuration.definitions.length;i++){
-      var definition = configuration.definitions[i];
-      var currentnode = defs.append(definition.type);
-      currentnode.attr("id",definition.id);
-      currentnode.attr("refX",definition.refX);
-      currentnode.attr("refY",definition.refY);
-      currentnode.attr("orient",definition.orient);
-      currentnode.attr("markerWidth",definition.markerWidth);
-      currentnode.attr("markerHeight",definition.markerHeight);
+    if(configuration.definitions){
+      for(var i = 0;i<configuration.definitions.length;i++){
+        var definition = configuration.definitions[i];
+        var currentnode = defs.append(definition.type);
+        currentnode.attr("id",definition.id);
+        currentnode.attr("refX",definition.refX);
+        currentnode.attr("refY",definition.refY);
+        currentnode.attr("orient",definition.orient);
+        currentnode.attr("markerWidth",definition.markerWidth);
+        currentnode.attr("markerHeight",definition.markerHeight);
 
-      for(var j=0;j<definition.look.length;j++){
-        var currentelement = currentnode.append(definition.look[j].type);
-        currentelement.attr("id",definition.id+j);
-        if(definition.look[j].type=="circle"){
-          currentelement.attr("cx",definition.look[j].cx);
-          currentelement.attr("cy",definition.look[j].cy);
-          currentelement.attr("r",definition.look[j].r);
-          currentelement.attr("style",definition.look[j].style);
-        }else if(definition.look[j].type=="path"){
-          currentelement.attr("d",definition.look[j].d);
-          currentelement.attr("style",definition.look[j].style);
+        for(var j=0;j<definition.look.length;j++){
+          var currentelement = currentnode.append(definition.look[j].type);
+          currentelement.attr("id",definition.id+j);
+          if(definition.look[j].type=="circle"){
+            currentelement.attr("cx",definition.look[j].cx);
+            currentelement.attr("cy",definition.look[j].cy);
+            currentelement.attr("r",definition.look[j].r);
+            currentelement.attr("style",definition.look[j].style);
+          }else if(definition.look[j].type=="path"){
+            currentelement.attr("d",definition.look[j].d);
+            currentelement.attr("style",definition.look[j].style);
+          }
         }
       }
+    }else{
+      console.log("No definitons found.")
     }
+
 
     //interaction
     view_node
@@ -145,7 +176,6 @@ function prepare(url,after,lang){
       view_node
       .select("svg").selectAll("g.node[selected=true]").each(function(d){
         d3.select(this).attr("selected", false);
-        //drawNode(d3.select(this));
         functions.updateNode(d3.select(this));
       });
       view_node
@@ -155,12 +185,6 @@ function prepare(url,after,lang){
       });
       d3.selectAll("#selector").remove();
 
-/*
-      $(d).children("bendpoint").eq(d3.select(this).attr("class").split(":")[2]).remove();
-
-      drawEdge(d3.select(this.parentElement));
-*/
-
 
     }).on('mousemove',
     function(d){
@@ -169,17 +193,19 @@ function prepare(url,after,lang){
       .select("svg")
       .selectAll("g.node[selected=true]").each(function(d){
         /* calculate new position */
-        var sel_x = d3.select(this).attr('selected_x');
-        var sel_y = d3.select(this).attr('selected_y');
+        var sel_x = parseInt(d3.select(this).attr('selected_x'));
+        var sel_y = parseInt(d3.select(this).attr('selected_y'));
         var x = d3.event.x-sel_x;
         var y = d3.event.y-sel_y;
 
-        var orig_x = parseInt($(d3.select(this).data()).attr("x"))
-        var orig_y = parseInt($(d3.select(this).data()).attr("y"))
+
+        var position = configuration.nodeposition(d3.select(this).data()[0]);
+        var orig_x = position.x;
+        var orig_y = position.y;
 
         var nodes = $(d3.select(this).data()).children("node");
 
-        functions.updateNodePosition(d3.select(this).data(),x,y,orig_x,orig_y);
+        functions.updateNodePosition(d3.select(this),x,y,orig_x,orig_y);
 
         d3.select("#nodeselector").attr("x",x-configuration.edgedistance/2)
         d3.select("#nodeselector").attr("y",y-configuration.edgedistance/2)
@@ -198,18 +224,13 @@ function prepare(url,after,lang){
         if(classstring){
           var bendpointindex = classstring.split(":")[2];
           if(bendpointindex){
-            $(d3.select(this.parentElement).data()).children("bendpoint").eq(bendpointindex).attr("x",x)
-            $(d3.select(this.parentElement).data()).children("bendpoint").eq(bendpointindex).attr("y",y);
+            configuration.updateEdgePosition(d3.select(this.parentElement).data()[0],bendpointindex,x,y);
             view_node.selectAll("#selector")
             .attr("cx",x)
             .attr("cy",y);
           }
         }
-        //drawEdge(d3.select(this.parentElement));
-
       });
-
-
     });
 
 
@@ -223,13 +244,11 @@ function prepare(url,after,lang){
       );
 
       g.enter().append('svg:g');
-      g.on('dblclick',function(d){alert("hi")});
       g.on('mousedown',function(d){
         d3.select(this).attr('selected',true);
         d3.select(this).attr('selected_x',d3.event.x-$(d3.select(this)[0]).attr("x"));
         d3.select(this).attr('selected_y',d3.event.y-$(d3.select(this)[0]).attr("y"));
-      //}).on('click',function(d){
-        //TODO:select
+
         var bbox = d3.select(this)[0][0].getBBox();
         var x = bbox.x;
         var y = bbox.y;
@@ -252,14 +271,13 @@ function prepare(url,after,lang){
         return 'node '+configuration.nodetype(d)
       })
       .attr('id',function(d){
-        return $(d).attr("identifier");
+        return d.id;
       });
 
       this.drawNode = function(node){
 
-      var g_svg = node;
-
-      var type = node.each(
+        var g_svg = node;
+        var type = node.each(
         function(d,i){
           var type = configuration.nodetype(d)
           var typeconf = configuration.nodes[type];
@@ -333,12 +351,12 @@ function prepare(url,after,lang){
               }else if(lookelements[i].type == "ellipse"){
                 d3.select(this).select(lookelements[i].type+".POS"+i)
                 .style('fill', function(d) {
-                  var fc = $( d ).children("style").children("fillColor");
-                  return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"
+                  return functions.getValueFromData(lookelements[i].fill,d);
                 })
                 .style('stroke', function(d) {
-                  var fc = $( d ).children("style").children("lineColor");
-                  return "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")";
+                  return functions.getValueFromData(lookelements[i].stroke,d);
+                }).style('stroke-width', function(d) {
+                  return functions.getValueFromData(lookelements[i]['stroke-width'],d);
                 })
                 .attr("cx",function(d){
                   return functions.getValueFromData(lookelements[i].cx,d);
@@ -393,6 +411,8 @@ function prepare(url,after,lang){
                   return functions.getValueFromData(lookelements[i]["stroke-dasharray"],d);
                 }).attr("d",function(d){
                   return functions.getValueFromData(lookelements[i].d,d);
+                }).style('stroke-width', function(d) {
+                  return functions.getValueFromData(lookelements[i]["stroke-width"],d);
                 })
 
               }else if(lookelements[i].type == "text"){
@@ -407,7 +427,9 @@ function prepare(url,after,lang){
                   return functions.getValueFromData(lookelements[i]["alignment-baseline"],d);
                 }).attr("text-anchor",function(d){
                   return functions.getValueFromData(lookelements[i]["text-anchor"],d);
-                })
+                }).attr("style",function(d){
+                  return functions.getValueFromData(lookelements[i]["style"],d);
+                });
 
                 if(lookelements[i].innerHtml){
                   text.html(function(d){
@@ -418,84 +440,22 @@ function prepare(url,after,lang){
                     return functions.getValueFromData(lookelements[i].text,d);
                   })
                 }
-
               }
             }
           }
         }
       );
 
-
       g_svg.attr("x",
         function(d) {
-          return $(d).attr('x');
+          return configuration.nodeposition(d).x;
         }).attr("y",
         function(d) {
-          return $(d).attr('y');
+          return configuration.nodeposition(d).y;
         }).attr("transform",
         function(d) {
-          return "translate(" + $(d).attr('x') + "," + $(d).attr('y') + ")";
-        }).attr("archimate\\:points",function(d){
-          //TODO this must be configuratebl by configurations.feel
-          var x = parseInt($(d).attr('x'));
-          var y = parseInt($(d).attr('y'));
-          var w = parseInt($(d).attr('w'));
-          var h = parseInt($(d).attr('h'));
-          return  (x +(w/2))   + ',' + (y)  +' '
-          +(x) + ',' +(y+(h/2)) +' '
-          +(x +(w/2))    + ',' + (y+h) +' '
-          +(x+w) + ',' + (y+(h/2))    +' ';
+          return "translate(" + configuration.nodeposition(d).x + "," + configuration.nodeposition(d).y + ")";
         });
-
-
-
-
-        // show the node label
-        nodelabel = node.append('svg:text')
-        .attr('text-anchor',"middle")
-        .attr('alignment-baseline',"central");
-
-        nodelabel.each(function(d) {
-          var text = $( d ).children('label[xml\\:lang="'+lang+'"]').text();
-          return functions.textDistributionToTSpan(text,d3.select(this),$(d).attr("w"),$(d).attr("h"));
-        });
-        nodelabel.attr('x', function(d){
-          return ($(d3.select(this)[0]).width()/2)+8;
-        })
-        .attr('y', function(d){
-          return ($(d3.select(this)[0]).height()/2)+4;
-        })
-        ;
-
-        // show the element label
-        elementlabel = node.append('svg:text')
-        .attr('text-anchor',"middle")
-        .attr('alignment-baseline',"central");
-
-        elementlabel.each(function(d) {
-          var text = $( d ).children("element").children('label[xml\\:lang="'+lang+'"]').text();
-          return functions.textDistributionToTSpan(text,d3.select(this),$(d).attr("w"),$(d).attr("h"));
-        });
-
-        elementlabel.attr('x', function(d){
-          if($(d).children("node").size()>0){
-            return ($(d3.select(this)[0]).width()/2)+8;
-          }else{
-            return $(d).attr('w')/2
-          }
-        })
-        .attr('y', function(d){
-          if($(d).children("node").size()>0){
-            return ($(d3.select(this)[0]).height()/2)+4;
-          }else
-            {
-              return $(d).attr('h')/2
-            }
-        });
-
-
-
-
       }
       drawNode(g);
       g.exit().remove();
@@ -513,12 +473,16 @@ function prepare(url,after,lang){
 
         g.enter().append('svg:g');
 
+        g.attr('id',function(d){
+          return d.id;
+        });
+
         g.on('click',function(d){
           var found = false;
           var lines = d3.select(this).selectAll("circle").each(function(d,i){
             if(functions.getNearToPoint(parseInt(d3.select(this).attr("cx")),parseInt(d3.select(this).attr("cy")),d3.event.offsetX,d3.event.offsetY,configuration.edgedistance)){
               //delete bendpoint
-              $(d).children("bendpoint").eq(d3.select(this).attr("id").split(":")[2]).remove();
+              $(d.self).children("bendpoint").eq(d3.select(this).attr("id").split(":")[2]).remove();
               drawEdge(d3.select(this.parentElement));
               d3.selectAll("#selector").remove();
               found = true;
@@ -527,7 +491,7 @@ function prepare(url,after,lang){
 
           });
           if(!found){
-            $(d).append("<bendpoint x='"+d3.event.offsetX+"' y='"+d3.event.offsetY+"' ></bendpoint>");
+            $(d.self).append("<bendpoint x='"+d3.event.offsetX+"' y='"+d3.event.offsetY+"' ></bendpoint>");
             drawEdge(d3.select(this));
           }
         });
@@ -557,13 +521,10 @@ function prepare(url,after,lang){
           });
           if(!found){
             d3.select(this).attr("selected","false");
-            $(d).append("<bendpoint x='"+d3.event.offsetX+"' y='"+d3.event.offsetY+"' ></bendpoint>");
+            $(d.self).append("<bendpoint x='"+d3.event.offsetX+"' y='"+d3.event.offsetY+"' ></bendpoint>");
             drawEdge(d3.select(this));
           }
         });
-
-
-
 
         this.drawEdge = function (edge) {
           edge.each(function(d,i){
@@ -574,6 +535,7 @@ function prepare(url,after,lang){
             var typeconf = configuration.edges[type];
             if(!typeconf){
               typeconf = configuration.edges[undefined];
+              console.log("Could not find edge type definition for "+type+".");
             }
             if(typeconf){
               currentedge.selectAll("path").remove();
@@ -583,49 +545,50 @@ function prepare(url,after,lang){
 
               currentedge
               .attr("id",function(d){
-                return $(d).attr("identifier")
+                return d.id;
               })
               .attr("source_node_id",function(d){
-                return $(d).attr("source")
+                return $(d.self).attr("source")
               })
               .attr("target_node_id",function(d){
-                return $(d).attr("target")
+                return $(d.self).attr("target")
               })
               .attr('class',function(d){
                 return 'connection '+configuration.edgetype(d)
               })
 
+              //this draws the actual visible line
               currentedge.append("svg\\:path")
                 .attr("d",function(d){
                   var current = 0;
                   var result = "M ";
-
-                  var sourceref_svg = $(d3.select("#"+$(d).attr("source"))[0]);
+                  var sourceref_svg = $(d3.select("#"+$(d.self).attr("source"))[0]);
                   var lineColor = $( d ).children("style").children("lineColor");
                   var lineWidth = $( d ).children("style").attr("lineWidth") ? $( d ).children("style").attr("lineWidth") : 1;
 
-                  var points1 = $(sourceref_svg).attr("points");
-                  var points2 = [];
-                  $(d).find("bendpoint").each(function(i,d_sub){
-                    points2 = $(d_sub).attr("x")+","+$(d_sub).attr("y");
-
-                    var pointsset = functions.getNearestTwoPointsFromTwoSets(functions.getPointArrayFromString(points1),
-                    functions.getPointArrayFromString(points2));
-
+                  //var points1 = $(sourceref_svg).attr("points");
+                  //var points2 = [];
+                  var edgetype = configuration.edges[configuration.edgetype(d)];
+                  if(!edgetype){
+                    edgetype = configuration.edges[undefined];
+                  }
+                  if(edgetype.points){
+                    var type = configuration.edges[configuration.edgetype(d)]?configuration.edges[configuration.edgetype(d)]:configuration.edges[undefined];
+                    var points = type.points(d);
+                    var points1 = points.shape1;
+                    for(var i = 0;i<points.path.length;i++){
+                      var points2 = [points.path[i]];
+                      var pointsset = functions.getNearestTwoPointsFromTwoSets(points1,points2);
+                      result += pointsset.x1+","+pointsset.y1+" L ";
+                      result += pointsset.x2+","+pointsset.y2+" L ";
+                      var points1 = [points.path[i]];
+                    }
+                    points2 = points.shape2;
+                    var pointsset = functions.getNearestTwoPointsFromTwoSets(points1,points2);
                     result += pointsset.x1+","+pointsset.y1+" L ";
-                    result += pointsset.x2+","+pointsset.y2+" L ";
-                    current = current + 1;
-                    points1 = points2;
-                  })
+                    result += pointsset.x2+","+pointsset.y2;
 
-                  var targetref_svg = $(d3.select("#"+$(d).attr("target"))[0]);
-                  points2 = $(targetref_svg).attr("points");
-
-                  var pointsset = functions.getNearestTwoPointsFromTwoSets(functions.getPointArrayFromString(points1),
-                  functions.getPointArrayFromString(points2))
-                  result += pointsset.x1+","+pointsset.y1+" L ";
-                  result += pointsset.x2+","+pointsset.y2;
-
+                  }
                   return result;
               }).attr("stroke-dasharray",function(d){
                 return functions.getValueFromData(typeconf["stroke-dasharray"],d);
@@ -635,14 +598,60 @@ function prepare(url,after,lang){
               .style("stroke",function(d){
                 return functions.getValueFromData(typeconf.stroke,d);
               })
-              .style("stroke-width",function(d){
+              .attr("stroke-width",function(d){
                 return functions.getValueFromData(typeconf["stroke-width"],d);
+              })
+              .style("fill","none");
+
+              //this draws the transparent line for UI
+              currentedge.append("svg\\:path")
+                .attr("d",function(d){
+                  var current = 0;
+                  var result = "M ";
+                  var sourceref_svg = $(d3.select("#"+$(d.self).attr("source"))[0]);
+                  var lineColor = $( d ).children("style").children("lineColor");
+                  var lineWidth = $( d ).children("style").attr("lineWidth") ? $( d ).children("style").attr("lineWidth") : 1;
+
+                  //var points1 = $(sourceref_svg).attr("points");
+                  //var points2 = [];
+                  var edgetype = configuration.edges[configuration.edgetype(d)];
+                  if(!edgetype){
+                    edgetype = configuration.edges[undefined];
+                  }
+                  if(edgetype.points){
+                    var type = configuration.edges[configuration.edgetype(d)]?configuration.edges[configuration.edgetype(d)]:configuration.edges[undefined];
+                    var points = type.points(d);
+                    var points1 = points.shape1;
+                    for(var i = 0;i<points.path.length;i++){
+                      var points2 = [points.path[i]];
+                      var pointsset = functions.getNearestTwoPointsFromTwoSets(points1,points2);
+                      result += pointsset.x1+","+pointsset.y1+" L ";
+                      result += pointsset.x2+","+pointsset.y2+" L ";
+                      var points1 = [points.path[i]];
+                    }
+                    points2 = points.shape2;
+                    var pointsset = functions.getNearestTwoPointsFromTwoSets(points1,points2);
+                    result += pointsset.x1+","+pointsset.y1+" L ";
+                    result += pointsset.x2+","+pointsset.y2;
+
+                  }
+                  return result;
+              }).style("stroke",function(d){
+                return "transparent";
+                //return functions.getValueFromData(typeconf.stroke,d);
+              }).attr("stroke-width",function(d){
+                var config = parseInt(functions.getValueFromData(typeconf["stroke-width"],d));
+                if(isNaN(config)){
+                  return 10;
+                }else{
+                    return config+10;
+                }
               })
               .style("fill","none");
 
               currentedge.append('svg:text')
                 .text(function(d){
-                return $(d).children("relationship").children('label[xml\\:lang="'+lang+'"]').text()
+                return $(d.self).children("relationship").children('label[xml\\:lang="'+lang+'"]').text()
               })
               .attr("x",function(d){
                 var path = d3.select(this.parentElement).select("path");
@@ -669,26 +678,28 @@ function prepare(url,after,lang){
                 }
               });
 
-              //TODO:attach a box to enwiden the frame of a connection
-              var bbox = d3.select(this).select("path")[0][0].getBBox();
-              currentedge
-                .append("rect")
-                .attr("x",bbox.x-configuration.edgedistance)
-                .attr("y",bbox.y-configuration.edgedistance)
-                .attr("width",bbox.width+configuration.edgedistance)
-                .attr("height",bbox.height+configuration.edgedistance)
-                .attr("fill","transparent")
-                .attr("stroke","none");
+
+              var edgetype = configuration.edges[configuration.edgetype(d)];
+              if(!edgetype){
+                edgetype = configuration.edges[undefined];
+              }
+              if(edgetype.points){
+                var type = configuration.edges[configuration.edgetype(d)]?configuration.edges[configuration.edgetype(d)]:configuration.edges[undefined];
+                var points = type.points(d);
+                for(var i = 0;i<points.path.length;i++){
+                  var points2 = [points.path[i]];
 
 
-              //var d_line = currentedge.select("path").attr("d").split("L");
-              var d_line = $(currentedge.data()).find("bendpoint");
-              for(var i = 0; i < d_line.length;i++){
-                var current = $(d_line[i]);
+
+              //var d_line = $(currentedge.data()[0].self).find("bendpoint");
+              //for(var i = 0; i < d_line.length;i++){
+                //var current = $(d_line[i]);
                 currentedge
                   .append("circle")
-                  .attr("cx",current.attr("x"))
-                  .attr("cy",current.attr("y"))
+                  //.attr("cx",current.attr("x"))
+                  //.attr("cy",current.attr("y"))
+                  .attr("cx",points2[0].x)
+                  .attr("cy",points2[0].y)
                   .attr("r",configuration.edgedistance)
                   .attr("fill","transparent")
                   .attr("stroke","none")
@@ -718,28 +729,25 @@ function prepare(url,after,lang){
                       .attr("stroke-dasharray","2,2")
                       .attr("id","hover_"+$(d3.select(this).data()).attr("id"));
                   }).on("mouseout",function(d){
-                    d3.select(this.parentElement).select("#hover_"+$(d3.select(this).data()).attr("id")).remove();
+                    d3.select(this.parentElement).select("[id='hover_"+$(d3.select(this).data()).attr("id")+"']").remove();
                   }).on('mouseup',function(d){
                       if(d3.select(this).attr("selected")=="true"){
                         //delete bendpoint
-                        $(d).children("bendpoint").eq(d3.select(this).attr("id").split(":")[2]).remove();
+                        configuration.deleteEdge(d,d3.select(this).attr("id").split(":")[2])
                         drawEdge(d3.select(this.parentElement));
                       }
-
-                  });
-                };
+                    });
+                  }
+                }
               }
-            })
-
+          })
         }
         this.drawEdge(g);
         g.exit().remove();
 
       }
-
-      drawNodes($(view_xml).find("node")); //start Drawing Nodes
-      drawEdges($(view_xml).find("connection")); //start Drawing Edges
-
+      drawNodes(view_xml.nodes); //start Drawing Nodes
+      drawEdges(view_xml.edges); //start Drawing Edges
       view_node.select("svg").attr("width",function(d){
         return d3.select(this)[0][0].getBBox().width;
       });
@@ -753,40 +761,47 @@ function prepare(url,after,lang){
       usersettings: {},
       updateNodePosition: function(node,x,y,o_x,o_y){
         /* redraw sub ordinated nodes */
-        var nodes = $(node).children("node")
-        for(var i = 0 ; i< nodes.size();i++){
-          var sub_node = nodes[i];//d3.select("g#"+nodes.eq(i).attr("identifier"));
-          x_sub = parseInt($(sub_node).attr("x"));
-          y_sub = parseInt($(sub_node).attr("y"));
-          functions.updateNodePosition(sub_node,x_sub+(x-o_x),y_sub+(y-o_y),x_sub,y_sub);
+        //var nodes = $(node.self).children("node")
+        var updates = node.data()[0].updates;
+          if(updates){
+          for(var i = 0 ; i< updates.length;i++){
+            var sub_node = d3.select("g.node[id='"+updates[i]+"']");
+            if(sub_node.size()>0){
+              var sub_pos = configuration.nodeposition(sub_node.data()[0]);
+              x_sub = parseInt(sub_pos.x);
+              y_sub = parseInt(sub_pos.y);
+              functions.updateNodePosition(sub_node,
+                                          x_sub+(x-o_x),
+                                          y_sub+(y-o_y),
+                                          x_sub,
+                                          y_sub);
+            }
+          }
         }
 
-        $(node).attr("x",x)
-        $(node).attr("y",y)
-
+        configuration.updateNodePosition(node.data()[0],x,y);
       },
       updateNode: function(node){
-        //TODO: this must be a standard function
+        //This redraws all nodes and associated connections
         /*change of data is done; now redraw the changed parts */
         drawNode(node);
-        var nodes = $(node.data()).children("node")
-        for(var i = 0 ; i< nodes.size();i++){
-          var current = d3.select("g#"+nodes.eq(i).attr("identifier"));
-          functions.updateNode(current);
-        }
-        //TODO: this must be a standard function
-        /* find associated connections */
-        var identifier = $(node.data()).attr("identifier");
-        //TODO: these two should be configurable
-        var targeted_connections = $(node.node().parentElement).find("g.connection[target_node_id='"+identifier+"']")
-        var sourced_connections  = $(node.node().parentElement).find("g.connection[source_node_id='"+identifier+"']")
 
-        for(var i = 0;i<sourced_connections.size();i++){
-          drawEdge(d3.select(sourced_connections[i]));
-        }
+        var updates = node.data()[0].updates;
+        if(updates){
+          for(var i=0;i < updates.length;i++){
+              var curId = updates[i];
 
-        for(var i = 0;i<targeted_connections.size();i++){
-          drawEdge(d3.select(targeted_connections[i]));
+              var current = d3.select("g.node[id='"+curId+"']");
+              if(current.size()>0){
+                functions.updateNode(current);
+              }else{
+                current = d3.select("g.connection[id='"+curId+"']");
+                if(current.size()>0){
+                  drawEdge(current);
+                }
+
+              }
+          }
         }
       },
       updateEdge:function(edge){
@@ -941,6 +956,3 @@ function prepare(url,after,lang){
       }
 
     }
-
-//prepare('http://localhost/Archisurance.xml',init,"de");
-prepare('http://localhost/Reference%20Model.xml',init,'en');
