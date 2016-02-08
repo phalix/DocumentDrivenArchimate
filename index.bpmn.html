@@ -1,28 +1,24 @@
-<!DOCTYPE html>
-<html>
+<html ng-app>
   <head>
     <meta charset="utf-8">
     <title>d3js_archimate</title>
     <link rel="stylesheet" href="app.css">
 
 
-    <!-- <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.8/angular.min.js"></script>
+    <script src="angular.min.js"></script>
     <script src="bower_components/webcomponentsjs/webcomponents-lite.min.js"></script>
     <link rel="import" href="bower_components/paper-tabs/paper-tabs.html" />
     <link rel="import" href="bower_components/iron-pages/iron-pages.html" />
-    <link rel="import" href="theme/the-times/the-times.html"> -->
-
-
+    <link rel="import" href="theme/the-times/the-times.html" />
 
     <script src="http://d3js.org/d3.v3.min.js"></script>
     <script src="http://code.jquery.com/jquery-2.1.4.min.js"></script>
     <script src="resources/bpmn_configuration.js"></script>
-    <script src="app.js"></script>
+    <script src="documentmodengine.js"></script>
   </head>
 
-  <body onload="">
+  <body onload="" ng-model="selected">
     <paper-tabs class="tabs" selected="{{selected}}">
-      <paper-tab>1</paper-tab>
     </paper-tabs>
 
     <iron-pages class="tabcontents" selected="{{selected}}">
@@ -30,7 +26,7 @@
     </iron-pages>
     <script>
     //prepare('http://localhost/Archisurance.xml',init,"de");
-    prepare('http://localhost/pizza-collaboration.xml',init,'en');
+    prepare('http://localhost/pizza-collaboration.xml','en');
     </script>
   </body>
 

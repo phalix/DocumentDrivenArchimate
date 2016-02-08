@@ -1,38 +1,91 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <title>d3js_archimate</title>
-    <link rel="stylesheet" href="app.css">
+<html ng-app="app">
+<head>
+  <meta charset="utf-8">
+  <title>d3js_archimate</title>
+  <link rel="stylesheet" href="app.css">
 
 
-    <!-- <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.8/angular.min.js"></script>
-    <script src="bower_components/webcomponentsjs/webcomponents-lite.min.js"></script>
-    <link rel="import" href="bower_components/paper-tabs/paper-tabs.html" />
-    <link rel="import" href="bower_components/iron-pages/iron-pages.html" />
-    <link rel="import" href="theme/the-times/the-times.html"> -->
+  <script src="angular.min.js"></script>
+  <script src="http://localhost/DocumentDrivenArchimate/bower_components/webcomponentsjs/webcomponents-lite.min.js"></script>
+  <link rel="import" href="http://localhost/DocumentDrivenArchimate/bower_components/paper-tabs/paper-tabs.html" />
+  <link rel="import" href="http://localhost/DocumentDrivenArchimate/bower_components/iron-pages/iron-pages.html" />
+  <!-- <link rel="import" href="http://localhost/DocumentDrivenArchimate/theme/the-times/the-times.html" /> -->
 
 
+  <script src="http://d3js.org/d3.v3.min.js"></script>
+  <script src="http://code.jquery.com/jquery-2.1.4.min.js"></script>
+  <script src="resources/archimate_configuration.js"></script>
+  <script src="documentmodengine.js"></script>
 
-    <script src="http://d3js.org/d3.v3.min.js"></script>
-    <script src="http://code.jquery.com/jquery-2.1.4.min.js"></script>
-    <script src="resources/archimate_configuration.js"></script>
-    <script src="app.js"></script>
-  </head>
+  <script>
+  //prepare('http://localhost/Archisurance.xml',"de");
+  prepare('http://localhost/Reference%20Model.xml','en');
 
-  <body onload="">
-    <paper-tabs class="tabs" selected="{{selected}}">
-      <paper-tab>1</paper-tab>
+  angular.module('app', [])
+  .controller('createTabs', ['$scope', function createTabs($scope) {
+    $scope.tabs = [{id:"div0"},{id:"div1"}];
+  }])
+  .controller('createPages', ['$scope', function createPages($scope) {
+    $scope.pages = [];
+  }]);
+
+  function updateMenu(){
+    if(window.done){
+
+      for(var i=0;i < window.viewsdata.children().size();i++){
+        var tab = {};
+        tab.tabtext = $(window.viewsdata.children().eq(i)).children('label[xml\\:lang="'+functions.usersettings.lang+'"]').text();
+        tab.divid = "div"+i;
+        tab.content = window.viewvisualisations[i]
+        //t.stuff.push(tab);
+        menu.stuff = menu.stuff.concat(tab);
+      }
+
+    }else{
+      setTimeout(updateMenu,100);
+    }
+  }
+
+  </script>
+
+
+</head>
+
+<body ng-model="selected" onload="updateMenu()">
+
+<template id="menu" is="dom-bind">
+
+    <paper-tabs id="menuTabs" selected="{{selected}}" scrollable>
+      <template is="dom-repeat" items="{{stuff}}">
+        <paper-tab onclick="refreshSvg">{{item.tabtext}}</paper-tab>
+      </template>
     </paper-tabs>
 
-    <iron-pages class="tabcontents" selected="{{selected}}">
-
+    <iron-pages id="menuPages" selected="{{selected}}">
+      <template is="dom-repeat" items="{{stuff}}">
+        <div id="{{item.divid}}" style="overflow:auto"></div>
+      </template>
     </iron-pages>
-    <script>
-    //prepare('http://localhost/Archisurance.xml',init,"de");
-    prepare('http://localhost/Reference%20Model.xml',init,'en');
-    </script>
-  </body>
+
+  <script>
+    menu = document.querySelector('#menu');
+    menu.stuff=[];
+    refreshSvg = function(){
+      for(var i = 0; i < window.viewvisualisations.length;i++){
+        d3.select("div#div"+i)[0][0].appendChild(window.viewvisualisations[i]);
+        var rect = d3.select("div#div"+i).select("svg")[0][0].getBBox();
+        d3.select("div#div"+i).select("svg").attr("width",rect.width*1,2);
+        d3.select("div#div"+i).select("svg").attr("height",rect.height*1,2);
+      }
+      //Polymer.RenderStatus.afterNextRender(t,refreshSvg);
+    }
+    Polymer.RenderStatus.afterNextRender(menu,refreshSvg)
+    document.addEventListener('iron-select', refreshSvg);
+  </script>
+</template>
+
+</body>
 
 
 </html>
