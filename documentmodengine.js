@@ -157,8 +157,7 @@ function init(view_node,view_xml,lang){
 	.on('mouseup',
 			function(d){
 		if(d3.event.ctrlKey) return;
-		view_node
-		.select("svg")
+		svg
 		.selectAll("g.connection[selected=true]").each(function(d){
 			drawEdge(d3.select(this));
 		});

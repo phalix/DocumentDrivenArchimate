@@ -1,5 +1,5 @@
 svg {
-  background-color: #FFF;
+  
   cursor: default;
   -webkit-user-select: none;
   -moz-user-select: none;
@@ -11,7 +11,10 @@ svg {
 svg:not(.active):not(.ctrl) {
   cursor: crosshair;
 }
-
+iron-icon.iron-icon-0{
+  stroke:black;
+  fill:black;
+}
 path.link {
   fill: none;
   stroke: #000;

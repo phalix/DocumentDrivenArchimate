@@ -9,9 +9,24 @@
   <script src="angular.min.js"></script>
   <script src="http://localhost/DocumentDrivenArchimate/bower_components/webcomponentsjs/webcomponents-lite.min.js"></script>
   <link rel="import" href="http://localhost/DocumentDrivenArchimate/bower_components/paper-tabs/paper-tabs.html" />
+  <!-- icons -->
+  <link rel="import" href="http://localhost/DocumentDrivenArchimate/bower_components/iron-icons/iron-icons.html">
+  <!--<link rel="import" href="http://localhost/DocumentDrivenArchimate/bower_components/iron-icons/maps-icons.html">
+  <link rel="import" href="http://localhost/DocumentDrivenArchimate/bower_components/iron-iconset-svg/iron-iconset-svg.html">-->
   <link rel="import" href="http://localhost/DocumentDrivenArchimate/bower_components/iron-pages/iron-pages.html" />
-  <!-- <link rel="import" href="http://localhost/DocumentDrivenArchimate/theme/the-times/the-times.html" /> -->
 
+  <link rel="import" href="http://localhost/DocumentDrivenArchimate/bower_components/paper-toast/paper-toast.html" />
+
+  <link rel="import" href="http://localhost/DocumentDrivenArchimate/bower_components/iron-flex-layout/classes/iron-flex-layout.html" />
+
+  <link rel="import" href="http://localhost/DocumentDrivenArchimate/bower_components/paper-toolbar/paper-toolbar.html" />
+  <link rel="import" href="http://localhost/DocumentDrivenArchimate/bower_components/paper-menu/paper-menu.html" />
+  <link rel="import" href="http://localhost/DocumentDrivenArchimate/bower_components/paper-icon-button/paper-icon-button.html" />
+  <link rel="import" href="http://localhost/DocumentDrivenArchimate/bower_components/paper-listbox/paper-listbox.html" />
+  <link rel="import" href="http://localhost/DocumentDrivenArchimate/bower_components/paper-input/paper-input.html" />
+  <link rel="import" href="http://localhost/DocumentDrivenArchimate/theme/classical/classical.html" />
+
+  <!-- use paper-toast to indicate that saves wont be saved -->
 
   <script src="http://d3js.org/d3.v3.min.js"></script>
   <script src="http://code.jquery.com/jquery-2.1.4.min.js"></script>
@@ -53,14 +68,26 @@
 </head>
 
 <body ng-model="selected" onload="updateMenu()">
+<paper-toast text="Warning! You have not checked out the Model. Changes won't be saved." opened></paper-toast>
+<!--<paper-menu>
+    <paper-item>Item 1</paper-item>
+    <paper-item>Item 2</paper-item>
+  </paper-menu>-->
 
 <template id="menu" is="dom-bind">
 
-    <paper-tabs id="menuTabs" selected="{{selected}}" scrollable>
+<paper-toolbar class="medium-tall">
+  <paper-icon-button icon="menu"></paper-icon-button>
+  <span class="title">Document Driven Archimate</span>
+  <!--<paper-icon-button icon="refresh"></paper-icon-button>
+  <paper-icon-button icon="add">+</paper-icon-button>-->
+
+    <paper-tabs id="menuTabs" class="middle" selected="{{selected}}" style="width:100%" scrollable>
       <template is="dom-repeat" items="{{stuff}}">
         <paper-tab onclick="refreshSvg">{{item.tabtext}}</paper-tab>
       </template>
     </paper-tabs>
+</paper-toolbar>
 
     <iron-pages id="menuPages" selected="{{selected}}">
       <template is="dom-repeat" items="{{stuff}}">
@@ -75,8 +102,8 @@
       for(var i = 0; i < window.viewvisualisations.length;i++){
         d3.select("div#div"+i)[0][0].appendChild(window.viewvisualisations[i]);
         var rect = d3.select("div#div"+i).select("svg")[0][0].getBBox();
-        d3.select("div#div"+i).select("svg").attr("width",rect.width*1,2);
-        d3.select("div#div"+i).select("svg").attr("height",rect.height*1,2);
+        d3.select("div#div"+i).select("svg").attr("width",rect.width*1.05);
+        d3.select("div#div"+i).select("svg").attr("height",rect.height*1.05);
       }
       //Polymer.RenderStatus.afterNextRender(t,refreshSvg);
     }
@@ -84,6 +111,34 @@
     document.addEventListener('iron-select', refreshSvg);
   </script>
 </template>
+<!-- start: custom elements -->
+<dom-module id="model-reference">
+  <template>
+    <div class="layout horizontal">
+      <div class="flex">
+      <paper-input label="[[label]]" disabled$="[[disabled]]" value="[[link]]"></paper-input>
+    </div><div><paper-icon-button icon="reply" title="reply"></paper-icon-button></div>
+    </div>
+  </template>
+  <script>
+    Polymer({
+      is: 'model-reference',
+      properties: {
+        label: String,
+        link: String,
+        disabled: Boolean
+      }
+    });
+  </script>
+</dom-module>
+<!-- end: custom elements -->
+<paper-listbox vertical-align="bottom" style="height:100%;padding-left:5%;padding-right:5%">
+
+  <model-reference label="direct links" link="test.zip" disabled></model-reference>
+  <model-reference label="indirect links of subordinated" link="test.zip" disabled></model-reference>
+  <model-reference label="enable multiselect" link="test.zip" disabled></model-reference>
+
+</paper-listbox>
 
 </body>
 
