@@ -651,26 +651,34 @@ function init(view_node,view_xml,lang){
 					})
 					.attr("x",function(d){
 						var path = d3.select(this.parentElement).select("path");
-						var lines = functions.getPointArrayFromString(path.attr("d"));
-						if((lines.length % 2) == 0){
-							var left = lines[(lines.length/2)-1];
-							var right = lines[(lines.length/2)];
-							return functions.getDistanceBetweenTwoPoints(parseInt($(left).attr("x")), parseInt($(right).attr("x")))
+						if(path.size()>0){
+							var lines = functions.getPointArrayFromString(path.attr("d"));
+							if((lines.length % 2) == 0){
+								var left = lines[(lines.length/2)-1];
+								var right = lines[(lines.length/2)];
+								return functions.getDistanceBetweenTwoPoints(parseInt($(left).attr("x")), parseInt($(right).attr("x")))
+							}else{
+								var left = lines[0][(lines.length/2)-0.5];
+								return left.attr("x");
+							}
 						}else{
-							var left = lines[0][(lines.length/2)-0.5];
-							return left.attr("x");
+							return 0;
 						}
 					})
 					.attr("y",function(d){
 						var path = d3.select(this.parentElement).select("path");
-						var lines = functions.getPointArrayFromString(path.attr("d"));
-						if((lines.length % 2) == 0){
-							var left = lines[(lines.length/2)-1];
-							var right = lines[(lines.length/2)];
-							return functions.getDistanceBetweenTwoPoints(parseInt($(left).attr("y")), parseInt($(right).attr("y")))
+						if(path.size()>0){
+							var lines = functions.getPointArrayFromString(path.attr("d"));
+							if((lines.length % 2) == 0){
+								var left = lines[(lines.length/2)-1];
+								var right = lines[(lines.length/2)];
+								return functions.getDistanceBetweenTwoPoints(parseInt($(left).attr("y")), parseInt($(right).attr("y")))
+							}else{
+								var left = lines[0][(lines.length/2)-0.5];
+								return left.attr("y");
+							}
 						}else{
-							var left = lines[0][(lines.length/2)-0.5];
-							return left.attr("y");
+							return 0;
 						}
 					});
 
