@@ -257,6 +257,14 @@ function init(view_node,view_xml,lang){
 			.attr("stroke-dasharray","2,2")
 			.attr("id","nodeselector")
 			.attr("ref",d3.select(this).attr("id"));
+			var ce = new CustomEvent("NodeSelected",{
+				detail: {
+					nodedata: d,
+					node: this
+				}});
+			ce.detail = this;
+			document.dispatchEvent(ce);
+
 		})
 		.attr('class',function(d){
 			return 'node '+configuration.nodetype(d)
