@@ -117,9 +117,8 @@ function init(view_node,view_xml,lang){
 
 	//SETUP CANVAS
 
-	var svg = view_node.append("svg");//.data(view_xml).enter();
+	var svg = view_node.append("svg");
 	window.viewvisualisations.push(svg[0][0]);
-	//var svg = view_node.select("svg");
 	var defs = svg.append("defs");
 	//attach defs from configuration
 	if(configuration.definitions){
@@ -456,8 +455,7 @@ function init(view_node,view_xml,lang){
 
 	this.drawEdges = function(data){
 
-		var g = view_node
-		.select("svg")
+		var g = svg
 		.selectAll("svg\\:g#connection")
 		.data(data);
 

@@ -54,6 +54,9 @@
         tab.divid = "div"+i;
         tab.content = window.viewvisualisations[i]
         //t.stuff.push(tab);
+        if(!menu.stuff){
+          menu.stuff = [];
+        }
         menu.stuff = menu.stuff.concat(tab);
       }
 
@@ -74,43 +77,68 @@
     <paper-item>Item 2</paper-item>
   </paper-menu>-->
 
-<template id="menu" is="dom-bind">
+<dom-module id="model-menu">
+  <template>
 
-<paper-toolbar class="medium-tall">
-  <paper-icon-button icon="menu"></paper-icon-button>
-  <span class="title">Document Driven Archimate</span>
-  <!--<paper-icon-button icon="refresh"></paper-icon-button>
-  <paper-icon-button icon="add">+</paper-icon-button>-->
+  <paper-toolbar class="medium-tall">
+    <paper-icon-button icon="menu"></paper-icon-button>
+    <span class="title">Document Driven Archimate</span>
+    <!--<paper-icon-button icon="refresh"></paper-icon-button>
+    <paper-icon-button icon="add">+</paper-icon-button>-->
 
-    <paper-tabs id="menuTabs" class="middle" selected="{{selected}}" style="width:100%" scrollable>
-      <template is="dom-repeat" items="{{stuff}}">
-        <paper-tab onclick="refreshSvg">{{item.tabtext}}</paper-tab>
-      </template>
-    </paper-tabs>
-</paper-toolbar>
+      <paper-tabs id="menuTabs" class="middle" selected="{{selected}}" style="width:100%" scrollable>
+        <template is="dom-repeat" items="{{stuff}}">
+          <paper-tab on-click="refreshSvg">{{item.tabtext}}</paper-tab>
+        </template>
+      </paper-tabs>
+  </paper-toolbar>
 
-    <iron-pages id="menuPages" selected="{{selected}}">
-      <template is="dom-repeat" items="{{stuff}}">
-        <div id="{{item.divid}}" style="overflow:auto"></div>
-      </template>
-    </iron-pages>
+      <iron-pages id="menuPages" selected="{{selected}}">
+        <template is="dom-repeat" items="{{stuff}}">
+          <div id="{{item.divid}}" style="overflow:auto"></div>
+        </template>
+      </iron-pages>
+    </template>
+    <script>
+    Polymer({
+      is: 'model-menu',
+      properties: {
+        stuff: Array,
+        selected:Number
 
-  <script>
-    menu = document.querySelector('#menu');
-    menu.stuff=[];
-    refreshSvg = function(){
-      for(var i = 0; i < window.viewvisualisations.length;i++){
-        d3.select("div#div"+i)[0][0].appendChild(window.viewvisualisations[i]);
-        var rect = d3.select("div#div"+i).select("svg")[0][0].getBBox();
-        d3.select("div#div"+i).select("svg").attr("width",rect.width*1.05);
-        d3.select("div#div"+i).select("svg").attr("height",rect.height*1.05);
+      },
+      refreshSvg : function(){
+        for(var i = 0; i < window.viewvisualisations.length;i++){
+          d3.select("div#div"+i)[0][0].appendChild(window.viewvisualisations[i]);
+          d3.select("div#div"+i).style("padding","5px");
+
+          var rect = d3.select("div#div"+i).select("svg")[0][0].getBBox();
+
+          //var maxwidth = Math.max(d3.select("div#div"+i)[0][0].getBoundingClientRect().width,rect.width);
+          //var maxheight = Math.max(d3.select("div#div"+i)[0][0].getBoundingClientRect().height,rect.height);
+
+
+          d3.select("div#div"+i).select("svg").attr("width",rect.width*1.05);
+          d3.select("div#div"+i).select("svg").attr("height",rect.height*1.05);
+          d3.select("div#div"+i).select("svg").attr("viewBox",rect.x+","+rect.y+","+rect.height*1.05+","+rect.width*1.05);
+
+          //d3.select("div#div"+i).style("width",(maxwidth*1.05)+"px");
+          d3.select("div#div"+i).style("width","100%");
+          //d3.select("div#div"+i).style("height",(maxheight*1.05)+"px");
+
+          d3.select("div#div"+i).style("height",($(window).height()-300)+"px");
+        }
       }
-      //Polymer.RenderStatus.afterNextRender(t,refreshSvg);
-    }
-    Polymer.RenderStatus.afterNextRender(menu,refreshSvg)
-    document.addEventListener('iron-select', refreshSvg);
-  </script>
-</template>
+      });
+      /*menu = document.querySelector('#menu');
+      menu.stuff=[];*/
+
+      //Polymer.RenderStatus.afterNextRender(menu,refreshSvg)
+      //document.addEventListener('iron-select', refreshSvg);
+    </script>
+
+</dom-module>
+<model-menu id="menu"></model-menu>
 <!-- start: custom elements -->
 <dom-module id="model-reference">
   <template>
@@ -131,6 +159,42 @@
     });
   </script>
 </dom-module>
+
+<dom-module id="model-zoom">
+  <template>
+    <div class="layout horizontal">
+      <div class="flex">
+      </div>
+      <div>
+      <paper-icon-button icon="add-box" title="add" on-click="zoomin"></paper-icon-button>
+    </div>
+    <div>
+      <paper-icon-button icon="indeterminate-check-box" title="remove" on-click="zoomout"></paper-icon-button>
+    </div>
+    </div>
+  </template>
+  <script>
+    Polymer({
+      is: 'model-zoom',
+      properties: {
+        label: String,
+        link: String,
+        disabled: Boolean
+      },
+      zoomin: function(e){
+        var svg = d3.select("div.iron-selected").select("svg");
+        svg.attr("width",parseFloat(svg.attr("width"))*1.5);
+        svg.attr("height",parseFloat(svg.attr("height"))*1.5);
+      },
+      zoomout: function(e){
+        var svg = d3.select("div.iron-selected").select("svg");
+        svg.attr("width",parseFloat(svg.attr("width"))/1.5);
+        svg.attr("height",parseFloat(svg.attr("height"))/1.5);
+      }
+    });
+  </script>
+</dom-module>
+<model-zoom></model-zoom>
 <!-- end: custom elements -->
 <paper-listbox vertical-align="bottom" style="height:100%;padding-left:5%;padding-right:5%">
 
