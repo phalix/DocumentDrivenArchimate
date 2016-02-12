@@ -6,7 +6,7 @@
   <link rel="stylesheet" href="app.css">
 
 
-  <script src="angular.min.js"></script>
+
   <script src="http://localhost/DocumentDrivenArchimate/bower_components/webcomponentsjs/webcomponents-lite.min.js"></script>
   <link rel="import" href="http://localhost/DocumentDrivenArchimate/bower_components/polymer/polymer.html" />
 
@@ -24,21 +24,24 @@
 
   <link rel="import" href="http://localhost/DocumentDrivenArchimate/bower_components/paper-toolbar/paper-toolbar.html" />
   <link rel="import" href="http://localhost/DocumentDrivenArchimate/bower_components/paper-tabs/paper-tabs.html" />
-
   <link rel="import" href="http://localhost/DocumentDrivenArchimate/bower_components/paper-menu/paper-menu.html" />
+  <link rel="import" href="http://localhost/DocumentDrivenArchimate/bower_components/paper-menu-button/paper-menu-button.html" />
   <link rel="import" href="http://localhost/DocumentDrivenArchimate/bower_components/paper-icon-button/paper-icon-button.html" />
   <link rel="import" href="http://localhost/DocumentDrivenArchimate/bower_components/paper-listbox/paper-listbox.html" />
+  <link rel="import" href="http://localhost/DocumentDrivenArchimate/bower_components/paper-item/paper-item.html" />
   <link rel="import" href="http://localhost/DocumentDrivenArchimate/bower_components/paper-input/paper-input.html" />
 
-  <link rel="import" href="http://localhost/DocumentDrivenArchimate/customelements.html" />
+
 
   <link rel="import" href="http://localhost/DocumentDrivenArchimate/theme/classical/classical.html" />
 
-  <!-- use paper-toast to indicate that saves wont be saved -->
+  <link rel="import" href="http://localhost/DocumentDrivenArchimate/lib/customelements.html" />
 
-  <script src="d3.v3.min.js"></script>
-  <script src="jquery-2.1.4.min.js"></script>
-  <script src="api-built.js"></script>
+  <!-- use paper-toast to indicate that saves wont be saved -->
+  <script src="lib/angular.min.js"></script>
+  <script src="lib/d3.v3.min.js"></script>
+  <script src="lib/jquery-2.1.4.min.js"></script>
+  <script src="lib/api-built.js"></script>
 
   <!-- main engine -->
   <script src="resources/archimate_configuration.js"></script>
@@ -46,7 +49,7 @@
 
   <script>
   //prepare('http://localhost/Archisurance.xml',"de");
-  prepare('http://192.168.192.48/Reference%20Model.xml','en');
+  //prepare('http://192.168.192.48/Reference%20Model.xml','en');
 
   angular.module('app', [])
   .controller('createTabs', ['$scope', function createTabs($scope) {
@@ -121,31 +124,104 @@ function addmodelreference(){
   dropZone.addEventListener('drop', handleFileSelect, false);
 </script>
 -->
+<dom-module id="model-selection">
+  <template>
+    <paper-dialog id="dialog" style="width:70%;height:70%">
+      <paper-icon-button icon="arrow-back" title="backwards" on-click="back"></paper-icon-button>
+      <paper-listbox id="list">
+        <template is="dom-repeat" items="[[current]]">
+          <div class="layout horizontal">
+            <div class="flex">
+              <paper-item>[[item.name]]</paper-item>
+            </div>
+          </div>
+        </template>
+      </paper-listbox>
+    </paper-dialog>
+  </template>
+  <script>
+    Polymer({
+      is: 'model-selection',
+      properties: {
+        structure: Object,
+        current: Array,
+        navigation: Array,
+        model:String
+      },
+      listeners: {
+        'iron-select': 'respondToSelection'
+      },
+      ready:function(){
+        if(this.structure){
+          this.navigation = [];
+          this.setItems();
+        }else{
+          var context = this;
+          setTimeout(function(){context.ready()},100);
+        }
+
+      },
+      back:function(e){
+        this.navigation.splice(this.navigation.length-1,1);
+        this.setItems(e);
+      },
+      setItems:function(e){
+        this.current = this.structure.content;
+        for(var i = 0;i < this.navigation.length;i++){
+          if(this.current){
+            var navigated = false;
+            for(var j = 0;j < this.current.length && !navigated;j++){
+              if(this.current[j].name == this.navigation[i]){
+                  navigated = true;
+                  if(this.current[j].get && !(this.current[j].content && this.current[j].content.length > 0)){
+                    this.model = this.current[j].get;
+                    this.close();
+                    this.navigation.splice(this.navigation.length-1,1);
+                    this.fire("modelselected",{"model":this.model});
+                  }else{
+                    this.current = (this.current[j].content);
+                    this.$.list.select(-1)
+                  }
+                }
+            }
+          }
+        }
+      },
+      open:function(e){
+        this.$.dialog.open();
+      },
+      close:function(e){
+        this.$.dialog.close();
+      },
+      respondToSelection:function(e){
+        var lastitem = "";
+        if(this.navigation.length>0){
+          lastitem = this.navigation[this.navigation.length-1]
+        }
+        if(lastitem != e.detail.item.outerText){
+            this.navigation.push(e.detail.item.outerText);
+
+        }
+        this.setItems(e);
+
+      }
+    });
+  </script>
+</dom-module>
+
+<script type="text/javascript" src="repository/mockup.json"></script>
+<model-selection id="ms"></model-selection>
+<script>
+  document.querySelector("#ms").structure = {};
+  document.querySelector("#ms").structure = mockup;
+  document.querySelector("#ms").addEventListener("modelselected",function(e){
+    console.log(ms.model);
+    prepare(ms.model,'en');
+  },false);
+  document.querySelector("#ms").open();
+</script>
 
 <model-menu id="menu"></model-menu>
-<script>
-function updateMenu(){
-  if(window.done){
-
-    for(var i=0;i < window.viewsdata.children().size();i++){
-      var tab = {};
-      tab.tabtext = $(window.viewsdata.children().eq(i)).children('label[xml\\:lang="'+functions.usersettings.lang+'"]').text();
-      tab.divid = "div"+i;
-      tab.content = window.viewvisualisations[i]
-      //t.stuff.push(tab);
-      if(!menu.stuff){
-        menu.stuff = [];
-      }
-      menu.stuff = menu.stuff.concat([tab]);
-    }
-
-  }else{
-    setTimeout(updateMenu,100);
-  }
-}
-
-document.querySelector("#menu").ready = updateMenu;
-</script>
 <model-zoom></model-zoom>
 
 <model-references id="mr">
