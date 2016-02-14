@@ -1,15 +1,113 @@
 
 
 <!-- start: custom elements -->
+<dom-module id="model-selection">
+  <template>
+    <paper-dialog id="dialog" style="width:70%;height:70%">
+      <div class="layout horizontal">
+        <div>
+          <paper-icon-button icon="arrow-back" title="backwards" on-click="back"></paper-icon-button>
+        </div>
+        <div class="flex">
+        </div>
+        <div>
+          <paper-icon-button icon="cancel" title="cancel" on-click="cancel"></paper-icon-button>
+        </div>
+      </div>
+      <paper-listbox id="list">
+        <template is="dom-repeat" items="[[current]]">
+          <div class="layout horizontal">
+            <div class="flex">
+              <paper-item>[[item.name]]</paper-item>
+            </div>
+          </div>
+        </template>
+      </paper-listbox>
+    </paper-dialog>
+  </template>
+  <script>
+    Polymer({
+      is: 'model-selection',
+      properties: {
+        structure: Object,
+        current: Array,
+        navigation: Array,
+        model:String
+      },
+      listeners: {
+        'iron-select': 'respondToSelection'
+      },
+      ready:function(){
+        if(this.structure){
+          this.navigation = [];
+          this.setItems();
+        }else{
+          var context = this;
+          setTimeout(function(){context.ready()},100);
+        }
+
+      },
+      back:function(e){
+        this.navigation.splice(this.navigation.length-1,1);
+        this.setItems(e);
+      },
+      cancel:function(e){
+        this.navigation = [];
+        this.close(e);
+      },
+      setItems:function(e){
+        this.current = this.structure.content;
+        for(var i = 0;i < this.navigation.length;i++){
+          if(this.current){
+            var navigated = false;
+            for(var j = 0;j < this.current.length && !navigated;j++){
+              if(this.current[j].name.trim() == this.navigation[i].trim()){
+                  navigated = true;
+                  if(this.current[j].get && !(this.current[j].content && this.current[j].content.length > 0)){
+                    this.model = this.current[j].get;
+                    this.close();
+                    this.navigation.splice(this.navigation.length-1,1);
+                    this.fire("modelselected",{"model":this.model});
+                  }else{
+                    this.current = (this.current[j].content);
+                    this.$.list.select(-1)
+                  }
+                }
+            }
+          }
+        }
+      },
+      open:function(e){
+        this.$.dialog.open();
+      },
+      close:function(e){
+        this.$.dialog.close();
+      },
+      respondToSelection:function(e){
+        var lastitem = "";
+        if(this.navigation.length>0){
+          lastitem = this.navigation[this.navigation.length-1]
+        }
+        if(lastitem != e.detail.item.outerText){
+            this.navigation.push(e.detail.item.outerText);
+
+        }
+        this.setItems(e);
+
+      }
+    });
+  </script>
+</dom-module>
 <dom-module id="model-menu">
   <template>
     <paper-toolbar class="medium-tall">
       <paper-menu-button>
         <paper-icon-button icon="menu" class="dropdown-trigger"></paper-icon-button>
         <paper-menu class="dropdown-content">
-          <paper-item>Share</paper-item>
-          <paper-item>Settings</paper-item>
-          <paper-item>Help</paper-item>
+          <paper-item on-click="ModelSelectionDialog">Open</paper-item>
+          <paper-item on-click="ModelSaveDialog">Save</paper-item>
+          <!-- <paper-item>Settings</paper-item>
+          <paper-item>Help</paper-item> -->
         </paper-menu>
       </paper-menu-button>
     <span class="title">Document Driven Archimate</span>
@@ -43,8 +141,12 @@
 
           //var maxwidth = Math.max(d3.select("div#div"+i)[0][0].getBoundingClientRect().width,rect.width);
           //var maxheight = Math.max(d3.select("div#div"+i)[0][0].getBoundingClientRect().height,rect.height);
-          d3.select("div#div"+i).select("svg").attr("width",rect.width*1.05);
-          d3.select("div#div"+i).select("svg").attr("height",rect.height*1.05);
+
+          if(!functions.usersettings.zoom){
+            functions.usersettings.zoom = 1.0
+          }
+          d3.select("div#div"+i).select("svg").attr("width",rect.width*1.05*functions.usersettings.zoom);
+          d3.select("div#div"+i).select("svg").attr("height",rect.height*1.05*functions.usersettings.zoom);
           d3.select("div#div"+i).select("svg").attr("viewBox",rect.x+","+rect.y+","+rect.width*1.05+","+rect.height*1.05);
 
           //d3.select("div#div"+i).style("width",(maxwidth*1.05)+"px");
@@ -56,6 +158,7 @@
       },
       ready:function(){
         if(window.done){
+          menu.stuff = [];
           for(var i=0;i < window.viewsdata.children().size();i++){
             var tab = {};
             tab.tabtext = $(window.viewsdata.children().eq(i)).children('label[xml\\:lang="'+functions.usersettings.lang+'"]').text();
@@ -72,6 +175,25 @@
           var context = this;
           setTimeout(function(){context.ready()},100);
         }
+      },
+      ModelSelectionDialog:function(){
+        document.querySelector("#ms").open();
+      },
+      ModelSaveDialog:function(){
+        //window.xml.firstChild.outerHTML
+        var element = document.createElement('a');
+        element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(window.xml.firstChild.outerHTML));
+        var name = configuration.modelname(window.xml.firstChild);
+        name = name.replace(" ","_");
+        var type = configuration.modelfiletype(window.xml.firstChild);
+        element.setAttribute('download', name+"."+type);
+
+        element.style.display = 'none';
+        document.body.appendChild(element);
+
+        element.click();
+
+        document.body.removeChild(element);
       }
       });
       this.stuff = [];
@@ -150,11 +272,19 @@
       },
       zoomin: function(e){
         var svg = d3.select("div.iron-selected").select("svg");
+        if(!functions.usersettings.zoom){
+          functions.usersettings.zoom = 1.0;
+        }
+        functions.usersettings.zoom = functions.usersettings.zoom*1.5;
         svg.attr("width",parseFloat(svg.attr("width"))*1.5);
         svg.attr("height",parseFloat(svg.attr("height"))*1.5);
       },
       zoomout: function(e){
         var svg = d3.select("div.iron-selected").select("svg");
+        if(!functions.usersettings.zoom){
+          functions.usersettings.zoom = 1.0;
+        }
+        functions.usersettings.zoom = functions.usersettings.zoom/1.5;
         svg.attr("width",parseFloat(svg.attr("width"))/1.5);
         svg.attr("height",parseFloat(svg.attr("height"))/1.5);
       },
@@ -197,7 +327,7 @@
         links: Array
       }
     });
-    this.links = [];
+
     refreshLinks = function (a) {
       if(a.detail&&a.detail.node){
           mr.label = $(a.detail.node).attr("id");

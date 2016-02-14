@@ -150,80 +150,84 @@ function init(view_node,view_xml,lang){
 		console.log("No definitons found.")
 	}
 
-
-	//interaction
-	svg
-	.on('mouseup',
-			function(d){
-		if(d3.event.ctrlKey) return;
+	if(!functions.usersettings.disabled || functions.usersettings.disabled==false){
+		//interaction
 		svg
-		.selectAll("g.connection[selected=true]").each(function(d){
-			drawEdge(d3.select(this));
-		});
-		svg
-		.selectAll("g.connection[selected=true]").selectAll("circle[selected=true]").each(function(d){
-			// calculate new position
-			drawEdge(d3.select(this.parentElement));
-		});
-		svg.selectAll("g.node[selected=true]").each(function(d){
-			d3.select(this).attr("selected", false);
-			functions.updateNode(d3.select(this));
-		});
-		svg
-		.selectAll("g[selected=true]").each(function(d){
-			d3.select(this).attr("selected", false);
-		});
-		d3.selectAll("#selector").remove();
+		.on('mouseup',
+				function(d){
 
+			svg
+			.selectAll("g.connection[selected=true]").selectAll("circle[selected=true]").each(function(d){
+				// calculate new position
+				var currentcircle = d3.select(this);
+				currentcircle.attr("selected", false);
+				var currentedge = d3.select(this.parentElement);
+				currentedge.attr("selected",false);
+				drawEdge(currentedge);
+			});
+			//if no circle was selected but an edge; this is performed
+			svg
+			.selectAll("g.connection[selected=true]").each(function(d){
+				d3.select(this).attr("selected", false);
+			});
+			if(!d3.event.altKey){
+				svg.selectAll("g.node[selected=true]").each(function(d){
+					d3.select(this).attr("selected", false);
+					functions.updateNode(d3.select(this));
+				});
+			}
 
-	})
-	.on('mousemove',
-			function(d){
-		if(d3.event.ctrlKey) return;
+			d3.selectAll("#selector").remove();
+			d3.selectAll(".hover.edge").remove();
 
-		svg
-		.selectAll("g.node[selected=true]").each(function(d){
-			/* calculate new position */
-			var sel_x = parseInt(d3.select(this).attr('selected_x'));
-			var sel_y = parseInt(d3.select(this).attr('selected_y'));
-			var x = d3.event.x-sel_x;
-			var y = d3.event.y-sel_y;
+		})
+		.on('mousemove',
+				function(d){
+			if(d3.event.altKey) return;
 
+			if(svg
+			.selectAll("g.node[selected=true]").size()>1) return;
 
-			var position = configuration.nodeposition(d3.select(this).data()[0]);
-			var orig_x = position.x;
-			var orig_y = position.y;
+			svg
+			.selectAll("g.node[selected=true]").each(function(d){
+				/* calculate new position */
+				var sel_x = parseInt(d3.select(this).attr('selected_x'));
+				var sel_y = parseInt(d3.select(this).attr('selected_y'));
+				var x = d3.event.x-sel_x;
+				var y = d3.event.y-sel_y;
 
-			var nodes = $(d3.select(this).data()).children("node");
+				var position = configuration.nodeposition(d3.select(this).data()[0]);
+				var orig_x = position.x;
+				var orig_y = position.y;
 
-			functions.updateNodePosition(d3.select(this),x,y,orig_x,orig_y);
+				var nodes = $(d3.select(this).data()).children("node");
 
-			d3.select("#nodeselector").attr("x",x-configuration.edgedistance/2)
-			d3.select("#nodeselector").attr("y",y-configuration.edgedistance/2)
+				functions.updateNodePosition(d3.select(this),x,y,orig_x,orig_y);
 
-		});
+				d3.select(".nodeselector").attr("x",x-configuration.edgedistance/2)
+				d3.select(".nodeselector").attr("y",y-configuration.edgedistance/2)
 
-		svg
-		.selectAll("g.connection[selected=true]").selectAll("circle[selected=true]").each(function(d){
-			/* calculate new position */
-			var sel_x = d3.select(this).attr('selected_x');
-			var sel_y = d3.select(this).attr('selected_y');
-			var x = d3.event.offsetX-sel_x;
-			var y = d3.event.offsetY-sel_y;
-			var classstring = d3.select(this).attr("id");
-			if(classstring){
-				var bendpointindex = classstring.split(":")[2];
-				if(bendpointindex){
-					configuration.updateEdgePosition(d3.select(this.parentElement).data()[0],bendpointindex,x,y);
-					svg.selectAll("#selector")
-					.attr("cx",x)
-					.attr("cy",y);
+			});
+
+			var hovercircle = svg.select(".hover.edge[selected=true]");
+			if(hovercircle.size()>0){
+				hovercircle.attr("moved",true);
+				var sel_x = hovercircle.attr('selected_x');
+				var sel_y = hovercircle.attr('selected_y');
+				var x = d3.event.offsetX-sel_x;
+				var y = d3.event.offsetY-sel_y;
+				var classstring = hovercircle.attr("id");
+				if(classstring){
+					var bendpointindex = classstring.split(":")[2];
+					if(bendpointindex){
+						var edge = d3.select("#"+classstring.split(":")[1]);
+						configuration.updateEdgePosition(edge.data()[0],bendpointindex,x,y);
+						hovercircle.attr("cx",x).attr("cy",y);
+					}
 				}
 			}
 		});
-
-	});
-
+	}
 
 	this.drawNodes = function(data){
 
@@ -234,38 +238,46 @@ function init(view_node,view_xml,lang){
 		);
 
 		g.enter().append('svg:g');
-		g.on('mousedown',function(d){
-			d3.select(this).attr('selected',true);
-			d3.select(this).attr('selected_x',d3.event.x-$(d3.select(this)[0]).attr("x"));
-			d3.select(this).attr('selected_y',d3.event.y-$(d3.select(this)[0]).attr("y"));
+		//this is always activated, so that the users can see the links
+		if(true||!functions.usersettings.disabled || functions.usersettings.disabled==false){
+			g.on('mousedown',function(d){
+				if(!d3.event.altKey){
+					d3.selectAll(".nodeselector").remove();
+				}
+				d3.select(this).attr('selected',true);
+				d3.select(this).attr('selected_x',d3.event.x-$(d3.select(this)[0]).attr("x"));
+				d3.select(this).attr('selected_y',d3.event.y-$(d3.select(this)[0]).attr("y"));
 
-			var bbox = d3.select(this)[0][0].getBBox();
-			var x = bbox.x;
-			var y = bbox.y;
-			var x = d3.transform(d3.select(this).attr("transform")).translate[0];
-			var y = d3.transform(d3.select(this).attr("transform")).translate[1];
-			d3.selectAll("#nodeselector").remove();
-			d3.select(this.parentElement)
-			.append("rect")
-			.attr("x",x-configuration.edgedistance/2)
-			.attr("y",y-configuration.edgedistance/2)
-			.attr("width",bbox.width+configuration.edgedistance)
-			.attr("height",bbox.height+configuration.edgedistance)
-			.attr("fill","none")
-			.attr("stroke","black")
-			.attr("stroke-dasharray","2,2")
-			.attr("id","nodeselector")
-			.attr("ref",d3.select(this).attr("id"));
-			var ce = new CustomEvent("NodeSelected",{
-				detail: {
-					nodedata: d,
-					node: this
-				}});
-			ce.detail = this;
-			document.dispatchEvent(ce);
+				var bbox = d3.select(this)[0][0].getBBox();
+				var x = bbox.x;
+				var y = bbox.y;
+				var x = d3.transform(d3.select(this).attr("transform")).translate[0];
+				var y = d3.transform(d3.select(this).attr("transform")).translate[1];
 
-		})
-		.attr('class',function(d){
+				d3.select(this.parentElement)
+					.append("rect")
+					.attr("x",x-configuration.edgedistance/2)
+					.attr("y",y-configuration.edgedistance/2)
+					.attr("width",bbox.width+configuration.edgedistance)
+					.attr("height",bbox.height+configuration.edgedistance)
+					.attr("fill","none")
+					.attr("stroke","black")
+					.attr("stroke-dasharray","2,2")
+					.classed("nodeselector",true)
+					.attr("id","nodeselector"+":"+d3.select(this).attr("id"))
+					.attr("ref",d3.select(this).attr("id"));
+				var ce = new CustomEvent("NodeSelected",{
+					detail: {
+						nodedata: d,
+						node: this
+					}});
+				ce.detail = this;
+				document.dispatchEvent(ce);
+
+			})
+		}
+
+		g.attr('class',function(d){
 			return 'node '+configuration.nodetype(d)
 		})
 		.attr('id',function(d){
@@ -473,38 +485,33 @@ function init(view_node,view_xml,lang){
 		});
 
 
-
-		g.on('mousedown',function(d){
-			d3.select(this).attr('selected',true);
-			var found = false;
-			var x = d3.event.offsetX;
-			var y = d3.event.offsetY;
-			var lines = d3.select(this).selectAll("circle").each(function(d,i){
-				if(functions.getNearToPoint(parseInt(d3.select(this).attr("cx")),parseInt(d3.select(this).attr("cy")),x,y,configuration.edgedistance)){
-					d3.select(this).attr("selected","true");
-					d3.select(this).attr('selected_x',x-$(d3.select(this)[0]).attr("cx"));
-					d3.select(this).attr('selected_y',y-$(d3.select(this)[0]).attr("cy"));
-
-					d3.select(this.parentElement.parentElement)
-					.append("circle")
-					.attr("cx",$(d3.select(this)[0]).attr("cx"))
-					.attr("cy",$(d3.select(this)[0]).attr("cy"))
-					.attr("r",configuration.edgedistance)
-					.attr("fill","none")
-					.attr("stroke","black")
-					.attr("stroke-dasharray","2,2")
-					.attr("id","selector");
-
+		if(!functions.usersettings.disabled || functions.usersettings.disabled==false){
+			g.on('mousedown',function(d){
+				d3.select(this).attr('selected',true);
+				var found = false;
+				var x = d3.event.offsetX;
+				var y = d3.event.offsetY;
+				var hovercircle = d3.select(".hover.edge");
+				if(hovercircle.size()>0){
 					found = true;
+					hovercircle.attr("selected","true");
+					hovercircle.attr('selected_x',x-parseInt(hovercircle.attr("cx")));
+					hovercircle.attr('selected_y',y-parseInt(hovercircle.attr("cy")));
+				}
 
+				if(!found){
+					d3.select(this).attr("selected","false");
+					if(configuration.addBendPoint){
+							configuration.addBendPoint(d,x,y);
+					}else{
+						console.log("Configuration does not support bendpoints of edges");
+					}
+
+					//$(d.self).append("<bendpoint x='"+x+"' y='"+y+"' ></bendpoint>");
+					drawEdge(d3.select(this));
 				}
 			});
-			if(!found){
-				d3.select(this).attr("selected","false");
-				$(d.self).append("<bendpoint x='"+x+"' y='"+y+"' ></bendpoint>");
-				drawEdge(d3.select(this));
-			}
-		});
+		}
 
 		this.drawEdge = function (edge) {
 			edge.each(function(d,i){
@@ -677,54 +684,54 @@ function init(view_node,view_xml,lang){
 						for(var i = 0;i<points.path.length;i++){
 							var points2 = [points.path[i]];
 
-
-
-							//var d_line = $(currentedge.data()[0].self).find("bendpoint");
-							//for(var i = 0; i < d_line.length;i++){
-							//var current = $(d_line[i]);
 							currentedge
 							.append("circle")
-							//.attr("cx",current.attr("x"))
-							//.attr("cy",current.attr("y"))
 							.attr("cx",points2[0].x)
 							.attr("cy",points2[0].y)
 							.attr("r",configuration.edgedistance)
 							.attr("fill","transparent")
 							.attr("stroke","none")
 							.attr("id","bendpoint:"+currentedge.attr("id")+":"+i)
-							.attr("class","bendpointselector")
-							.on("mouseover",function(d){
-								d3.select(this.parentElement).select("#hover_"+$(d3.select(this).data()).attr("id")).remove();
-								d3.select(this.parentElement)
-								.append("circle")
-								.attr("cx",$(d3.select(this)[0]).attr("cx"))
-								.attr("cy",$(d3.select(this)[0]).attr("cy"))
-								.attr("r",configuration.edgedistance)
-								.attr("fill","none")
-								.attr("stroke","black")
-								.attr("stroke-dasharray","2,2")
-								.attr("id","hover_"+$(d3.select(this).data()).attr("id"));
-							})
-							.on("mouseover",function(d){
-								d3.select(this.parentElement).select("#hover_"+$(d3.select(this).data()).attr("id")).remove();
-								d3.select(this.parentElement)
-								.append("circle")
-								.attr("cx",$(d3.select(this)[0]).attr("cx"))
-								.attr("cy",$(d3.select(this)[0]).attr("cy"))
-								.attr("r",configuration.edgedistance)
-								.attr("fill","none")
-								.attr("stroke","black")
-								.attr("stroke-dasharray","2,2")
-								.attr("id","hover_"+$(d3.select(this).data()).attr("id"));
-							}).on("mouseout",function(d){
-								d3.select(this.parentElement).select("[id='hover_"+$(d3.select(this).data()).attr("id")+"']").remove();
-							}).on('mouseup',function(d){
-								if(d3.select(this).attr("selected")=="true"){
-									//delete bendpoint
-									configuration.deleteEdge(d,d3.select(this).attr("id").split(":")[2])
-									drawEdge(d3.select(this.parentElement));
-								}
-							});
+							.attr("class","bendpointselector");
+							if(!functions.usersettings.disabled || functions.usersettings.disabled==false){
+								currentedge.on("mouseover",function(d){
+									//d3.select(this.parentElement).select("#hover\\:"+$(d3.select(this).data()).attr("id")).remove();
+									d3.selectAll(".hover.edge").remove();
+									var arrayofattr = d3.select(this).attr("id").split(":")
+									d3.select(this.parentElement)
+									.append("circle")
+									.attr("cx",$(d3.select(this)[0]).attr("cx"))
+									.attr("cy",$(d3.select(this)[0]).attr("cy"))
+									.attr("r",configuration.edgedistance)
+									.attr("fill","none")
+									.attr("stroke","black")
+									.attr("stroke-dasharray","2,2")
+									.attr("id","hover:"+arrayofattr[1]+":"+arrayofattr[2])
+									.classed("hover",true)
+									.classed("edge",true);
+								})
+								.on("mouseout",function(d){
+									d3.select(this.parentElement)
+										.filter(function(d){
+											return !(d3.select(this).attr("selected") == "true")
+										})
+										.select("[id='hover\\:"+d3.select(this).attr("id").split(":")[1]+"\\:"+d3.select(this).attr("id").split(":")[2]+"']")
+										.remove();
+								}).on('mouseup',function(d){
+									var hovercircle = d3.select(".hover.edge[selected=true]");
+									if(hovercircle.size()>0 && !hovercircle.attr("moved")){
+										var bendpointinfo = d3.select(this).attr("id").split(":");
+										var hoverinfo = hovercircle.attr("id").split(":");
+										if(bendpointinfo[2]==hoverinfo[2]&&bendpointinfo[1]==hoverinfo[1]){
+											//delete bendpoint
+											configuration.deleteEdge(d,bendpointinfo[2])
+											drawEdge(d3.select(this.parentElement));
+										}
+									}
+
+									d3.selectAll(".hover.edge").remove();
+								});
+							}
 						}
 					}
 				}

@@ -40,6 +40,10 @@ this.mockup = {
           "type":"file",
           "name":"Archisurance",
           "get":"http://localhost/Archisurance.xml"
+        },{
+          "type":"file",
+          "name":"test",
+          "get":"http://localhost/test.xml"
         }
       ]
       }]
