@@ -1,4 +1,9 @@
 
+//author: Sebastian Bittmann
+//email: sebastianbittmann@gmail.com
+//This software was created with the help of the jquery and d3js library.
+//See https://d3js.org/ and https://jquery.com/ for more info.
+
 //TODO: create new node
 //TODO: create new relation
 //TODO: move by limits of nodes
