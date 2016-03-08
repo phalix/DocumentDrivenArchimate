@@ -1,6 +1,91 @@
 
 
 <!-- start: custom elements -->
+<dom-module id="model-editor">
+  <template>
+      <paper-menuattr-for-item-title="label">
+        <!--<paper-submenu label="Views">
+          <paper-item class="menu-trigger">Views</paper-item>
+          <paper-menu class="menu-content sublist">
+            <paper-item>Actor</paper-item>
+        </paper-menu>
+      </paper-submenu>-->
+    <paper-submenu label="Nodes">
+      <paper-item class="menu-trigger">Nodes</paper-item>
+      <paper-menu class="menu-content sublist">
+        <template is="dom-repeat" items="[[nodes]]">
+          <paper-item id="[[item.name]]" on-click="nodeselected">[[item.name]]</paper-item>
+        </template>
+      </paper-menu>
+    </paper-submenu>
+    <paper-submenu label="Connections">
+      <paper-item class="menu-trigger">Connections</paper-item>
+      <paper-menu class="menu-content sublist">
+          <template is="dom-repeat" items="[[edges]]">
+            <paper-item id="[[item.name]]" on-click="edgeselected">[[item.name]]</paper-item>
+          </template>
+        </paper-menu>
+      </paper-submenu>
+    </paper-menu>
+  </template>
+  <script>
+    Polymer({
+      is: 'model-editor',
+      properties: {
+        nodes:Array,
+        edges:Array,
+        views:Array
+      },
+      nodeselected:function(e){
+        var newnode = configuration.nodes[e.target.id].new();
+        configuration.adder(window.xml,newnode);
+        drawNode(d3.select(newnode));
+
+      },
+      ready:function(){
+        if(window.done){
+          if(!this.nodes){
+              this.nodes = [];
+          }
+          if(!this.edges){
+              this.edges = [];
+          }
+          for(var node in configuration.nodes){
+            if(node != "undefined"){
+              var newelement = {};
+              newelement["name"] = node;
+              if(configuration.nodes[node].new){
+                  newelement["onclick"] = function(){alert(node)};
+                  this.nodes = this.nodes.concat([newelement]);
+              }
+            }
+          }
+          for(var edge in configuration.edges){
+            if(edge != "undefined"){
+
+              var newelement = {};
+              newelement["name"] = edge;
+              if(configuration.edges[edge].new){
+                /*function(){
+                  var element = configuration.edges[edge].new();
+                  configuration.add(element);
+                }*/
+
+                this.edges = this.edges.concat([newelement]);
+              }
+
+            }
+          }
+
+        }else{
+          var context = this;
+          setTimeout(function(){context.ready()},100);
+        }
+      }
+    });
+  </script>
+</dom-module>
+
 <dom-module id="model-selection">
   <template>
     <paper-dialog id="dialog" style="width:70%;height:70%">
@@ -114,7 +199,7 @@
 
       <paper-tabs id="menuTabs" class="middle" selected="{{selected}}" style="width:100%" scrollable>
         <template is="dom-repeat" items="[[stuff]]">
-          <paper-tab on-click="refreshSvg">[[item.tabtext]]</paper-tab>
+          <paper-tab id="[[item.tabid]]" on-click="refreshSvg">[[item.tabtext]]</paper-tab>
         </template>
       </paper-tabs>
   </paper-toolbar>
@@ -132,15 +217,12 @@
         stuff: Array,
         selected: Number
       },
-      refreshSvg: function(){
+      refreshSvg: function(e){
         for(var i = 0; i < window.viewvisualisations.length;i++){
           d3.select("div#div"+i)[0][0].appendChild(window.viewvisualisations[i]);
           d3.select("div#div"+i).style("padding","5px");
 
           var rect = d3.select("div#div"+i).select("svg")[0][0].getBBox();
-
-          //var maxwidth = Math.max(d3.select("div#div"+i)[0][0].getBoundingClientRect().width,rect.width);
-          //var maxheight = Math.max(d3.select("div#div"+i)[0][0].getBoundingClientRect().height,rect.height);
 
           if(!functions.usersettings.zoom){
             functions.usersettings.zoom = 1.0
@@ -149,11 +231,10 @@
           d3.select("div#div"+i).select("svg").attr("height",rect.height*1.05*functions.usersettings.zoom);
           d3.select("div#div"+i).select("svg").attr("viewBox",rect.x+","+rect.y+","+rect.width*1.05+","+rect.height*1.05);
 
-          //d3.select("div#div"+i).style("width",(maxwidth*1.05)+"px");
           d3.select("div#div"+i).style("width","100%");
-          //d3.select("div#div"+i).style("height",(maxheight*1.05)+"px");
-
           d3.select("div#div"+i).style("height",($(window).height()-300)+"px");
+
+          functions.usersettings.currentview = e.path[1].id.substr(3);
         }
       },
       ready:function(){
@@ -163,6 +244,7 @@
             var tab = {};
             tab.tabtext = $(window.viewsdata.children().eq(i)).children('label[xml\\:lang="'+functions.usersettings.lang+'"]').text();
             tab.divid = "div"+i;
+            tab.tabid = "tab"+$(window.viewsdata.children().eq(i)).attr("identifier");
             tab.content = window.viewvisualisations[i]
             //t.stuff.push(tab);
             if(!menu.stuff){

@@ -7,7 +7,8 @@
 //TODO: create new node
 //TODO: create new relation
 //TODO: move by limits of nodes
-
+//TODO: Create coponent for adding nodes, edges and views
+//TODO: Encapsule this in a polymer component
 
 function prepare(url,lang){
 	if(!configuration){return null;}
@@ -103,10 +104,6 @@ function prepare(url,lang){
 						edgedata.self = edges_ofview[j];
 						viewdata.edges.push(edgedata);
 					}
-
-					/*var node = d3.select("body")
-					.select("iron-pages")
-					.select("div#div"+i);*/
 					var node = d3.select(document.createElement("div"));
 
 					init(node,viewdata,lang);
