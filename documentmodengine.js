@@ -10,8 +10,34 @@
 //TODO: Create coponent for adding nodes, edges and views
 //TODO: Encapsule this in a polymer component
 
+function releaseModel(){
+	if(window.viewvisualisations){
+		for(var i = 0;i<window.viewvisualisations.length;i++){
+			d3.select(window.viewvisualisations[i]).remove();
+		}
+	}
+
+	window.viewsdata = [];
+	window.viewvisualisations = [];
+}
+
+
+function prepareFile(file,lang){
+	if(!configuration){return null;}
+	window.done = 1;
+	functions.usersettings.lang = lang;
+
+	var reader = new FileReader();
+	reader.onload = function(event) {
+		window.xml = $.parseXML(event.target.result);
+		processWindowXML(lang);
+	}
+	reader.readAsText(file);
+}
+
 function prepare(url,lang){
 	if(!configuration){return null;}
+	window.done = 1;
 	functions.usersettings.lang = lang;
 	$.ajax(
 			{
@@ -19,14 +45,21 @@ function prepare(url,lang){
 				async: true,
 				url:  url
 			}).done(function(xml){
-				window.done = false;
-				window.viewsdata = [];
-				window.viewvisualisations = [];
-
 
 				//prepare xml file.
 				//I need all data for each connection and each node!
 				window.xml = xml;
+				processWindowXML(lang);
+			});
+}
+
+function processWindowXML(lang){
+				window.done = 1;
+
+
+				releaseModel();
+
+
 
 				var views = configuration.view_extraction(xml);
 
@@ -110,15 +143,15 @@ function prepare(url,lang){
 
 				};
 				window.viewsdata = views;
-				window.done = true;
-			});
+				window.done = 2;
+
 
 }
 
 function init(view_node,view_xml,lang){
 
 	//SETUP CANVAS
-
+	view_node.selectAll("svg").remove();
 	var svg = view_node.append("svg");
 	window.viewvisualisations.push(svg[0][0]);
 	var defs = svg.append("defs");
@@ -152,7 +185,7 @@ function init(view_node,view_xml,lang){
 		console.log("No definitons found.")
 	}
 
-	if(!functions.usersettings.disabled || functions.usersettings.disabled==false){
+	if(functions.usersettings.viewonly == false){
 		//interaction
 		svg
 		.on('mouseup',
@@ -241,7 +274,7 @@ function init(view_node,view_xml,lang){
 
 		g.enter().append('svg:g');
 		//this is always activated, so that the users can see the links
-		if(true||!functions.usersettings.disabled || functions.usersettings.disabled==false){
+		if(true||functions.usersettings.viewonly==false){
 			g.on('mousedown',function(d){
 				if(!d3.event.altKey){
 					d3.selectAll(".nodeselector").remove();
@@ -487,7 +520,7 @@ function init(view_node,view_xml,lang){
 		});
 
 
-		if(!functions.usersettings.disabled || functions.usersettings.disabled==false){
+		if(functions.usersettings.viewonly==false){
 			g.on('mousedown',function(d){
 				d3.select(this).attr('selected',true);
 				var found = false;
@@ -695,7 +728,7 @@ function init(view_node,view_xml,lang){
 							.attr("stroke","none")
 							.attr("id","bendpoint:"+currentedge.attr("id")+":"+i)
 							.attr("class","bendpointselector");
-							if(!functions.usersettings.disabled || functions.usersettings.disabled==false){
+							if(functions.usersettings.viewonly ==false){
 								currentedge.on("mouseover",function(d){
 									//d3.select(this.parentElement).select("#hover\\:"+$(d3.select(this).data()).attr("id")).remove();
 									d3.selectAll(".hover.edge").remove();

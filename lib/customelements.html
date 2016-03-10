@@ -1,4 +1,53 @@
 
+<dom-module id="model-display">
+<template>
+  <!--
+    TODO: Use this in the future for Checkouts!
+    <paper-toast text="Warning! You have not checked out the Model. Changes won't be saved." opened></paper-toast>
+  -->
+  <template is="dom-if" if="{{ active }}">
+    <paper-toast text="Please be patient. Model is loading." duration="0" opened="{{loading}}"></paper-toast>
+    <paper-toast text="Model has been loaded completely." duration="1500" opened="{{ !loading }}"></paper-toast>
+  </template>
+</template>
+<script>
+  Polymer({
+    is: 'model-display',
+    properties: {
+      loading:{
+        type: Boolean,
+        notify: true
+      },
+      active:{
+        type: Boolean,
+        notify: true
+      },
+      currentview:Number,
+      maxview:Number
+    },
+    ready:function(event){
+
+    },
+    listeners:{
+      'loading-changed':'checkFinish'
+
+    },
+    checkFinish:function(event){
+      if(this.active == true){
+        if(window.done>1){
+          //this.active = false;
+          this.loading = false;
+        }else{
+          var context = this;
+          setTimeout(function(){context.checkFinish()},100);
+        }
+      }
+
+    }
+  })
+  </script>
+</dom-module>
+
 
 <!-- start: custom elements -->
 <dom-module id="model-editor">
@@ -43,7 +92,10 @@
 
       },
       ready:function(){
-        if(window.done){
+        if(window.done == 2){
+          if(functions.usersettings.viewonly == true){
+            $(this).hide();
+          }
           if(!this.nodes){
               this.nodes = [];
           }
@@ -91,75 +143,153 @@
     <paper-dialog id="dialog" style="width:70%;height:70%">
       <div class="layout horizontal">
         <div>
-          <paper-icon-button icon="arrow-back" title="backwards" on-click="back"></paper-icon-button>
+          <template is="dom-if" if="{{ !upload }}">
+
+
+              <paper-icon-button icon="arrow-back" title="backwards" on-click="back"></paper-icon-button>
+
+          </template>
         </div>
         <div class="flex">
         </div>
         <div>
+          <paper-icon-button icon="file-upload" title="upload" on-click="uploadxml"></paper-icon-button>
           <paper-icon-button icon="cancel" title="cancel" on-click="cancel"></paper-icon-button>
         </div>
       </div>
-      <paper-listbox id="list">
-        <template is="dom-repeat" items="[[current]]">
-          <div class="layout horizontal">
-            <div class="flex">
-              <paper-item>[[item.name]]</paper-item>
+      <template id="templist" is="dom-if" if="{{ ! upload}}">
+        <paper-listbox id="list" selected = "{{selected}}">
+          <template is="dom-repeat" items="[[current]]">
+            <div class="layout horizontal">
+              <div class="flex">
+                <paper-item>[[item.name]]</paper-item>
+              </div>
             </div>
+          </template>
+        </paper-listbox>
+      </template>
+      <template id="templist" is="dom-if" if="{{upload}}">
+        <div style="width:60%;height:inherit; margin-left:auto;margin-right:auto;border:1px dashed grey;border-radius:10px">
+          <div class="layout vertical" style="height:100%">
+            <div style="height:33%"></div>
+            <div class="flex">
+              <div class="layout horizontal">
+                <div style="width:15%"></div>
+                <div style="" class="flex">Drop Archimate XML here.</div>
+                <div style="width:15%"></div>
+              </div>
+              <div class="layout horizontal">
+                  <div style="width:35%"></div>
+                  <div style="" class="flex">
+                    <iron-icon style="width:64px;height:64px;margin: 0 auto" icon="cloud-upload"></iron-icon>
+                  </div>
+                  <div style="width:35%"></div>
+              </div>
+
+            </div>
+            <div style="height:33%"></div>
           </div>
-        </template>
-      </paper-listbox>
+          </div>
+
+      </template>
     </paper-dialog>
   </template>
   <script>
     Polymer({
       is: 'model-selection',
       properties: {
-        structure: Object,
+        structure: {
+          type:"Object",
+          notify:true
+        },
         current: Array,
         navigation: Array,
-        model:String
+        model:String,
+        upload:Boolean,
+        selected: Number,
+        file:Object
       },
       listeners: {
-        'iron-select': 'respondToSelection'
+        'iron-select': 'respondToSelection',
+        'dragover': 'handleDragOver',
+        'drop':'handleDropFiles',
+        'structure-changed':'setItems'
       },
       ready:function(){
-        if(this.structure){
+        this.upload = false;
+        this.navigation = [];
+        /*if(this.structure){
           this.navigation = [];
           this.setItems();
         }else{
           var context = this;
           setTimeout(function(){context.ready()},100);
-        }
+        }*/
 
+      },
+      nouploadandnonavigation:function(upload,navigation){
+        if(upload&&navigation){
+          return !upload && navigation.length>0;
+        }
+        return false;
+      },
+     handleDragOver: function(event) {
+        event.stopPropagation();
+        event.preventDefault();
+        event.dataTransfer.dropEffect = 'copy';
+      },
+      handleDropFiles: function(dropevent) {
+        //'dragover': 'cancel',
+        dropevent.stopPropagation();
+        dropevent.preventDefault();
+
+        var files = dropevent.dataTransfer.files;
+        var output = [];
+        this.file = files[0];
+        this.fire("fileselected",{"file":files[0]});
+        this.close();
       },
       back:function(e){
         this.navigation.splice(this.navigation.length-1,1);
         this.setItems(e);
       },
       cancel:function(e){
-        this.navigation = [];
-        this.close(e);
+        if(this.upload){
+          this.upload = false
+        }else{
+          this.navigation = [];
+          this.close(e);
+        }
+      },
+      uploadxml:function(e){
+        this.upload = true;
       },
       setItems:function(e){
-        this.current = this.structure.content;
-        for(var i = 0;i < this.navigation.length;i++){
-          if(this.current){
-            var navigated = false;
-            for(var j = 0;j < this.current.length && !navigated;j++){
-              if(this.current[j].name.trim() == this.navigation[i].trim()){
-                  navigated = true;
-                  if(this.current[j].get && !(this.current[j].content && this.current[j].content.length > 0)){
-                    this.model = this.current[j].get;
-                    this.close();
-                    this.navigation.splice(this.navigation.length-1,1);
-                    this.fire("modelselected",{"model":this.model});
-                  }else{
-                    this.current = (this.current[j].content);
-                    this.$.list.select(-1)
+        if(this.structure&&this.structure.content){
+          this.upload = false;
+          this.current = this.structure.content;
+          for(var i = 0;i < this.navigation.length;i++){
+            if(this.current){
+              var navigated = false;
+              for(var j = 0;j < this.current.length && !navigated;j++){
+                if(this.current[j].name.trim() == this.navigation[i].trim()){
+                    navigated = true;
+                    if(this.current[j].get && !(this.current[j].content && this.current[j].content.length > 0)){
+                      this.model = this.current[j].get;
+                      this.close();
+                      this.navigation.splice(this.navigation.length-1,1);
+                      this.fire("modelselected",{"model":this.model});
+                    }else{
+                      this.current = (this.current[j].content);
+                      //this.$.templist.list.select(-1)
+                      this.selected = -1;
+                    }
                   }
-                }
+              }
             }
           }
+        }else{
+          this.upload =true;
         }
       },
       open:function(e){
@@ -219,26 +349,33 @@
       },
       refreshSvg: function(e){
         for(var i = 0; i < window.viewvisualisations.length;i++){
-          d3.select("div#div"+i)[0][0].appendChild(window.viewvisualisations[i]);
-          d3.select("div#div"+i).style("padding","5px");
+          var div = d3.select("div#div"+i);
+          if(div.size()>0){
+            div[0][0].appendChild(window.viewvisualisations[i]);
+            div.style("padding","5px");
 
-          var rect = d3.select("div#div"+i).select("svg")[0][0].getBBox();
+            var rect = div.select("svg")[0][0].getBBox();
 
-          if(!functions.usersettings.zoom){
-            functions.usersettings.zoom = 1.0
+            if(!functions.usersettings.zoom){
+              functions.usersettings.zoom = 1.0
+            }
+            div.select("svg").attr("width",rect.width*1.05*functions.usersettings.zoom);
+            div.select("svg").attr("height",rect.height*1.05*functions.usersettings.zoom);
+            div.select("svg").attr("viewBox",rect.x+","+rect.y+","+rect.width*1.05+","+rect.height*1.05);
+
+            div.style("width","100%");
+            div.style("height",($(window).height()-300)+"px");
+            if(e){
+                //functions.usersettings.currentview = e.path[1].id.substr(3);
+            }
+
           }
-          d3.select("div#div"+i).select("svg").attr("width",rect.width*1.05*functions.usersettings.zoom);
-          d3.select("div#div"+i).select("svg").attr("height",rect.height*1.05*functions.usersettings.zoom);
-          d3.select("div#div"+i).select("svg").attr("viewBox",rect.x+","+rect.y+","+rect.width*1.05+","+rect.height*1.05);
 
-          d3.select("div#div"+i).style("width","100%");
-          d3.select("div#div"+i).style("height",($(window).height()-300)+"px");
-
-          functions.usersettings.currentview = e.path[1].id.substr(3);
         }
       },
       ready:function(){
-        if(window.done){
+        if(window.done == 2){
+          //TODO: This will cause an issue; since "menu" means here "this"
           menu.stuff = [];
           for(var i=0;i < window.viewsdata.children().size();i++){
             var tab = {};
@@ -251,8 +388,10 @@
               menu.stuff = [];
             }
             menu.stuff = menu.stuff.concat([tab]);
-          }
 
+          }
+          this.selected = 0;
+          this.refreshSvg();
         }else{
           var context = this;
           setTimeout(function(){context.ready()},100);
@@ -358,8 +497,10 @@
           functions.usersettings.zoom = 1.0;
         }
         functions.usersettings.zoom = functions.usersettings.zoom*1.5;
-        svg.attr("width",parseFloat(svg.attr("width"))*1.5);
-        svg.attr("height",parseFloat(svg.attr("height"))*1.5);
+        if(svg.size()>0){
+          svg.attr("width",parseFloat(svg.attr("width"))*1.5);
+          svg.attr("height",parseFloat(svg.attr("height"))*1.5);
+        }
       },
       zoomout: function(e){
         var svg = d3.select("div.iron-selected").select("svg");
@@ -367,8 +508,10 @@
           functions.usersettings.zoom = 1.0;
         }
         functions.usersettings.zoom = functions.usersettings.zoom/1.5;
-        svg.attr("width",parseFloat(svg.attr("width"))/1.5);
-        svg.attr("height",parseFloat(svg.attr("height"))/1.5);
+        if(svg.size()>0){
+          svg.attr("width",parseFloat(svg.attr("width"))/1.5);
+          svg.attr("height",parseFloat(svg.attr("height"))/1.5);
+        }
       },
       addlink: function(e){
         if(mr.label){
@@ -395,7 +538,7 @@
 <dom-module id="model-references">
   <template>
     <paper-listbox vertical-align="bottom" style="height:100%;padding-left:5%;padding-right:5%">
-      <iron-label>{{label}}</iron-label>
+      <iron-label>{{label}} {{addinfo}}</iron-label>
       <template is="dom-repeat" items="{{links}}">
         <model-reference label="{{item.label}}" link="{{item.link}}" disabled$="[[item.disabled]]"></model-reference>
       </template>
@@ -406,13 +549,17 @@
       is: 'model-references',
       properties: {
         label: String,
-        links: Array
+        links: Array,
+        addinfo: String
       }
     });
 
     refreshLinks = function (a) {
+      //todo: get rid of mr, should be this!
       if(a.detail&&a.detail.node){
           mr.label = $(a.detail.node).attr("id");
+          console.log($(a.detail.node));
+          mr.addinfo = $(a.detail.nodedata.element).children('label[xml\\:lang="'+functions.usersettings.lang+'"]').text();
       }
       mr.links = [];
       if(window.links&&window.links[mr.label])
