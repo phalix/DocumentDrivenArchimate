@@ -1,5 +1,59 @@
 
-<dom-module id="model-display">
+
+
+<dom-module id="link-dialog">
+  <template>
+    <paper-dialog id="link-dialog-act-dialog" style="width:50%" >
+     <h2>Add Link</h2>
+      <paper-dialog-scrollable style="margin:20px">
+        <paper-input id="linkname" label="Link name" style="padding:20px" value="{{linkname}}"></paper-input>
+        <paper-dropdown-menu id="linktype" label="Link type" style="padding:20px" selectedItemLabel="{{typeOfLink}}">
+          <paper-listbox class="dropdown-content" selected="0">
+            <paper-item>www</paper-item>
+          </paper-listbox>
+        </paper-dropdown-menu>
+        <paper-input id="linkactual" label="Link" style="padding:20px" value="{{value}}"></paper-input>
+      </paper-dialog-scrollable>
+      <div class="buttons">
+        <paper-button dialog-dismiss>Cancel</paper-button>
+        <paper-button dialog-confirm on-click="addmodelreference">Accept</paper-button>
+      </div>
+    </paper-dialog>
+  </template>
+  <script>
+  Polymer({
+    is: 'link-dialog',
+    properties: {
+      value:String,
+      linkname:String,
+      typeOfLink:String
+    },
+    open: function(e){
+      this.$["link-dialog-act-dialog"].open()
+    },
+    addmodelreference: function(e){
+      var type = this.$.linktype.selectedItemLabel;
+      var link = {
+        label: this.linkname,
+        link: this.value,
+        disabled: true
+      };
+      if(type=="www"){
+        var httpsarray = ["http://","https://"];
+        if(httpsarray.indexOf(link.link)<0){
+          link.link = "http://"+link.link;
+        }
+      }
+
+      window.links[mr.label].push(link);
+      var event = new Event('LinkAdded');
+      document.dispatchEvent(event);
+    }
+  })
+  </script>
+</dom-module>
+
+<dom-module id="model-action-display">
 <template>
   <!--
     TODO: Use this in the future for Checkouts!
@@ -12,7 +66,7 @@
 </template>
 <script>
   Polymer({
-    is: 'model-display',
+    is: 'model-action-display',
     properties: {
       loading:{
         type: Boolean,
@@ -26,24 +80,27 @@
       maxview:Number
     },
     ready:function(event){
-
+      var context = this;
+      document.addEventListener("DoneWithLoading",function(e){
+        context.done(e);
+      });
+      document.addEventListener("StartingProcessingXML",function(e){
+        context.start(e);
+      });
     },
     listeners:{
-      'loading-changed':'checkFinish'
+      //'loading-changed':'checkFinish'
 
     },
-    checkFinish:function(event){
-      if(this.active == true){
-        if(window.done>1){
-          //this.active = false;
-          this.loading = false;
-        }else{
-          var context = this;
-          setTimeout(function(){context.checkFinish()},100);
-        }
-      }
+    done:function(event){
+      this.loading = false;
+    },
+    start:function(event){
+      this.active = true;
+      this.loading = true;
 
     }
+
   })
   </script>
 </dom-module>
@@ -218,14 +275,7 @@
       ready:function(){
         this.upload = false;
         this.navigation = [];
-        /*if(this.structure){
-          this.navigation = [];
-          this.setItems();
-        }else{
-          var context = this;
-          setTimeout(function(){context.ready()},100);
-        }*/
-
+        this.open();
       },
       nouploadandnonavigation:function(upload,navigation){
         if(upload&&navigation){
@@ -374,28 +424,33 @@
         }
       },
       ready:function(){
+        var context = this;
+        document.addEventListener("DoneWithLoading",function(e){
+          context.setupTabsAndPages();
+        });
         if(window.done == 2){
-          //TODO: This will cause an issue; since "menu" means here "this"
-          menu.stuff = [];
-          for(var i=0;i < window.viewsdata.children().size();i++){
-            var tab = {};
-            tab.tabtext = $(window.viewsdata.children().eq(i)).children('label[xml\\:lang="'+functions.usersettings.lang+'"]').text();
-            tab.divid = "div"+i;
-            tab.tabid = "tab"+$(window.viewsdata.children().eq(i)).attr("identifier");
-            tab.content = window.viewvisualisations[i]
-            //t.stuff.push(tab);
-            if(!menu.stuff){
-              menu.stuff = [];
-            }
-            menu.stuff = menu.stuff.concat([tab]);
-
-          }
-          this.selected = 0;
-          this.refreshSvg();
+          this.setupTabsAndPages()
         }else{
           var context = this;
           setTimeout(function(){context.ready()},100);
         }
+      },
+      setupTabsAndPages:function(){
+        this.stuff = [];
+        for(var i=0;i < window.viewsdata.children().size();i++){
+          var tab = {};
+          tab.tabtext = $(window.viewsdata.children().eq(i)).children('label[xml\\:lang="'+functions.usersettings.lang+'"]').text();
+          tab.divid = "div"+i;
+          tab.tabid = "tab"+$(window.viewsdata.children().eq(i)).attr("identifier");
+          tab.content = window.viewvisualisations[i]
+
+          if(!this.stuff){
+            this.stuff = [];
+          }
+          this.stuff = this.stuff.concat([tab]);
+        }
+        this.selected = 0;
+        this.refreshSvg();
       },
       ModelSelectionDialog:function(){
         document.querySelector("#ms").open();
@@ -482,6 +537,7 @@
       <paper-icon-button icon="indeterminate-check-box" title="zoomout" on-click="zoomout"></paper-icon-button>
     </div>
     </div>
+    <link-dialog id="linkdialog"></link-dialog>
   </template>
   <script>
     Polymer({
@@ -521,7 +577,7 @@
           if(!window.links[mr.label]){
             window.links[mr.label] = [];
           }
-          var dialog = document.querySelector("#linkdialog");
+          var dialog = this.$.linkdialog;//document.querySelector("#linkdialog");
 
           dialog.open();
 

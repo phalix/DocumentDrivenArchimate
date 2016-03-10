@@ -24,6 +24,15 @@ function releaseModel(){
 
 function prepareFile(file,lang){
 	if(!configuration){return null;}
+	var ce = new CustomEvent("StartingLoadingAFile",{
+		detail: {
+			file: file,
+			lang: lang,
+			loader: this
+		}});
+	ce.detail = this;
+	document.dispatchEvent(ce);
+
 	window.done = 1;
 	functions.usersettings.lang = lang;
 
@@ -37,6 +46,15 @@ function prepareFile(file,lang){
 
 function prepare(url,lang){
 	if(!configuration){return null;}
+
+	var ce = new CustomEvent("StartingLoadingAnUrl",{
+		detail: {
+			url: url,
+			lang: lang,
+			loader: this
+		}});
+	document.dispatchEvent(ce);
+
 	window.done = 1;
 	functions.usersettings.lang = lang;
 	$.ajax(
@@ -54,6 +72,13 @@ function prepare(url,lang){
 }
 
 function processWindowXML(lang){
+			var ce = new CustomEvent("StartingProcessingXML",{
+				detail: {
+					loader: this
+				}});
+
+			document.dispatchEvent(ce);
+
 				window.done = 1;
 
 
@@ -141,9 +166,22 @@ function processWindowXML(lang){
 
 					init(node,viewdata,lang);
 
+					var ce = new CustomEvent("DoneWithView",{
+						detail: {
+							view: i
+						}});
+
+					document.dispatchEvent(ce);
+
+
 				};
 				window.viewsdata = views;
 				window.done = 2;
+				var ce = new CustomEvent("DoneWithLoading",{
+					detail: {
+						views: views
+					}});
+				document.dispatchEvent(ce);
 
 
 }
@@ -185,7 +223,7 @@ function init(view_node,view_xml,lang){
 		console.log("No definitons found.")
 	}
 
-	if(functions.usersettings.viewonly == false){
+	if(functions.usersettings.viewonly != true){
 		//interaction
 		svg
 		.on('mouseup',
@@ -274,7 +312,7 @@ function init(view_node,view_xml,lang){
 
 		g.enter().append('svg:g');
 		//this is always activated, so that the users can see the links
-		if(true||functions.usersettings.viewonly==false){
+		if(true||functions.usersettings.viewonly != true){
 			g.on('mousedown',function(d){
 				if(!d3.event.altKey){
 					d3.selectAll(".nodeselector").remove();
@@ -520,7 +558,7 @@ function init(view_node,view_xml,lang){
 		});
 
 
-		if(functions.usersettings.viewonly==false){
+		if(functions.usersettings.viewonly != true){
 			g.on('mousedown',function(d){
 				d3.select(this).attr('selected',true);
 				var found = false;
@@ -719,7 +757,7 @@ function init(view_node,view_xml,lang){
 						for(var i = 0;i<points.path.length;i++){
 							var points2 = [points.path[i]];
 
-							currentedge
+							var bendpointselector = currentedge
 							.append("circle")
 							.attr("cx",points2[0].x)
 							.attr("cy",points2[0].y)
@@ -728,8 +766,9 @@ function init(view_node,view_xml,lang){
 							.attr("stroke","none")
 							.attr("id","bendpoint:"+currentedge.attr("id")+":"+i)
 							.attr("class","bendpointselector");
-							if(functions.usersettings.viewonly ==false){
-								currentedge.on("mouseover",function(d){
+
+							if(true || functions.usersettings.viewonly != true){
+								bendpointselector.on("mouseover",function(d){
 									//d3.select(this.parentElement).select("#hover\\:"+$(d3.select(this).data()).attr("id")).remove();
 									d3.selectAll(".hover.edge").remove();
 									var arrayofattr = d3.select(this).attr("id").split(":")

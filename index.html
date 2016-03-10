@@ -1,114 +1,79 @@
 <!DOCTYPE html>
-<html ng-app="app">
+<html>
 <head>
-  <!-- The user interface is mainly based on Polymer Web-Components.-->
-  <!-- See https://www.polymer-project.org/1.0/ for more info. -->
+
   <meta charset="utf-8">
   <title>d3js_archimate</title>
   <link rel="stylesheet" href="app.css">
 
-
-
-  <script src="http://localhost/DocumentDrivenArchimate/bower_components/webcomponentsjs/webcomponents-lite.min.js"></script>
-  <link rel="import" href="http://localhost/DocumentDrivenArchimate/bower_components/polymer/polymer.html" />
-
-  <link rel="import" href="http://localhost/DocumentDrivenArchimate/bower_components/paper-dialog/paper-dialog.html" />
-  <link rel="import" href="http://localhost/DocumentDrivenArchimate/bower_components/paper-button/paper-button.html" />
-  <!-- icons -->
-  <link rel="import" href="http://localhost/DocumentDrivenArchimate/bower_components/iron-icons/iron-icons.html">
-  <!--<link rel="import" href="http://localhost/DocumentDrivenArchimate/bower_components/iron-icons/maps-icons.html">
-  <link rel="import" href="http://localhost/DocumentDrivenArchimate/bower_components/iron-iconset-svg/iron-iconset-svg.html">-->
-  <link rel="import" href="http://localhost/DocumentDrivenArchimate/bower_components/iron-pages/iron-pages.html" />
-
-  <link rel="import" href="http://localhost/DocumentDrivenArchimate/bower_components/paper-toast/paper-toast.html" />
-
-  <link rel="import" href="http://localhost/DocumentDrivenArchimate/bower_components/iron-flex-layout/classes/iron-flex-layout.html" />
-
-  <link rel="import" href="http://localhost/DocumentDrivenArchimate/bower_components/paper-toolbar/paper-toolbar.html" />
-  <link rel="import" href="http://localhost/DocumentDrivenArchimate/bower_components/paper-tabs/paper-tabs.html" />
-  <link rel="import" href="http://localhost/DocumentDrivenArchimate/bower_components/paper-menu/paper-menu.html" />
-  <link rel="import" href="http://localhost/DocumentDrivenArchimate/bower_components/paper-menu/paper-submenu.html" />
-  <link rel="import" href="http://localhost/DocumentDrivenArchimate/bower_components/paper-dropdown-menu/paper-dropdown-menu.html" />
-  <link rel="import" href="http://localhost/DocumentDrivenArchimate/bower_components/paper-menu-button/paper-menu-button.html" />
-  <link rel="import" href="http://localhost/DocumentDrivenArchimate/bower_components/paper-icon-button/paper-icon-button.html" />
-  <link rel="import" href="http://localhost/DocumentDrivenArchimate/bower_components/paper-listbox/paper-listbox.html" />
-  <link rel="import" href="http://localhost/DocumentDrivenArchimate/bower_components/paper-item/paper-item.html" />
-  <link rel="import" href="http://localhost/DocumentDrivenArchimate/bower_components/paper-input/paper-input.html" />
-
-
-
-  <link rel="import" href="http://localhost/DocumentDrivenArchimate/theme/classical/classical.html" />
-
-  <link rel="import" href="http://localhost/DocumentDrivenArchimate/lib/customelements.html" />
-
-  <!-- use paper-toast to indicate that saves wont be saved -->
-  <script src="lib/angular.min.js"></script>
+  <!-- external libraries -->
   <script src="lib/d3.v3.min.js"></script>
   <script src="lib/jquery-2.1.4.min.js"></script>
-  <script src="lib/api-built.js"></script>
+
+  <!-- The user interface is mainly based on Polymer Web-Components.-->
+  <!-- See https://www.polymer-project.org/1.0/ for more info. -->
+  <!-- Extensive Polymer Usage -->
+  <script src="./bower_components/webcomponentsjs/webcomponents-lite.min.js"></script>
+  <link rel="import" href="./bower_components/polymer/polymer.html" />
+  <link rel="import" href="./bower_components/paper-dialog/paper-dialog.html" />
+  <link rel="import" href="./bower_components/paper-button/paper-button.html" />
+  <link rel="import" href="./bower_components/iron-icons/iron-icons.html">
+  <link rel="import" href="./bower_components/iron-pages/iron-pages.html" />
+  <link rel="import" href="./bower_components/paper-toast/paper-toast.html" />
+  <link rel="import" href="./bower_components/iron-flex-layout/classes/iron-flex-layout.html" />
+  <link rel="import" href="./bower_components/paper-toolbar/paper-toolbar.html" />
+  <link rel="import" href="./bower_components/paper-tabs/paper-tabs.html" />
+  <link rel="import" href="./bower_components/paper-menu/paper-menu.html" />
+  <link rel="import" href="./bower_components/paper-menu/paper-submenu.html" />
+  <link rel="import" href="./bower_components/paper-dropdown-menu/paper-dropdown-menu.html" />
+  <link rel="import" href="./bower_components/paper-menu-button/paper-menu-button.html" />
+  <link rel="import" href="./bower_components/paper-icon-button/paper-icon-button.html" />
+  <link rel="import" href="./bower_components/paper-listbox/paper-listbox.html" />
+  <link rel="import" href="./bower_components/paper-item/paper-item.html" />
+  <link rel="import" href="./bower_components/paper-input/paper-input.html" />
+  <!-- import of custom elements -->
+  <link rel="import" href="./lib/customelements.html" />
+
+  <!--theme import-->
+  <link rel="import" href="./theme/classical/classical.html" />
 
   <!-- main engine -->
   <script src="resources/archimate_configuration.js"></script>
   <script src="documentmodengine.js"></script>
 
   <script>
-  functions.usersettings.viewonly = true;
-  angular.module('app', [])
-  .controller('createTabs', ['$scope', function createTabs($scope) {
-    $scope.tabs = [{id:"div0"},{id:"div1"}];
-  }])
-  .controller('createPages', ['$scope', function createPages($scope) {
-    $scope.pages = [];
-  }]);
-
-
+    //set to false for expiremental features
+    functions.usersettings.viewonly = true;
   </script>
 
 
 </head>
 
-<body ng-model="selected" onload="">
-
-<script>
-function addmodelreference(){
-  var type = document.querySelector("#linktype").selectedItem.innerText.trim();
-  var link = {
-    label: document.querySelector("#linkname").value,
-    link: document.querySelector("#linkactual").value,
-    disabled: true
-  };
-  if(type=="www"){
-    var httpsarray = ["http://","https://"];
-    if(httpsarray.indexOf(link.link)<0){
-      link.link = "http://"+link.link;
-    }
-  }
-
-  window.links[mr.label].push(link);
-  var event = new Event('LinkAdded');
-  document.dispatchEvent(event);
-}
-</script>
-<paper-dialog id="linkdialog" style="width:50%" >
- <h2>Add Link</h2>
-  <paper-dialog-scrollable style="margin:20px">
-    <paper-input id="linkname" label="Link name" style="padding:20px" value="{{value}}"></paper-input>
-    <paper-dropdown-menu id="linktype" label="Link type" style="padding:20px">
-      <paper-listbox class="dropdown-content" selected="0">
-        <paper-item>www</paper-item>
-      </paper-listbox>
-    </paper-dropdown-menu>
-    <paper-input id="linkactual" label="Link" style="padding:20px" value="{{value}}"></paper-input>
-  </paper-dialog-scrollable>
-  <div class="buttons">
-    <paper-button dialog-dismiss >Cancel</paper-button>
-    <paper-button dialog-confirm onclick="addmodelreference()">Accept</paper-button>
-  </div>
-</paper-dialog>
-
+<body onload="">
 
 <!--<script type="text/javascript" src="repository/mockup.json"></script>-->
+
+
 <model-selection id="ms"></model-selection>
+<div class="layout vertical">
+  <div class="flex">
+    <div class="layout horizontal">
+      <div class="flex">
+        <model-menu id="menu"></model-menu>
+      </div>
+      <div>
+        <model-editor id="me"></model-editor>
+      </div>
+    </div>
+  </div>
+  <div>
+    <model-zoom></model-zoom>
+    <model-references id="mr"></model-references>
+  </div>
+</div>
+
+<model-action-display id="md"></model-action-display>
+
 <script>
 
   window.done = 0;
@@ -116,24 +81,15 @@ function addmodelreference(){
   function openFirstTime(){
     if(document.querySelector("#ms").open){
       document.querySelector("#ms").structure = {};
-      //document.querySelector("#ms").structure = mockup;
       document.querySelector("#ms").addEventListener("modelselected",function(e){
         console.log(ms.model);
-        window.done = 1;
-        document.querySelector("#md").active=true;
-        document.querySelector("#md").loading=true;
         setTimeout(prepare,50,ms.model,'en');
-        document.querySelector("#menu").ready();
       },false);
       document.querySelector("#ms").addEventListener("fileselected",function(e){
         console.log(ms.file);
-        window.done = 1;
-        document.querySelector("#md").active=true;
-        document.querySelector("#md").loading=true;
         setTimeout(prepareFile,50,e.detail.file,'en');
-        document.querySelector("#menu").ready();
       },false);
-      document.querySelector("#ms").open();
+
     }else{
       setTimeout(openFirstTime,50)
     }
@@ -141,21 +97,6 @@ function addmodelreference(){
   setTimeout(openFirstTime,50);
 
 </script>
-<div class="layout horizontal">
-  <div class="flex">
-    <model-menu id="menu"></model-menu>
-    <model-zoom></model-zoom>
-    <model-references id="mr"></model-references>
-  </div>
-  <div>
-    <model-editor id="me"></model-editor>
-  </div>
-</div>
-
-<model-display id="md"></model-display>
-
-
-
 
 </body>
 
