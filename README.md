@@ -9,14 +9,14 @@ The Goal of this Project is to create a lightweight model editor for viewing and
 The Viewer is written in pure Javascript and currently supports most of the Archimate Specification.  
 However, for a fully functional modeler certain elements are missing.
 
-The architecture consists of the following:
+## The architecture consists of the following:
 
 1. a d3.js component for generating svg based on the model. 
 2. A general application script (documentmodengine.js) 
 3. The archimate_configuration.js, which specifies the behaviour of different ArchiMate elements for the viewer. It is also readable and interpretable by the general application. 
 4. Ultimately, the architecture requires ArchiMate models in the xml standard.
 
-How to install
+## How to install
 
 1. Download the entire git repository.
 2. Copy the files onto a webserver.
