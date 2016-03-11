@@ -43,7 +43,7 @@
 
   <script>
     //set to false for expiremental features
-    functions.usersettings.viewonly = true;
+    documentmodengine.usersettings.viewonly = true;
   </script>
 
 
@@ -83,11 +83,11 @@
       document.querySelector("#ms").structure = {};
       document.querySelector("#ms").addEventListener("modelselected",function(e){
         console.log(ms.model);
-        setTimeout(prepare,50,ms.model,'en');
+        setTimeout(documentmodengine.prepareUrl,50,ms.model,'en');
       },false);
       document.querySelector("#ms").addEventListener("fileselected",function(e){
         console.log(ms.file);
-        setTimeout(prepareFile,50,e.detail.file,'en');
+        setTimeout(documentmodengine.prepareFile,50,e.detail.file,'en');
       },false);
 
     }else{

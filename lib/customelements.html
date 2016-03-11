@@ -1,6 +1,6 @@
-
-
-
+<!--
+//TODO: Complete coponent for adding nodes, edges and views
+-->
 <dom-module id="link-dialog">
   <template>
     <paper-dialog id="link-dialog-act-dialog" style="width:50%" >
@@ -80,13 +80,18 @@
       maxview:Number
     },
     ready:function(event){
-      var context = this;
-      document.addEventListener("DoneWithLoading",function(e){
-        context.done(e);
-      });
-      document.addEventListener("StartingProcessingXML",function(e){
-        context.start(e);
-      });
+      if(!documentmodengine){
+        var context = this;
+        document.addEventListener("DoneWithLoading",function(e){
+          context.done(e);
+        });
+        document.addEventListener("StartingProcessingXML",function(e){
+          context.start(e);
+        });
+      }else{
+        console.log("documentmodengine not available.")
+      }
+
     },
     listeners:{
       //'loading-changed':'checkFinish'
@@ -150,7 +155,7 @@
       },
       ready:function(){
         if(window.done == 2){
-          if(functions.usersettings.viewonly == true){
+          if(documentmodengine.usersettings.viewonly == true){
             $(this).hide();
           }
           if(!this.nodes){
@@ -406,17 +411,17 @@
 
             var rect = div.select("svg")[0][0].getBBox();
 
-            if(!functions.usersettings.zoom){
-              functions.usersettings.zoom = 1.0
+            if(!documentmodengine.usersettings.zoom){
+              documentmodengine.usersettings.zoom = 1.0
             }
-            div.select("svg").attr("width",rect.width*1.05*functions.usersettings.zoom);
-            div.select("svg").attr("height",rect.height*1.05*functions.usersettings.zoom);
+            div.select("svg").attr("width",rect.width*1.05*documentmodengine.usersettings.zoom);
+            div.select("svg").attr("height",rect.height*1.05*documentmodengine.usersettings.zoom);
             div.select("svg").attr("viewBox",rect.x+","+rect.y+","+rect.width*1.05+","+rect.height*1.05);
 
             div.style("width","100%");
             div.style("height",($(window).height()-300)+"px");
             if(e){
-                //functions.usersettings.currentview = e.path[1].id.substr(3);
+                //documentmodengine.usersettings.currentview = e.path[1].id.substr(3);
             }
 
           }
@@ -424,10 +429,16 @@
         }
       },
       ready:function(){
-        var context = this;
-        document.addEventListener("DoneWithLoading",function(e){
-          context.setupTabsAndPages();
-        });
+        if(documentmodengine){
+          var context = this;
+          document.addEventListener("DoneWithLoading",function(e){
+            context.setupTabsAndPages();
+          });
+        }else{
+          console.log("documentmodengine not available");
+        }
+
+
         if(window.done == 2){
           this.setupTabsAndPages()
         }else{
@@ -439,7 +450,7 @@
         this.stuff = [];
         for(var i=0;i < window.viewsdata.children().size();i++){
           var tab = {};
-          tab.tabtext = $(window.viewsdata.children().eq(i)).children('label[xml\\:lang="'+functions.usersettings.lang+'"]').text();
+          tab.tabtext = $(window.viewsdata.children().eq(i)).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
           tab.divid = "div"+i;
           tab.tabid = "tab"+$(window.viewsdata.children().eq(i)).attr("identifier");
           tab.content = window.viewvisualisations[i]
@@ -549,10 +560,10 @@
       },
       zoomin: function(e){
         var svg = d3.select("div.iron-selected").select("svg");
-        if(!functions.usersettings.zoom){
-          functions.usersettings.zoom = 1.0;
+        if(!documentmodengine.usersettings.zoom){
+          documentmodengine.usersettings.zoom = 1.0;
         }
-        functions.usersettings.zoom = functions.usersettings.zoom*1.5;
+        documentmodengine.usersettings.zoom = documentmodengine.usersettings.zoom*1.5;
         if(svg.size()>0){
           svg.attr("width",parseFloat(svg.attr("width"))*1.5);
           svg.attr("height",parseFloat(svg.attr("height"))*1.5);
@@ -560,10 +571,10 @@
       },
       zoomout: function(e){
         var svg = d3.select("div.iron-selected").select("svg");
-        if(!functions.usersettings.zoom){
-          functions.usersettings.zoom = 1.0;
+        if(!documentmodengine.usersettings.zoom){
+          documentmodengine.usersettings.zoom = 1.0;
         }
-        functions.usersettings.zoom = functions.usersettings.zoom/1.5;
+        documentmodengine.usersettings.zoom = documentmodengine.usersettings.zoom/1.5;
         if(svg.size()>0){
           svg.attr("width",parseFloat(svg.attr("width"))/1.5);
           svg.attr("height",parseFloat(svg.attr("height"))/1.5);
@@ -577,8 +588,7 @@
           if(!window.links[mr.label]){
             window.links[mr.label] = [];
           }
-          var dialog = this.$.linkdialog;//document.querySelector("#linkdialog");
-
+          var dialog = this.$.linkdialog;
           dialog.open();
 
 
@@ -607,24 +617,31 @@
         label: String,
         links: Array,
         addinfo: String
-      }
+      },
+      ready : function(e){
+        if(documentmodengine){
+          var context = this;
+          document.addEventListener('NodeSelected', function(e){context.refreshLinks(e)}, false);
+          document.addEventListener('LinkAdded', function(e){context.refreshLinks(e)}, false);
+        }else{
+          console.log("documentmodengine not available");
+        }
+
+      },
+      refreshLinks : function (a) {
+        if(a.detail&&a.detail.node){
+            mr.label = $(a.detail.node).attr("id");
+            console.log($(a.detail.node));
+            mr.addinfo = $(a.detail.nodedata.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
+        }
+        mr.links = [];
+        if(window.links&&window.links[mr.label])
+          {
+            mr.links = mr.links.concat(window.links[mr.label]);
+          }
+        }
     });
 
-    refreshLinks = function (a) {
-      //todo: get rid of mr, should be this!
-      if(a.detail&&a.detail.node){
-          mr.label = $(a.detail.node).attr("id");
-          console.log($(a.detail.node));
-          mr.addinfo = $(a.detail.nodedata.element).children('label[xml\\:lang="'+functions.usersettings.lang+'"]').text();
-      }
-      mr.links = [];
-      if(window.links&&window.links[mr.label])
-        {
-          mr.links = mr.links.concat(window.links[mr.label]);
-        }
-      };
-    document.addEventListener('NodeSelected', refreshLinks, false);
-    document.addEventListener('LinkAdded', refreshLinks, false);
-  </script>
+    </script>
 </dom-module>
 <!-- end: custom elements -->
