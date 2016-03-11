@@ -80,17 +80,34 @@
       maxview:Number
     },
     ready:function(event){
-      if(!documentmodengine){
-        var context = this;
-        document.addEventListener("DoneWithLoading",function(e){
-          context.done(e);
-        });
-        document.addEventListener("StartingProcessingXML",function(e){
-          context.start(e);
-        });
-      }else{
-        console.log("documentmodengine not available.")
-      }
+
+      var context = this;
+      document.addEventListener("DoneWithLoading",function(e){
+        context.done(e);
+      });
+      document.addEventListener("StartingProcessingXML",function(e){
+        context.start(e);
+      });
+      document.addEventListener("modelselected",function(e){
+        if(documentmodengine){
+          console.log(e.detail.model);
+          setTimeout(context.start(e),10);
+          setTimeout(documentmodengine.prepareUrl,50,e.detail.model,'en');
+        }else{
+          console.log("documentmodengine not available.")
+        }
+
+      },false);
+      document.addEventListener("fileselected",function(e){
+        if(documentmodengine){
+          console.log(ms.file);
+          setTimeout(context.start(e),10);
+          setTimeout(documentmodengine.prepareFile,50,e.detail.file,'en');
+        }else{
+          console.log("documentmodengine not available.")
+        }
+      },false);
+
 
     },
     listeners:{
@@ -115,12 +132,14 @@
 <dom-module id="model-editor">
   <template>
       <paper-menuattr-for-item-title="label">
-        <!--<paper-submenu label="Views">
+        <paper-submenu label="Views">
           <paper-item class="menu-trigger">Views</paper-item>
           <paper-menu class="menu-content sublist">
-            <paper-item>Actor</paper-item>
+            <template is="dom-repeat" items="[[views]]">
+              <paper-item id="[[view.name]]" on-click="viewselected">[[view.name]]</paper-item>
+            </template>
         </paper-menu>
-      </paper-submenu>-->
+      </paper-submenu>
     <paper-submenu label="Nodes">
       <paper-item class="menu-trigger">Nodes</paper-item>
       <paper-menu class="menu-content sublist">
@@ -151,7 +170,6 @@
         var newnode = configuration.nodes[e.target.id].new();
         configuration.adder(window.xml,newnode);
         drawNode(d3.select(newnode));
-
       },
       ready:function(){
         if(window.done == 2){
@@ -180,11 +198,6 @@
               var newelement = {};
               newelement["name"] = edge;
               if(configuration.edges[edge].new){
-                /*function(){
-                  var element = configuration.edges[edge].new();
-                  configuration.add(element);
-                }*/
-
                 this.edges = this.edges.concat([newelement]);
               }
 
@@ -301,6 +314,13 @@
         var files = dropevent.dataTransfer.files;
         var output = [];
         this.file = files[0];
+
+        var ce = new CustomEvent("DocumentModEngine_fileselected",{
+    			detail: {
+    				file: files[0]
+    			}});
+    		document.dispatchEvent(ce);
+
         this.fire("fileselected",{"file":files[0]});
         this.close();
       },
@@ -334,6 +354,13 @@
                       this.close();
                       this.navigation.splice(this.navigation.length-1,1);
                       this.fire("modelselected",{"model":this.model});
+
+                      var ce = new CustomEvent("DocumentModEngine_modelselected",{
+                  			detail: {
+                  				model: this.model
+                  			}});
+                  		document.dispatchEvent(ce);
+
                     }else{
                       this.current = (this.current[j].content);
                       //this.$.templist.list.select(-1)
