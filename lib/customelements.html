@@ -169,7 +169,11 @@
       nodeselected:function(e){
         var newnode = configuration.nodes[e.target.id].new();
         configuration.adder(window.xml,newnode);
-        drawNode(d3.select(newnode));
+        //update view with the following id
+        var viewid      = menu.$.menuTabs.selectedItem.id.substr(4);
+        var updatedsvg  = documentmodengine.updateCompleteView(viewid,documentmodengine.usersettings.lang);
+        console.log(updatedsvg);
+        //documentmodengine.drawNode(d3.select(newnode));
       },
       ready:function(){
         if(window.done == 2){
@@ -479,7 +483,7 @@
           var tab = {};
           tab.tabtext = $(window.viewsdata.children().eq(i)).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
           tab.divid = "div"+i;
-          tab.tabid = "tab"+$(window.viewsdata.children().eq(i)).attr("identifier");
+          tab.tabid = "tab_"+$(window.viewsdata.children().eq(i)).attr("identifier");
           tab.content = window.viewvisualisations[i]
 
           if(!this.stuff){

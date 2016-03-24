@@ -155,6 +155,8 @@ documentmodengine = {
 						//return $(d).attr("identifier");
 					});
 
+					var viewsdata = [];
+
 					for(var i = 0; i < views.children().size();i++){
 						var view = views.children().eq(i);
 
@@ -183,9 +185,8 @@ documentmodengine = {
 							edgedata.self = edges_ofview[j];
 							viewdata.edges.push(edgedata);
 						}
-						var node = d3.select(document.createElement("div"));
 
-						documentmodengine.buildView_internal(node,viewdata,lang);
+						documentmodengine.buildView_internal(viewdata,lang);
 
 						var ce = new CustomEvent("DoneWithView",{
 							detail: {
@@ -193,13 +194,15 @@ documentmodengine = {
 							}});
 
 						document.dispatchEvent(ce);
-
+						viewsdata.push(viewdata);
 
 					};
 					window.viewsdata = views;
+
 					window.done = 2;
 					documentmodengine.status = 2;
 					documentmodengine.views = views;
+					documentmodengine.viewsdata = viewsdata;
 					var ce = new CustomEvent("DoneWithLoading",{
 						detail: {
 							views: views
@@ -208,11 +211,530 @@ documentmodengine = {
 
 
 	},
-  buildView_internal: function(view_node,view_xml,lang){
+	updateCompleteView: function(byid,lang){
+		var view = documentmodengine.views.children("[identifier='"+byid+"']");
+		return documentmodengine.buildView_internal(view,lang);
+	},
+	drawNodes: function(svg,data){
+
+		svg.selectAll("svg\\:g#node").remove();
+
+		var g = svg
+		.selectAll("svg\\:g#node")
+		.data(
+				data
+		);
+
+		g.enter().append('svg:g');
+		//this is always activated, so that the users can see the links
+		if(true||documentmodengine.usersettings.viewonly != true){
+			g.on('mousedown',function(d){
+				if(!d3.event.altKey){
+					d3.selectAll(".nodeselector").remove();
+				}
+				d3.select(this).attr('selected',true);
+				d3.select(this).attr('selected_x',d3.event.x-$(d3.select(this)[0]).attr("x"));
+				d3.select(this).attr('selected_y',d3.event.y-$(d3.select(this)[0]).attr("y"));
+
+				var bbox = d3.select(this)[0][0].getBBox();
+				var x = bbox.x;
+				var y = bbox.y;
+				var x = d3.transform(d3.select(this).attr("transform")).translate[0];
+				var y = d3.transform(d3.select(this).attr("transform")).translate[1];
+
+				d3.select(this.parentElement)
+					.append("rect")
+					.attr("x",x-configuration.edgedistance/2)
+					.attr("y",y-configuration.edgedistance/2)
+					.attr("width",bbox.width+configuration.edgedistance)
+					.attr("height",bbox.height+configuration.edgedistance)
+					.attr("fill","none")
+					.attr("stroke","black")
+					.attr("stroke-dasharray","2,2")
+					.classed("nodeselector",true)
+					.attr("id","nodeselector"+":"+d3.select(this).attr("id"))
+					.attr("ref",d3.select(this).attr("id"));
+				var ce = new CustomEvent("NodeSelected",{
+					detail: {
+						nodedata: d,
+						node: this
+					}});
+				ce.detail = this;
+				document.dispatchEvent(ce);
+
+			})
+		}
+
+		g.attr('class',function(d){
+			return 'node '+configuration.nodetype(d)
+		})
+		.attr('id',function(d){
+			return d.id;
+		});
+
+		this.drawNode = function(node){
+
+			var g_svg = node;
+			var type = node.each(
+					function(d,i){
+						var type = configuration.nodetype(d)
+						var typeconf = configuration.nodes[type];
+						if(!typeconf){
+							typeconf = configuration.nodes[undefined];
+						}
+						if(typeconf){
+							var lookelements = typeconf.look;
+							for(var i = 0;i<lookelements.length;i++){
+								d3.select(this).select(lookelements[i].type+".POS"+i).remove();
+								d3.select(this).append('svg:'+lookelements[i].type).classed("POS"+i,true)
+								if(lookelements[i].type == "polygon"){
+									d3.select(this).select(lookelements[i].type+".POS"+i)
+									.style('fill', function(d) {
+										return documentmodengine.functions.getValueFromData(lookelements[i].fill,d);
+										//var fc = $( d ).children("style").children("fillColor");
+										//return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"
+									})
+									.style('stroke', function(d) {
+										return documentmodengine.functions.getValueFromData(lookelements[i].stroke,d);
+										//var fc = $( d ).children("style").children("lineColor");
+										//return "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")";
+									})
+									.attr("points",function(d){
+										return documentmodengine.functions.getValueFromData(lookelements[i].points,d);
+										//return documentmodengine.functions.getPointsStringFromConfiguration(lookelements[i].points,d);
+									});
+								}else if(lookelements[i].type == "circle"){
+									d3.select(this).select(lookelements[i].type+".POS"+i)
+									.style('fill', function(d) {
+										return documentmodengine.functions.getValueFromData(lookelements[i].fill,d);
+									})
+									.style('stroke', function(d) {
+										return documentmodengine.functions.getValueFromData(lookelements[i].stroke,d);
+										//var fc = $( d ).children("style").children("lineColor");
+										//return "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")";
+									})
+									.attr("r",function(d){
+										return documentmodengine.functions.getValueFromData(lookelements[i].r,d);
+									})
+									.attr("cx",function(d){
+										return documentmodengine.functions.getValueFromData(lookelements[i].cx,d);
+									})
+									.attr("cy",function(d){
+										return documentmodengine.functions.getValueFromData(lookelements[i].cy,d);
+									})
+								}else if(lookelements[i].type == "line"){
+									d3.select(this).select(lookelements[i].type+".POS"+i)
+									.style('fill', function(d) {
+										return documentmodengine.functions.getValueFromData(lookelements[i].fill,d);
+										//var fc = $( d ).children("style").children("fillColor");
+										//return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"
+									})
+									.style('stroke', function(d) {
+										return documentmodengine.functions.getValueFromData(lookelements[i].stroke,d);
+										//var fc = $( d ).children("style").children("lineColor");
+										//return "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")";
+									})
+									.attr("x1",function(d){
+										return documentmodengine.functions.getValueFromData(lookelements[i].x1,d);
+									})
+									.attr("y1",function(d){
+										return documentmodengine.functions.getValueFromData(lookelements[i].y1,d);
+									})
+									.attr("x2",function(d){
+										return documentmodengine.functions.getValueFromData(lookelements[i].x2,d);
+									})
+									.attr("y2",function(d){
+										return documentmodengine.functions.getValueFromData(lookelements[i].y2,d);
+									})
+								}else if(lookelements[i].type == "ellipse"){
+									d3.select(this).select(lookelements[i].type+".POS"+i)
+									.style('fill', function(d) {
+										return documentmodengine.functions.getValueFromData(lookelements[i].fill,d);
+									})
+									.style('stroke', function(d) {
+										return documentmodengine.functions.getValueFromData(lookelements[i].stroke,d);
+									}).style('stroke-width', function(d) {
+										return documentmodengine.functions.getValueFromData(lookelements[i]['stroke-width'],d);
+									})
+									.attr("cx",function(d){
+										return documentmodengine.functions.getValueFromData(lookelements[i].cx,d);
+									})
+									.attr("cy",function(d){
+										return documentmodengine.functions.getValueFromData(lookelements[i].cy,d);
+									})
+									.attr("rx",function(d){
+										return documentmodengine.functions.getValueFromData(lookelements[i].rx,d);
+									})
+									.attr("ry",function(d){
+										return documentmodengine.functions.getValueFromData(lookelements[i].ry,d);
+									})
+								}else if(lookelements[i].type == "rect"){
+									d3.select(this).select(lookelements[i].type+".POS"+i)
+									.style('fill', function(d) {
+										return documentmodengine.functions.getValueFromData(lookelements[i].fill,d);
+									})
+									.style('stroke', function(d) {
+										return documentmodengine.functions.getValueFromData(lookelements[i].stroke,d);
+									})
+									.style('stroke-width', function(d) {
+										return documentmodengine.functions.getValueFromData(lookelements[i]['stroke-width'],d);
+									})
+									.attr("x",function(d){
+										return documentmodengine.functions.getValueFromData(lookelements[i].x,d);
+									})
+									.attr("y",function(d){
+										return documentmodengine.functions.getValueFromData(lookelements[i].y,d);
+									})
+									.attr("width",function(d){
+										return documentmodengine.functions.getValueFromData(lookelements[i].w,d);
+									})
+									.attr("height",function(d){
+										return documentmodengine.functions.getValueFromData(lookelements[i].h,d);
+									})
+									.attr("ry",function(d){
+										return documentmodengine.functions.getValueFromData(lookelements[i].ry,d);
+									})
+									.attr("rx",function(d){
+										return documentmodengine.functions.getValueFromData(lookelements[i].rx,d);
+									})
+								}else if(lookelements[i].type == "path"){
+									d3.select(this).select(lookelements[i].type+".POS"+i)
+									.attr("style",function(d){
+										return documentmodengine.functions.getValueFromData(lookelements[i].style,d);
+									}).style('fill', function(d) {
+										return documentmodengine.functions.getValueFromData(lookelements[i].fill,d);
+									}).style('stroke', function(d) {
+										return documentmodengine.functions.getValueFromData(lookelements[i].stroke,d);
+									}).attr("stroke-dasharray",function(d){
+										return documentmodengine.functions.getValueFromData(lookelements[i]["stroke-dasharray"],d);
+									}).attr("d",function(d){
+										return documentmodengine.functions.getValueFromData(lookelements[i].d,d);
+									}).style('stroke-width', function(d) {
+										return documentmodengine.functions.getValueFromData(lookelements[i]["stroke-width"],d);
+									})
+
+								}else if(lookelements[i].type == "text"){
+									var text = d3.select(this).select(lookelements[i].type+".POS"+i);
+									text.attr("style",function(d){
+										return documentmodengine.functions.getValueFromData(lookelements[i].style,d);
+									}).attr("x",function(d){
+										return documentmodengine.functions.getValueFromData(lookelements[i].x,d);
+									}).attr("y",function(d){
+										return documentmodengine.functions.getValueFromData(lookelements[i].y,d);
+									}).attr("alignment-baseline",function(d){
+										return documentmodengine.functions.getValueFromData(lookelements[i]["alignment-baseline"],d);
+									}).attr("text-anchor",function(d){
+										return documentmodengine.functions.getValueFromData(lookelements[i]["text-anchor"],d);
+									}).attr("style",function(d){
+										return documentmodengine.functions.getValueFromData(lookelements[i]["style"],d);
+									});
+
+									if(lookelements[i].innerHtml){
+										text.html(function(d){
+											return documentmodengine.functions.getValueFromData(lookelements[i].innerHtml,d);
+										})
+									}else{
+										text.text(function(d){
+											return documentmodengine.functions.getValueFromData(lookelements[i].text,d);
+										})
+									}
+								}
+							}
+						}
+					}
+			);
+
+			g_svg.attr("x",
+					function(d) {
+				return configuration.nodeposition(d).x;
+			}).attr("y",
+					function(d) {
+				return configuration.nodeposition(d).y;
+			}).attr("transform",
+					function(d) {
+				return "translate(" + configuration.nodeposition(d).x + "," + configuration.nodeposition(d).y + ")";
+			});
+		}
+		this.drawNode(g);
+		g.exit().remove();
+
+	},
+	drawEdges: function(svg,data){
+
+		var g = svg
+		.selectAll("svg\\:g#connection")
+		.data(data);
+
+		g.enter().append('svg:g');
+
+		g.attr('id',function(d){
+			return d.id;
+		});
+
+
+		if(documentmodengine.usersettings.viewonly != true){
+			g.on('mousedown',function(d){
+				d3.select(this).attr('selected',true);
+				var found = false;
+				var x = d3.event.offsetX;
+				var y = d3.event.offsetY;
+				var hovercircle = d3.select(".hover.edge");
+				if(hovercircle.size()>0){
+					found = true;
+					hovercircle.attr("selected","true");
+					hovercircle.attr('selected_x',x-parseInt(hovercircle.attr("cx")));
+					hovercircle.attr('selected_y',y-parseInt(hovercircle.attr("cy")));
+				}
+
+				if(!found){
+					d3.select(this).attr("selected","false");
+					if(configuration.addBendPoint){
+							configuration.addBendPoint(d,x,y);
+					}else{
+						console.log("Configuration does not support bendpoints of edges");
+					}
+
+					//$(d.self).append("<bendpoint x='"+x+"' y='"+y+"' ></bendpoint>");
+					documentmodengine.drawEdge(d3.select(this));
+				}
+			});
+		}
+
+		this.drawEdge = function (edge) {
+			edge.each(function(d,i){
+
+				var currentedge = d3.select(this);
+
+				var type = configuration.edgetype(d)
+				var typeconf = configuration.edges[type];
+				if(!typeconf){
+					typeconf = configuration.edges[undefined];
+					console.log("Could not find edge type definition for "+type+".");
+				}
+				if(typeconf){
+					currentedge.selectAll("path").remove();
+					currentedge.selectAll("text").remove();
+					currentedge.selectAll("circle").remove();
+					currentedge.selectAll("rect").remove();
+
+					currentedge
+					.attr("id",function(d){
+						return d.id;
+					})
+					.attr("source_node_id",function(d){
+						return $(d.self).attr("source")
+					})
+					.attr("target_node_id",function(d){
+						return $(d.self).attr("target")
+					})
+					.attr('class',function(d){
+						return 'connection '+configuration.edgetype(d)
+					})
+
+					//this draws the actual visible line
+					currentedge.append("svg\\:path")
+					.attr("d",function(d){
+						var current = 0;
+						var result = "M ";
+						var sourceref_svg = $(d3.select("#"+$(d.self).attr("source"))[0]);
+						var lineColor = $( d ).children("style").children("lineColor");
+						var lineWidth = $( d ).children("style").attr("lineWidth") ? $( d ).children("style").attr("lineWidth") : 1;
+
+						//var points1 = $(sourceref_svg).attr("points");
+						//var points2 = [];
+						var edgetype = configuration.edges[configuration.edgetype(d)];
+						if(!edgetype){
+							edgetype = configuration.edges[undefined];
+						}
+						if(edgetype.points){
+							var type = configuration.edges[configuration.edgetype(d)]?configuration.edges[configuration.edgetype(d)]:configuration.edges[undefined];
+							var points = type.points(d);
+							var points1 = points.shape1;
+							for(var i = 0;i<points.path.length;i++){
+								var points2 = [points.path[i]];
+								var pointsset = documentmodengine.functions.getNearestTwoPointsFromTwoSets(points1,points2);
+								result += pointsset.x1+","+pointsset.y1+" L ";
+								result += pointsset.x2+","+pointsset.y2+" L ";
+								var points1 = [points.path[i]];
+							}
+							points2 = points.shape2;
+							var pointsset = documentmodengine.functions.getNearestTwoPointsFromTwoSets(points1,points2);
+							result += pointsset.x1+","+pointsset.y1+" L ";
+							result += pointsset.x2+","+pointsset.y2;
+
+						}
+						return result;
+					}).attr("stroke-dasharray",function(d){
+						return documentmodengine.functions.getValueFromData(typeconf["stroke-dasharray"],d);
+					}).attr("style",function(d){
+						return documentmodengine.functions.getValueFromData(typeconf.style,d);
+					})
+					.style("stroke",function(d){
+						return documentmodengine.functions.getValueFromData(typeconf.stroke,d);
+					})
+					.attr("stroke-width",function(d){
+						return documentmodengine.functions.getValueFromData(typeconf["stroke-width"],d);
+					})
+					.style("fill","none");
+
+					//this draws the transparent line for UI
+					currentedge.append("svg\\:path")
+					.attr("d",function(d){
+						var current = 0;
+						var result = "M ";
+						var sourceref_svg = $(d3.select("#"+$(d.self).attr("source"))[0]);
+						var lineColor = $( d ).children("style").children("lineColor");
+						var lineWidth = $( d ).children("style").attr("lineWidth") ? $( d ).children("style").attr("lineWidth") : 1;
+
+						//var points1 = $(sourceref_svg).attr("points");
+						//var points2 = [];
+						var edgetype = configuration.edges[configuration.edgetype(d)];
+						if(!edgetype){
+							edgetype = configuration.edges[undefined];
+						}
+						if(edgetype.points){
+							var type = configuration.edges[configuration.edgetype(d)]?configuration.edges[configuration.edgetype(d)]:configuration.edges[undefined];
+							var points = type.points(d);
+							var points1 = points.shape1;
+							for(var i = 0;i<points.path.length;i++){
+								var points2 = [points.path[i]];
+								var pointsset = documentmodengine.functions.getNearestTwoPointsFromTwoSets(points1,points2);
+								result += pointsset.x1+","+pointsset.y1+" L ";
+								result += pointsset.x2+","+pointsset.y2+" L ";
+								var points1 = [points.path[i]];
+							}
+							points2 = points.shape2;
+							var pointsset = documentmodengine.functions.getNearestTwoPointsFromTwoSets(points1,points2);
+							result += pointsset.x1+","+pointsset.y1+" L ";
+							result += pointsset.x2+","+pointsset.y2;
+
+						}
+						return result;
+					}).style("stroke",function(d){
+						return "transparent";
+						//return documentmodengine.functions.getValueFromData(typeconf.stroke,d);
+					}).attr("stroke-width",function(d){
+						var config = parseInt(documentmodengine.functions.getValueFromData(typeconf["stroke-width"],d));
+						if(isNaN(config)){
+							return 10;
+						}else{
+							return config+10;
+						}
+					})
+					.style("fill","none");
+
+					currentedge.append('svg:text')
+					.text(function(d){
+						return $(d.self).children("relationship").children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text()
+					})
+					.attr("x",function(d){
+						var path = d3.select(this.parentElement).select("path");
+						if(path.size()>0){
+							var lines = documentmodengine.functions.getPointArrayFromString(path.attr("d"));
+							if((lines.length % 2) == 0){
+								var left = lines[(lines.length/2)-1];
+								var right = lines[(lines.length/2)];
+								return documentmodengine.functions.getDistanceBetweenTwoPoints(parseInt($(left).attr("x")), parseInt($(right).attr("x")))
+							}else{
+								var left = lines[0][(lines.length/2)-0.5];
+								return left.attr("x");
+							}
+						}else{
+							return 0;
+						}
+					})
+					.attr("y",function(d){
+						var path = d3.select(this.parentElement).select("path");
+						if(path.size()>0){
+							var lines = documentmodengine.functions.getPointArrayFromString(path.attr("d"));
+							if((lines.length % 2) == 0){
+								var left = lines[(lines.length/2)-1];
+								var right = lines[(lines.length/2)];
+								return documentmodengine.functions.getDistanceBetweenTwoPoints(parseInt($(left).attr("y")), parseInt($(right).attr("y")))
+							}else{
+								var left = lines[0][(lines.length/2)-0.5];
+								return left.attr("y");
+							}
+						}else{
+							return 0;
+						}
+					});
+
+
+					var edgetype = configuration.edges[configuration.edgetype(d)];
+					if(!edgetype){
+						edgetype = configuration.edges[undefined];
+					}
+					if(edgetype.points){
+						var type = configuration.edges[configuration.edgetype(d)]?configuration.edges[configuration.edgetype(d)]:configuration.edges[undefined];
+						var points = type.points(d);
+						for(var i = 0;i<points.path.length;i++){
+							var points2 = [points.path[i]];
+
+							var bendpointselector = currentedge
+							.append("circle")
+							.attr("cx",points2[0].x)
+							.attr("cy",points2[0].y)
+							.attr("r",configuration.edgedistance)
+							.attr("fill","transparent")
+							.attr("stroke","none")
+							.attr("id","bendpoint:"+currentedge.attr("id")+":"+i)
+							.attr("class","bendpointselector");
+
+							if(true || documentmodengine.usersettings.viewonly != true){
+								bendpointselector.on("mouseover",function(d){
+									//d3.select(this.parentElement).select("#hover\\:"+$(d3.select(this).data()).attr("id")).remove();
+									d3.selectAll(".hover.edge").remove();
+									var arrayofattr = d3.select(this).attr("id").split(":")
+									d3.select(this.parentElement)
+									.append("circle")
+									.attr("cx",$(d3.select(this)[0]).attr("cx"))
+									.attr("cy",$(d3.select(this)[0]).attr("cy"))
+									.attr("r",configuration.edgedistance)
+									.attr("fill","none")
+									.attr("stroke","black")
+									.attr("stroke-dasharray","2,2")
+									.attr("id","hover:"+arrayofattr[1]+":"+arrayofattr[2])
+									.classed("hover",true)
+									.classed("edge",true);
+								})
+								.on("mouseout",function(d){
+									d3.select(this.parentElement)
+										.filter(function(d){
+											return !(d3.select(this).attr("selected") == "true")
+										})
+										.select("[id='hover\\:"+d3.select(this).attr("id").split(":")[1]+"\\:"+d3.select(this).attr("id").split(":")[2]+"']")
+										.remove();
+								}).on('mouseup',function(d){
+									var hovercircle = d3.select(".hover.edge[selected=true]");
+									if(hovercircle.size()>0 && !hovercircle.attr("moved")){
+										var bendpointinfo = d3.select(this).attr("id").split(":");
+										var hoverinfo = hovercircle.attr("id").split(":");
+										if(bendpointinfo[2]==hoverinfo[2]&&bendpointinfo[1]==hoverinfo[1]){
+											//delete bendpoint
+											configuration.deleteEdge(d,bendpointinfo[2])
+											documentmodengine.drawEdge(d3.select(this.parentElement));
+										}
+									}
+
+									d3.selectAll(".hover.edge").remove();
+								});
+							}
+						}
+					}
+				}
+			});
+		}
+		this.drawEdge(g);
+		g.exit().remove();
+
+	},
+	buildView_internal: function(view_xml,lang){
 
 		//SETUP CANVAS
-		view_node.selectAll("svg").remove();
-		var svg = view_node.append("svg");
+		//view_node.selectAll("svg").remove();
+		var node = d3.select(document.createElement("div"));
+		var svg = node.append("svg");
 		window.viewvisualisations.push(svg[0][0]);
 		var defs = svg.append("defs");
 		//attach defs from configuration
@@ -258,7 +780,7 @@ documentmodengine = {
 					currentcircle.attr("selected", false);
 					var currentedge = d3.select(this.parentElement);
 					currentedge.attr("selected",false);
-					this.drawEdge(currentedge);
+					documentmodengine.drawEdge(currentedge);
 				});
 				//if no circle was selected but an edge; this is performed
 				svg
@@ -268,7 +790,7 @@ documentmodengine = {
 				if(!d3.event.altKey){
 					svg.selectAll("g.node[selected=true]").each(function(d){
 						d3.select(this).attr("selected", false);
-						functions.updateNode(d3.select(this));
+						documentmodengine.functions.updateNode(d3.select(this));
 					});
 				}
 
@@ -297,7 +819,7 @@ documentmodengine = {
 
 					var nodes = $(d3.select(this).data()).children("node");
 
-					functions.updateNodePosition(d3.select(this),x,y,orig_x,orig_y);
+					documentmodengine.functions.updateNodePosition(d3.select(this),x,y,orig_x,orig_y);
 
 					d3.select(".nodeselector").attr("x",x-configuration.edgedistance/2)
 					d3.select(".nodeselector").attr("y",y-configuration.edgedistance/2)
@@ -324,522 +846,8 @@ documentmodengine = {
 			});
 		}
 
-		this.drawNodes = function(data){
-
-			var g = svg
-			.selectAll("svg\\:g#node")
-			.data(
-					data
-			);
-
-			g.enter().append('svg:g');
-			//this is always activated, so that the users can see the links
-			if(true||documentmodengine.usersettings.viewonly != true){
-				g.on('mousedown',function(d){
-					if(!d3.event.altKey){
-						d3.selectAll(".nodeselector").remove();
-					}
-					d3.select(this).attr('selected',true);
-					d3.select(this).attr('selected_x',d3.event.x-$(d3.select(this)[0]).attr("x"));
-					d3.select(this).attr('selected_y',d3.event.y-$(d3.select(this)[0]).attr("y"));
-
-					var bbox = d3.select(this)[0][0].getBBox();
-					var x = bbox.x;
-					var y = bbox.y;
-					var x = d3.transform(d3.select(this).attr("transform")).translate[0];
-					var y = d3.transform(d3.select(this).attr("transform")).translate[1];
-
-					d3.select(this.parentElement)
-						.append("rect")
-						.attr("x",x-configuration.edgedistance/2)
-						.attr("y",y-configuration.edgedistance/2)
-						.attr("width",bbox.width+configuration.edgedistance)
-						.attr("height",bbox.height+configuration.edgedistance)
-						.attr("fill","none")
-						.attr("stroke","black")
-						.attr("stroke-dasharray","2,2")
-						.classed("nodeselector",true)
-						.attr("id","nodeselector"+":"+d3.select(this).attr("id"))
-						.attr("ref",d3.select(this).attr("id"));
-					var ce = new CustomEvent("NodeSelected",{
-						detail: {
-							nodedata: d,
-							node: this
-						}});
-					ce.detail = this;
-					document.dispatchEvent(ce);
-
-				})
-			}
-
-			g.attr('class',function(d){
-				return 'node '+configuration.nodetype(d)
-			})
-			.attr('id',function(d){
-				return d.id;
-			});
-
-			this.drawNode = function(node){
-
-				var g_svg = node;
-				var type = node.each(
-						function(d,i){
-							var type = configuration.nodetype(d)
-							var typeconf = configuration.nodes[type];
-							if(!typeconf){
-								typeconf = configuration.nodes[undefined];
-							}
-							if(typeconf){
-								var lookelements = typeconf.look;
-								for(var i = 0;i<lookelements.length;i++){
-									d3.select(this).select(lookelements[i].type+".POS"+i).remove();
-									d3.select(this).append('svg:'+lookelements[i].type).classed("POS"+i,true)
-									if(lookelements[i].type == "polygon"){
-										d3.select(this).select(lookelements[i].type+".POS"+i)
-										.style('fill', function(d) {
-											return documentmodengine.functions.getValueFromData(lookelements[i].fill,d);
-											//var fc = $( d ).children("style").children("fillColor");
-											//return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"
-										})
-										.style('stroke', function(d) {
-											return documentmodengine.functions.getValueFromData(lookelements[i].stroke,d);
-											//var fc = $( d ).children("style").children("lineColor");
-											//return "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")";
-										})
-										.attr("points",function(d){
-											return documentmodengine.functions.getValueFromData(lookelements[i].points,d);
-											//return documentmodengine.functions.getPointsStringFromConfiguration(lookelements[i].points,d);
-										});
-									}else if(lookelements[i].type == "circle"){
-										d3.select(this).select(lookelements[i].type+".POS"+i)
-										.style('fill', function(d) {
-											return documentmodengine.functions.getValueFromData(lookelements[i].fill,d);
-										})
-										.style('stroke', function(d) {
-											return documentmodengine.functions.getValueFromData(lookelements[i].stroke,d);
-											//var fc = $( d ).children("style").children("lineColor");
-											//return "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")";
-										})
-										.attr("r",function(d){
-											return documentmodengine.functions.getValueFromData(lookelements[i].r,d);
-										})
-										.attr("cx",function(d){
-											return documentmodengine.functions.getValueFromData(lookelements[i].cx,d);
-										})
-										.attr("cy",function(d){
-											return documentmodengine.functions.getValueFromData(lookelements[i].cy,d);
-										})
-									}else if(lookelements[i].type == "line"){
-										d3.select(this).select(lookelements[i].type+".POS"+i)
-										.style('fill', function(d) {
-											return documentmodengine.functions.getValueFromData(lookelements[i].fill,d);
-											//var fc = $( d ).children("style").children("fillColor");
-											//return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"
-										})
-										.style('stroke', function(d) {
-											return documentmodengine.functions.getValueFromData(lookelements[i].stroke,d);
-											//var fc = $( d ).children("style").children("lineColor");
-											//return "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")";
-										})
-										.attr("x1",function(d){
-											return documentmodengine.functions.getValueFromData(lookelements[i].x1,d);
-										})
-										.attr("y1",function(d){
-											return documentmodengine.functions.getValueFromData(lookelements[i].y1,d);
-										})
-										.attr("x2",function(d){
-											return documentmodengine.functions.getValueFromData(lookelements[i].x2,d);
-										})
-										.attr("y2",function(d){
-											return documentmodengine.functions.getValueFromData(lookelements[i].y2,d);
-										})
-									}else if(lookelements[i].type == "ellipse"){
-										d3.select(this).select(lookelements[i].type+".POS"+i)
-										.style('fill', function(d) {
-											return documentmodengine.functions.getValueFromData(lookelements[i].fill,d);
-										})
-										.style('stroke', function(d) {
-											return documentmodengine.functions.getValueFromData(lookelements[i].stroke,d);
-										}).style('stroke-width', function(d) {
-											return documentmodengine.functions.getValueFromData(lookelements[i]['stroke-width'],d);
-										})
-										.attr("cx",function(d){
-											return documentmodengine.functions.getValueFromData(lookelements[i].cx,d);
-										})
-										.attr("cy",function(d){
-											return documentmodengine.functions.getValueFromData(lookelements[i].cy,d);
-										})
-										.attr("rx",function(d){
-											return documentmodengine.functions.getValueFromData(lookelements[i].rx,d);
-										})
-										.attr("ry",function(d){
-											return documentmodengine.functions.getValueFromData(lookelements[i].ry,d);
-										})
-									}else if(lookelements[i].type == "rect"){
-										d3.select(this).select(lookelements[i].type+".POS"+i)
-										.style('fill', function(d) {
-											return documentmodengine.functions.getValueFromData(lookelements[i].fill,d);
-										})
-										.style('stroke', function(d) {
-											return documentmodengine.functions.getValueFromData(lookelements[i].stroke,d);
-										})
-										.style('stroke-width', function(d) {
-											return documentmodengine.functions.getValueFromData(lookelements[i]['stroke-width'],d);
-										})
-										.attr("x",function(d){
-											return documentmodengine.functions.getValueFromData(lookelements[i].x,d);
-										})
-										.attr("y",function(d){
-											return documentmodengine.functions.getValueFromData(lookelements[i].y,d);
-										})
-										.attr("width",function(d){
-											return documentmodengine.functions.getValueFromData(lookelements[i].w,d);
-										})
-										.attr("height",function(d){
-											return documentmodengine.functions.getValueFromData(lookelements[i].h,d);
-										})
-										.attr("ry",function(d){
-											return documentmodengine.functions.getValueFromData(lookelements[i].ry,d);
-										})
-										.attr("rx",function(d){
-											return documentmodengine.functions.getValueFromData(lookelements[i].rx,d);
-										})
-									}else if(lookelements[i].type == "path"){
-										d3.select(this).select(lookelements[i].type+".POS"+i)
-										.attr("style",function(d){
-											return documentmodengine.functions.getValueFromData(lookelements[i].style,d);
-										}).style('fill', function(d) {
-											return documentmodengine.functions.getValueFromData(lookelements[i].fill,d);
-										}).style('stroke', function(d) {
-											return documentmodengine.functions.getValueFromData(lookelements[i].stroke,d);
-										}).attr("stroke-dasharray",function(d){
-											return documentmodengine.functions.getValueFromData(lookelements[i]["stroke-dasharray"],d);
-										}).attr("d",function(d){
-											return documentmodengine.functions.getValueFromData(lookelements[i].d,d);
-										}).style('stroke-width', function(d) {
-											return documentmodengine.functions.getValueFromData(lookelements[i]["stroke-width"],d);
-										})
-
-									}else if(lookelements[i].type == "text"){
-										var text = d3.select(this).select(lookelements[i].type+".POS"+i);
-										text.attr("style",function(d){
-											return documentmodengine.functions.getValueFromData(lookelements[i].style,d);
-										}).attr("x",function(d){
-											return documentmodengine.functions.getValueFromData(lookelements[i].x,d);
-										}).attr("y",function(d){
-											return documentmodengine.functions.getValueFromData(lookelements[i].y,d);
-										}).attr("alignment-baseline",function(d){
-											return documentmodengine.functions.getValueFromData(lookelements[i]["alignment-baseline"],d);
-										}).attr("text-anchor",function(d){
-											return documentmodengine.functions.getValueFromData(lookelements[i]["text-anchor"],d);
-										}).attr("style",function(d){
-											return documentmodengine.functions.getValueFromData(lookelements[i]["style"],d);
-										});
-
-										if(lookelements[i].innerHtml){
-											text.html(function(d){
-												return documentmodengine.functions.getValueFromData(lookelements[i].innerHtml,d);
-											})
-										}else{
-											text.text(function(d){
-												return documentmodengine.functions.getValueFromData(lookelements[i].text,d);
-											})
-										}
-									}
-								}
-							}
-						}
-				);
-
-				g_svg.attr("x",
-						function(d) {
-					return configuration.nodeposition(d).x;
-				}).attr("y",
-						function(d) {
-					return configuration.nodeposition(d).y;
-				}).attr("transform",
-						function(d) {
-					return "translate(" + configuration.nodeposition(d).x + "," + configuration.nodeposition(d).y + ")";
-				});
-			}
-			this.drawNode(g);
-			g.exit().remove();
-
-		}
-
-		this.drawEdges = function(data){
-
-			var g = svg
-			.selectAll("svg\\:g#connection")
-			.data(data);
-
-			g.enter().append('svg:g');
-
-			g.attr('id',function(d){
-				return d.id;
-			});
-
-
-			if(documentmodengine.usersettings.viewonly != true){
-				g.on('mousedown',function(d){
-					d3.select(this).attr('selected',true);
-					var found = false;
-					var x = d3.event.offsetX;
-					var y = d3.event.offsetY;
-					var hovercircle = d3.select(".hover.edge");
-					if(hovercircle.size()>0){
-						found = true;
-						hovercircle.attr("selected","true");
-						hovercircle.attr('selected_x',x-parseInt(hovercircle.attr("cx")));
-						hovercircle.attr('selected_y',y-parseInt(hovercircle.attr("cy")));
-					}
-
-					if(!found){
-						d3.select(this).attr("selected","false");
-						if(configuration.addBendPoint){
-								configuration.addBendPoint(d,x,y);
-						}else{
-							console.log("Configuration does not support bendpoints of edges");
-						}
-
-						//$(d.self).append("<bendpoint x='"+x+"' y='"+y+"' ></bendpoint>");
-						this.drawEdge(d3.select(this));
-					}
-				});
-			}
-
-			this.drawEdge = function (edge) {
-				edge.each(function(d,i){
-
-					var currentedge = d3.select(this);
-
-					var type = configuration.edgetype(d)
-					var typeconf = configuration.edges[type];
-					if(!typeconf){
-						typeconf = configuration.edges[undefined];
-						console.log("Could not find edge type definition for "+type+".");
-					}
-					if(typeconf){
-						currentedge.selectAll("path").remove();
-						currentedge.selectAll("text").remove();
-						currentedge.selectAll("circle").remove();
-						currentedge.selectAll("rect").remove();
-
-						currentedge
-						.attr("id",function(d){
-							return d.id;
-						})
-						.attr("source_node_id",function(d){
-							return $(d.self).attr("source")
-						})
-						.attr("target_node_id",function(d){
-							return $(d.self).attr("target")
-						})
-						.attr('class',function(d){
-							return 'connection '+configuration.edgetype(d)
-						})
-
-						//this draws the actual visible line
-						currentedge.append("svg\\:path")
-						.attr("d",function(d){
-							var current = 0;
-							var result = "M ";
-							var sourceref_svg = $(d3.select("#"+$(d.self).attr("source"))[0]);
-							var lineColor = $( d ).children("style").children("lineColor");
-							var lineWidth = $( d ).children("style").attr("lineWidth") ? $( d ).children("style").attr("lineWidth") : 1;
-
-							//var points1 = $(sourceref_svg).attr("points");
-							//var points2 = [];
-							var edgetype = configuration.edges[configuration.edgetype(d)];
-							if(!edgetype){
-								edgetype = configuration.edges[undefined];
-							}
-							if(edgetype.points){
-								var type = configuration.edges[configuration.edgetype(d)]?configuration.edges[configuration.edgetype(d)]:configuration.edges[undefined];
-								var points = type.points(d);
-								var points1 = points.shape1;
-								for(var i = 0;i<points.path.length;i++){
-									var points2 = [points.path[i]];
-									var pointsset = documentmodengine.functions.getNearestTwoPointsFromTwoSets(points1,points2);
-									result += pointsset.x1+","+pointsset.y1+" L ";
-									result += pointsset.x2+","+pointsset.y2+" L ";
-									var points1 = [points.path[i]];
-								}
-								points2 = points.shape2;
-								var pointsset = documentmodengine.functions.getNearestTwoPointsFromTwoSets(points1,points2);
-								result += pointsset.x1+","+pointsset.y1+" L ";
-								result += pointsset.x2+","+pointsset.y2;
-
-							}
-							return result;
-						}).attr("stroke-dasharray",function(d){
-							return documentmodengine.functions.getValueFromData(typeconf["stroke-dasharray"],d);
-						}).attr("style",function(d){
-							return documentmodengine.functions.getValueFromData(typeconf.style,d);
-						})
-						.style("stroke",function(d){
-							return documentmodengine.functions.getValueFromData(typeconf.stroke,d);
-						})
-						.attr("stroke-width",function(d){
-							return documentmodengine.functions.getValueFromData(typeconf["stroke-width"],d);
-						})
-						.style("fill","none");
-
-						//this draws the transparent line for UI
-						currentedge.append("svg\\:path")
-						.attr("d",function(d){
-							var current = 0;
-							var result = "M ";
-							var sourceref_svg = $(d3.select("#"+$(d.self).attr("source"))[0]);
-							var lineColor = $( d ).children("style").children("lineColor");
-							var lineWidth = $( d ).children("style").attr("lineWidth") ? $( d ).children("style").attr("lineWidth") : 1;
-
-							//var points1 = $(sourceref_svg).attr("points");
-							//var points2 = [];
-							var edgetype = configuration.edges[configuration.edgetype(d)];
-							if(!edgetype){
-								edgetype = configuration.edges[undefined];
-							}
-							if(edgetype.points){
-								var type = configuration.edges[configuration.edgetype(d)]?configuration.edges[configuration.edgetype(d)]:configuration.edges[undefined];
-								var points = type.points(d);
-								var points1 = points.shape1;
-								for(var i = 0;i<points.path.length;i++){
-									var points2 = [points.path[i]];
-									var pointsset = documentmodengine.functions.getNearestTwoPointsFromTwoSets(points1,points2);
-									result += pointsset.x1+","+pointsset.y1+" L ";
-									result += pointsset.x2+","+pointsset.y2+" L ";
-									var points1 = [points.path[i]];
-								}
-								points2 = points.shape2;
-								var pointsset = documentmodengine.functions.getNearestTwoPointsFromTwoSets(points1,points2);
-								result += pointsset.x1+","+pointsset.y1+" L ";
-								result += pointsset.x2+","+pointsset.y2;
-
-							}
-							return result;
-						}).style("stroke",function(d){
-							return "transparent";
-							//return documentmodengine.functions.getValueFromData(typeconf.stroke,d);
-						}).attr("stroke-width",function(d){
-							var config = parseInt(documentmodengine.functions.getValueFromData(typeconf["stroke-width"],d));
-							if(isNaN(config)){
-								return 10;
-							}else{
-								return config+10;
-							}
-						})
-						.style("fill","none");
-
-						currentedge.append('svg:text')
-						.text(function(d){
-							return $(d.self).children("relationship").children('label[xml\\:lang="'+lang+'"]').text()
-						})
-						.attr("x",function(d){
-							var path = d3.select(this.parentElement).select("path");
-							if(path.size()>0){
-								var lines = documentmodengine.functions.getPointArrayFromString(path.attr("d"));
-								if((lines.length % 2) == 0){
-									var left = lines[(lines.length/2)-1];
-									var right = lines[(lines.length/2)];
-									return documentmodengine.functions.getDistanceBetweenTwoPoints(parseInt($(left).attr("x")), parseInt($(right).attr("x")))
-								}else{
-									var left = lines[0][(lines.length/2)-0.5];
-									return left.attr("x");
-								}
-							}else{
-								return 0;
-							}
-						})
-						.attr("y",function(d){
-							var path = d3.select(this.parentElement).select("path");
-							if(path.size()>0){
-								var lines = documentmodengine.functions.getPointArrayFromString(path.attr("d"));
-								if((lines.length % 2) == 0){
-									var left = lines[(lines.length/2)-1];
-									var right = lines[(lines.length/2)];
-									return documentmodengine.functions.getDistanceBetweenTwoPoints(parseInt($(left).attr("y")), parseInt($(right).attr("y")))
-								}else{
-									var left = lines[0][(lines.length/2)-0.5];
-									return left.attr("y");
-								}
-							}else{
-								return 0;
-							}
-						});
-
-
-						var edgetype = configuration.edges[configuration.edgetype(d)];
-						if(!edgetype){
-							edgetype = configuration.edges[undefined];
-						}
-						if(edgetype.points){
-							var type = configuration.edges[configuration.edgetype(d)]?configuration.edges[configuration.edgetype(d)]:configuration.edges[undefined];
-							var points = type.points(d);
-							for(var i = 0;i<points.path.length;i++){
-								var points2 = [points.path[i]];
-
-								var bendpointselector = currentedge
-								.append("circle")
-								.attr("cx",points2[0].x)
-								.attr("cy",points2[0].y)
-								.attr("r",configuration.edgedistance)
-								.attr("fill","transparent")
-								.attr("stroke","none")
-								.attr("id","bendpoint:"+currentedge.attr("id")+":"+i)
-								.attr("class","bendpointselector");
-
-								if(true || documentmodengine.usersettings.viewonly != true){
-									bendpointselector.on("mouseover",function(d){
-										//d3.select(this.parentElement).select("#hover\\:"+$(d3.select(this).data()).attr("id")).remove();
-										d3.selectAll(".hover.edge").remove();
-										var arrayofattr = d3.select(this).attr("id").split(":")
-										d3.select(this.parentElement)
-										.append("circle")
-										.attr("cx",$(d3.select(this)[0]).attr("cx"))
-										.attr("cy",$(d3.select(this)[0]).attr("cy"))
-										.attr("r",configuration.edgedistance)
-										.attr("fill","none")
-										.attr("stroke","black")
-										.attr("stroke-dasharray","2,2")
-										.attr("id","hover:"+arrayofattr[1]+":"+arrayofattr[2])
-										.classed("hover",true)
-										.classed("edge",true);
-									})
-									.on("mouseout",function(d){
-										d3.select(this.parentElement)
-											.filter(function(d){
-												return !(d3.select(this).attr("selected") == "true")
-											})
-											.select("[id='hover\\:"+d3.select(this).attr("id").split(":")[1]+"\\:"+d3.select(this).attr("id").split(":")[2]+"']")
-											.remove();
-									}).on('mouseup',function(d){
-										var hovercircle = d3.select(".hover.edge[selected=true]");
-										if(hovercircle.size()>0 && !hovercircle.attr("moved")){
-											var bendpointinfo = d3.select(this).attr("id").split(":");
-											var hoverinfo = hovercircle.attr("id").split(":");
-											if(bendpointinfo[2]==hoverinfo[2]&&bendpointinfo[1]==hoverinfo[1]){
-												//delete bendpoint
-												configuration.deleteEdge(d,bendpointinfo[2])
-												this.drawEdge(d3.select(this.parentElement));
-											}
-										}
-
-										d3.selectAll(".hover.edge").remove();
-									});
-								}
-							}
-						}
-					}
-				});
-			}
-			this.drawEdge(g);
-			g.exit().remove();
-
-		}
-
-		documentmodengine.drawNodes(view_xml.nodes); //start Drawing Nodes
-		documentmodengine.drawEdges(view_xml.edges); //start Drawing Edges
+		documentmodengine.drawNodes(svg,view_xml.nodes); //start Drawing Nodes
+		documentmodengine.drawEdges(svg,view_xml.edges); //start Drawing Edges
 
 
 
@@ -874,7 +882,7 @@ documentmodengine = {
 							var sub_pos = configuration.nodeposition(sub_node.data()[0]);
 							x_sub = parseInt(sub_pos.x);
 							y_sub = parseInt(sub_pos.y);
-							functions.updateNodePosition(sub_node,
+							documentmodengine.functions.updateNodePosition(sub_node,
 									x_sub+(x-o_x),
 									y_sub+(y-o_y),
 									x_sub,
@@ -888,7 +896,7 @@ documentmodengine = {
 			updateNode: function(node){
 				//This redraws all nodes and associated connections
 				/*change of data is done; now redraw the changed parts */
-				this.drawNode(node);
+				documentmodengine.drawNode(node);
 
 				var updates = node.data()[0].updates;
 				if(updates){
@@ -897,11 +905,11 @@ documentmodengine = {
 
 						var current = d3.select("g.node[id='"+curId+"']");
 						if(current.size()>0){
-							functions.updateNode(current);
+							documentmodengine.functions.updateNode(current);
 						}else{
 							current = d3.select("g.connection[id='"+curId+"']");
 							if(current.size()>0){
-								drawEdge(current);
+								documentmodengine.drawEdge(current);
 							}
 
 						}
