@@ -169,8 +169,6 @@
       nodeselected:function(e){
         var viewid      = menu.$.menuTabs.selectedItem.id.substr(3);
         documentmodengine.addnewnode(e.target.id,viewid);
-
-
       },
       ready:function(){
         if(window.done == 2){
@@ -560,6 +558,62 @@
   </script>
 </dom-module>
 
+<dom-module id="model-attribute">
+  <template>
+    <div class="layout horizontal">
+      <div class="flex">
+        <paper-input label="[[name]]" disabled$="[[disabled]]" value="{{value}}"></paper-input>
+      </div>
+      <div>
+        <paper-icon-button icon="save" title="save" on-click="save"></paper-icon-button>
+      </div>
+    </div>
+  </template>
+  <script>
+    Polymer({
+      is: 'model-attribute',
+      properties: {
+        index: Number,
+        name: String,
+        value: String,
+        object: Object,
+        disabled: Boolean
+      },
+      ready:function(){
+        this.load();/*
+        if(this.object){
+
+        }else{
+          var context = this;
+          setTimeout(function(){
+            context.ready();
+          },500);
+        }*/
+
+      },
+      load:function(){
+        if(this.object){
+          var nodetype = configuration.nodetype(this.object);
+          nodetype = configuration.nodes[nodetype];
+          this.value = nodetype.attributes[this.name].get(this.object);
+        }
+
+      },
+      save:function(){
+        if(this.object){
+          var nodetype = configuration.nodetype(this.object);
+          nodetype = configuration.nodes[nodetype];
+          nodetype.attributes[this.name].set(this.object,this.value);
+
+          var viewid      = menu.$.menuTabs.selectedItem.id.substr(3);
+          documentmodengine.updateLoadedView(viewid,documentmodengine.usersettings.lang);
+        }
+
+      }
+    });
+  </script>
+</dom-module>
+
 <dom-module id="model-zoom">
   <template>
     <div class="layout horizontal">
@@ -633,6 +687,9 @@
   <template>
     <paper-listbox vertical-align="bottom" style="height:100%;padding-left:5%;padding-right:5%">
       <iron-label>{{label}} {{addinfo}}</iron-label>
+      <template is="dom-repeat" items="{{attributes}}">
+        <model-attribute object={{item.object}} name="{{item.attributename}}" disabled$="[[item.disabled]]"></model-attribute>
+      </template>
       <template is="dom-repeat" items="{{links}}">
         <model-reference label="{{item.label}}" link="{{item.link}}" disabled$="[[item.disabled]]"></model-reference>
       </template>
@@ -644,7 +701,8 @@
       properties: {
         label: String,
         links: Array,
-        addinfo: String
+        addinfo: String,
+        attributes: Array
       },
       ready : function(e){
         if(documentmodengine){
@@ -654,14 +712,30 @@
         }else{
           console.log("documentmodengine not available");
         }
-
       },
       refreshLinks : function (a) {
         if(a.detail&&a.detail.node){
-            mr.label = $(a.detail.node).attr("id");
+            this.label = $(a.detail.node).attr("id");
             console.log($(a.detail.node));
-            mr.addinfo = $(a.detail.nodedata.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
+            this.addinfo = $(a.detail.nodedata.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
         }
+        this.attributes = [];
+        var data = d3.select(a.detail.node).data()[0];
+        var nodetype = configuration.nodetype(data);
+        nodetype = configuration.nodes[nodetype];
+        if(nodetype.attributes){
+          for (var key in nodetype.attributes) {
+            if (nodetype.attributes.hasOwnProperty(key)) {
+              var attr = {};
+              attr.object = data;
+              attr.attributename = key;
+              attr.disabled = false;
+              this.attributes.push(attr);
+            }
+          }
+        }
+        this.attributes = this.attributes.concat([]);
+
         mr.links = [];
         if(window.links&&window.links[mr.label])
           {

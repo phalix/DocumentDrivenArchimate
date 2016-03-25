@@ -804,11 +804,14 @@ addnewnode:function(type,viewid){
 				.selectAll("g.connection[selected=true]").each(function(d){
 					d3.select(this).attr("selected", false);
 				});
-				if(!d3.event.altKey){
-					svg.selectAll("g.node[selected=true]").each(function(d){
-						d3.select(this).attr("selected", false);
-						documentmodengine.functions.updateNode(d3.select(this));
-					});
+				if(!d3.event.altKey||svg.selectAll("g.node[selected=true]").size()<=1){
+
+						svg.selectAll("g.node[selected=true]").each(function(d){
+							d3.select(this).attr("selected", false);
+							documentmodengine.functions.updateNode(d3.select(this));
+						});
+
+
 				}
 
 				d3.selectAll("#selector").remove();
