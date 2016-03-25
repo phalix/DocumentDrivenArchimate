@@ -233,10 +233,10 @@ addnewnode:function(type,viewid){
 	},
 	drawNodes: function(svg,data){
 
-		svg.selectAll("svg\\:g.node").remove();
+		svg.selectAll("g.node").remove();
 
 		var g = svg
-		.selectAll("svg\\:g.node")
+		.selectAll("g.node")
 		.data(
 				data
 		);
@@ -477,11 +477,13 @@ addnewnode:function(type,viewid){
 	},
 	drawEdges: function(svg,data){
 
+		svg.selectAll("g.connection").remove()
+
 		var g = svg
-		.selectAll("svg\\:g#connection")
+		.selectAll("g.connection")
 		.data(data);
 
-		g.enter().append('svg:g');
+		g.enter().append('g');
 
 		g.attr('id',function(d){
 			return d.id;
