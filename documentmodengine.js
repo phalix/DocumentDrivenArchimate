@@ -233,10 +233,10 @@ addnewnode:function(type,viewid){
 	},
 	drawNodes: function(svg,data){
 
-		svg.selectAll("svg\\:g#node").remove();
+		svg.selectAll("svg\\:g.node").remove();
 
 		var g = svg
-		.selectAll("svg\\:g#node")
+		.selectAll("svg\\:g.node")
 		.data(
 				data
 		);
