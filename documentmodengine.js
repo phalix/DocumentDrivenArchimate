@@ -96,6 +96,7 @@ documentmodengine = {
 addnewnode:function(type,viewid){
 	var newnode = configuration.nodes[type].new();
 	configuration.adder(window.xml,newnode);
+	//TODO: Node must be also added to view explicitly
 	documentmodengine.viewsdata[viewid].nodes.push(newnode);
 	var updatedsvg  = documentmodengine.updateLoadedView(viewid,documentmodengine.usersettings.lang);
 },
@@ -221,8 +222,12 @@ addnewnode:function(type,viewid){
 	updateLoadedView: function(byid,lang){
 
 		var svg = d3.select(documentmodengine.diagrams[byid]);
-		var nodes = documentmodengine.viewsdata[byid].nodes;
+		var viewdata = documentmodengine.viewsdata[byid];
+		var nodes = viewdata.nodes;
+		var edges = viewdata.edges;
+
 		documentmodengine.drawNodes(svg,nodes);
+		documentmodengine.drawEdges(svg,edges);
 		//var view = documentmodengine.views.children("[identifier='"+byid+"']");
 		//return documentmodengine.buildView_internal(view,lang);
 	},
