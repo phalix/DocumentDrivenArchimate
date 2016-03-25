@@ -18,8 +18,10 @@ documentmodengine = {
 	url			:	undefined,
 
 
-	xml			: undefined,
-	views		: undefined,
+	xml				: undefined,
+	views			: undefined,
+	viewsdata : undefined,
+	diagrams	: undefined,
 
 	usersettings: {},
 
@@ -54,7 +56,8 @@ documentmodengine = {
 				}});
 			document.dispatchEvent(ce);
 
-			documentmodengine.buildModel_internal(lang);
+			var result = documentmodengine.buildModel_internal(lang);
+
 		}
 		reader.readAsText(file);
 	},
@@ -90,7 +93,12 @@ documentmodengine = {
 				});
 	},
 
-
+addnewnode:function(type,viewid){
+	var newnode = configuration.nodes[type].new();
+	configuration.adder(window.xml,newnode);
+	documentmodengine.viewsdata[viewid].nodes.push(newnode);
+	var updatedsvg  = documentmodengine.updateLoadedView(viewid,documentmodengine.usersettings.lang);
+},
 
  buildModel_internal: function(lang){
 				var ce = new CustomEvent("StartingProcessingXML",{
@@ -102,10 +110,7 @@ documentmodengine = {
 
 					window.done = 1;
 					documentmodengine.status = 1;
-					//TODO: Change documentmodengine to this when possible.
 					documentmodengine.releaseModel();
-
-
 
 					var views = configuration.view_extraction(xml);
 
@@ -152,10 +157,10 @@ documentmodengine = {
 					.append("div")
 					.attr("id",function(d){
 						return "div"+d;
-						//return $(d).attr("identifier");
 					});
 
 					var viewsdata = [];
+					var diagrams = [];
 
 					for(var i = 0; i < views.children().size();i++){
 						var view = views.children().eq(i);
@@ -186,7 +191,8 @@ documentmodengine = {
 							viewdata.edges.push(edgedata);
 						}
 
-						documentmodengine.buildView_internal(viewdata,lang);
+						var result = documentmodengine.buildView_internal(viewdata,lang);
+						diagrams.push(result[0][0]);
 
 						var ce = new CustomEvent("DoneWithView",{
 							detail: {
@@ -203,6 +209,7 @@ documentmodengine = {
 					documentmodengine.status = 2;
 					documentmodengine.views = views;
 					documentmodengine.viewsdata = viewsdata;
+					documentmodengine.diagrams = diagrams;
 					var ce = new CustomEvent("DoneWithLoading",{
 						detail: {
 							views: views
@@ -211,9 +218,13 @@ documentmodengine = {
 
 
 	},
-	updateCompleteView: function(byid,lang){
-		var view = documentmodengine.views.children("[identifier='"+byid+"']");
-		return documentmodengine.buildView_internal(view,lang);
+	updateLoadedView: function(byid,lang){
+
+		var svg = d3.select(documentmodengine.diagrams[byid]);
+		var nodes = documentmodengine.viewsdata[byid].nodes;
+		documentmodengine.drawNodes(svg,nodes);
+		//var view = documentmodengine.views.children("[identifier='"+byid+"']");
+		//return documentmodengine.buildView_internal(view,lang);
 	},
 	drawNodes: function(svg,data){
 
@@ -735,7 +746,6 @@ documentmodengine = {
 		//view_node.selectAll("svg").remove();
 		var node = d3.select(document.createElement("div"));
 		var svg = node.append("svg");
-		window.viewvisualisations.push(svg[0][0]);
 		var defs = svg.append("defs");
 		//attach defs from configuration
 		if(configuration.definitions){
@@ -855,9 +865,9 @@ documentmodengine = {
 	},
 
 	releaseModel: function(){
-		if(window.viewvisualisations){
-			for(var i = 0;i<window.viewvisualisations.length;i++){
-				d3.select(window.viewvisualisations[i]).remove();
+		if(documentmodengine.diagrams){
+			for(var i = 0;i<documentmodengine.diagrams.length;i++){
+				d3.select(documentmodengine.diagrams[i]).remove();
 			}
 		}
 		documentmodengine.views = undefined;

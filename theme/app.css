@@ -1,0 +1,86 @@
+svg {
+
+  cursor: default;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -o-user-select: none;
+  user-select: none;
+}
+
+svg:not(.active):not(.ctrl) {
+  cursor: crosshair;
+}
+iron-icon.iron-icon-0{
+
+  fill:black;
+}
+path.link {
+  fill: none;
+  stroke: #000;
+  stroke-width: 4px;
+  cursor: default;
+}
+
+svg:not(.active):not(.ctrl) path.link {
+  cursor: pointer;
+}
+
+path.link.selected {
+  stroke-dasharray: 10,2;
+}
+
+path.link.dragline {
+  pointer-events: none;
+}
+
+path.link.hidden {
+  stroke-width: 0;
+}
+
+circle.node {
+  stroke-width: 1.5px;
+  cursor: pointer;
+}
+
+circle.node.reflexive {
+  stroke: #000 !important;
+  stroke-width: 2.5px;
+}
+
+text {
+  font: 12px sans-serif;
+  pointer-events: none;
+}
+
+text.id {
+  text-anchor: middle;
+  font-weight: bold;
+}
+
+section {
+     -webkit-tap-highlight-color: rgba(0,0,0,0);
+   }
+
+   section > paper-button {
+     background-color: var(--google-grey-300);
+     padding: 5px;
+   }
+   section > paper-button:hover {
+     background-color: var(--paper-light-blue-200);
+     padding: 5px;
+   }
+   paper-dialog.colored {
+     border: 2px solid;
+     border-color: var(--paper-green-500);
+     background-color: var(--paper-light-green-50);
+     color: var(--paper-green-500);
+   }
+   paper-dialog.size-position {
+     position: fixed;
+     top: 16px;
+     right: 16px;
+     width: 300px;
+     height: 300px;
+     overflow: auto;
+   }

@@ -1,0 +1,50 @@
+this.mockup = {
+  "name":"mockup-repository",
+  "description":"this should be provided by plugins",
+  "type":"mockup",
+  "content":[{
+    "type":"directory",
+    "name":"own hosted",
+    "get":"http://",
+    "content":[
+      {
+        "type":"file",
+        "name":"archimate reference model",
+        "get":"http://",
+        "content":[
+          {
+            "type":"version",
+            "name":"default version",
+            "get":"http://localhost/Reference%20Model.xml"
+          }
+        ]
+      }
+    ]
+    },{
+      "type":"directory",
+      "name":"copy_own hosted",
+      "get":"http://",
+      "content":[
+        {
+          "type":"file",
+          "name":"archimate reference model",
+          "get":"http://",
+          "content":[
+            {
+              "type":"version",
+              "name":"default version",
+              "get":"http://localhost/Reference%20Model.xml"
+            }
+          ]
+        },{
+          "type":"file",
+          "name":"Archisurance",
+          "get":"http://localhost/Archisurance.xml"
+        },{
+          "type":"file",
+          "name":"test",
+          "get":"http://localhost/test.xml"
+        }
+      ]
+      }]
+}

@@ -1,0 +1,189 @@
+
+
+<!-- start: custom elements -->
+<dom-module id="model-menu">
+  <template>
+    <paper-toolbar class="medium-tall">
+    <paper-icon-button icon="menu"></paper-icon-button>
+    <span class="title">Document Driven Archimate</span>
+
+      <paper-tabs id="menuTabs" class="middle" selected="{{selected}}" style="width:100%" scrollable>
+        <template is="dom-repeat" items="[[stuff]]">
+          <paper-tab on-click="refreshSvg">[[item.tabtext]]</paper-tab>
+        </template>
+      </paper-tabs>
+  </paper-toolbar>
+
+    <iron-pages id="menuPages" selected="{{selected}}">
+      <template is="dom-repeat" items="{{stuff}}">
+        <div id="{{item.divid}}" style="overflow:auto"></div>
+      </template>
+    </iron-pages>
+  </template>
+    <script>
+    Polymer({
+      is: 'model-menu',
+      properties: {
+        stuff: Array,
+        selected: Number
+      },
+      refreshSvg: function(){
+        for(var i = 0; i < window.viewvisualisations.length;i++){
+          d3.select("div#div"+i)[0][0].appendChild(window.viewvisualisations[i]);
+          d3.select("div#div"+i).style("padding","5px");
+
+          var rect = d3.select("div#div"+i).select("svg")[0][0].getBBox();
+
+          //var maxwidth = Math.max(d3.select("div#div"+i)[0][0].getBoundingClientRect().width,rect.width);
+          //var maxheight = Math.max(d3.select("div#div"+i)[0][0].getBoundingClientRect().height,rect.height);
+          d3.select("div#div"+i).select("svg").attr("width",rect.width*1.05);
+          d3.select("div#div"+i).select("svg").attr("height",rect.height*1.05);
+          d3.select("div#div"+i).select("svg").attr("viewBox",rect.x+","+rect.y+","+rect.height*1.05+","+rect.width*1.05);
+
+          //d3.select("div#div"+i).style("width",(maxwidth*1.05)+"px");
+          d3.select("div#div"+i).style("width","100%");
+          //d3.select("div#div"+i).style("height",(maxheight*1.05)+"px");
+
+          d3.select("div#div"+i).style("height",($(window).height()-300)+"px");
+        }
+      }
+      });
+      this.stuff = [];
+    </script>
+
+</dom-module>
+
+
+<dom-module id="model-reference">
+  <template>
+    <div class="layout horizontal">
+      <div class="flex">
+        <paper-input label="[[label]]" disabled$="[[disabled]]" value="[[link]]"></paper-input>
+      </div>
+      <div>
+        <paper-icon-button icon="reply" title="openlink" on-click="open"></paper-icon-button>
+      </div>
+      <div>
+        <paper-icon-button icon="delete" title="delete" on-click="drop"></paper-icon-button>
+      </div>
+    </div>
+  </template>
+  <script>
+    Polymer({
+      is: 'model-reference',
+      properties: {
+        index: Number,
+        label: String,
+        link: String,
+        disabled: Boolean
+      },
+      drop: function(e){
+        if(window.links&&window.links[mr.label]){
+          for(var i = 0;i<window.links[mr.label].length;i++){
+            if(window.links[mr.label][i].label == this.label){
+              if(window.links[mr.label][i].links == this.links){
+                window.links[mr.label].splice(i,1);
+                var event = new Event("LinkAdded");
+                document.dispatchEvent(event);
+              }
+            }
+          }
+        }
+      },
+      open: function(e){
+        window.open(this.link)
+      }
+    });
+  </script>
+</dom-module>
+
+<dom-module id="model-zoom">
+  <template>
+    <div class="layout horizontal">
+
+      <div>
+      <paper-icon-button icon="note-add" title="add-link" on-click="addlink"></paper-icon-button>
+    </div>
+    <div class="flex">
+    </div>
+      <div>
+      <paper-icon-button icon="add-box" title="zoomin" on-click="zoomin"></paper-icon-button>
+    </div>
+    <div>
+      <paper-icon-button icon="indeterminate-check-box" title="zoomout" on-click="zoomout"></paper-icon-button>
+    </div>
+    </div>
+  </template>
+  <script>
+    Polymer({
+      is: 'model-zoom',
+      properties: {
+        label: String,
+        link: String,
+        disabled: Boolean
+      },
+      zoomin: function(e){
+        var svg = d3.select("div.iron-selected").select("svg");
+        svg.attr("width",parseFloat(svg.attr("width"))*1.5);
+        svg.attr("height",parseFloat(svg.attr("height"))*1.5);
+      },
+      zoomout: function(e){
+        var svg = d3.select("div.iron-selected").select("svg");
+        svg.attr("width",parseFloat(svg.attr("width"))/1.5);
+        svg.attr("height",parseFloat(svg.attr("height"))/1.5);
+      },
+      addlink: function(e){
+        if(mr.label){
+          if(!window.links){
+            links = {};
+          };
+          if(!window.links[mr.label]){
+            window.links[mr.label] = [];
+          }
+          var dialog = document.querySelector("#linkdialog");
+
+          dialog.open();
+
+
+
+          var event = new Event("LinkAdded");
+    			document.dispatchEvent(event);
+        }
+      }
+    });
+  </script>
+</dom-module>
+
+<dom-module id="model-references">
+  <template>
+    <paper-listbox vertical-align="bottom" style="height:100%;padding-left:5%;padding-right:5%">
+      <iron-label>{{label}}</iron-label>
+      <template is="dom-repeat" items="{{links}}">
+        <model-reference label="{{item.label}}" link="{{item.link}}" disabled$="[[item.disabled]]"></model-reference>
+      </template>
+    </paper-listbox>
+  </template>
+  <script>
+    Polymer({
+      is: 'model-references',
+      properties: {
+        label: String,
+        links: Array
+      }
+    });
+    this.links = [];
+    refreshLinks = function (a) {
+      if(a.detail&&a.detail.node){
+          mr.label = $(a.detail.node).attr("id");
+      }
+      mr.links = [];
+      if(window.links&&window.links[mr.label])
+        {
+          mr.links = mr.links.concat(window.links[mr.label]);
+        }
+      };
+    document.addEventListener('NodeSelected', refreshLinks, false);
+    document.addEventListener('LinkAdded', refreshLinks, false);
+  </script>
+</dom-module>
+<!-- end: custom elements -->
