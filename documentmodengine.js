@@ -21,7 +21,9 @@ documentmodengine = {
 	viewsdata : undefined,
 	diagrams	: undefined,
 
-	nodeselection : [],
+	nodeselection : function(){
+		return d3.selectAll("g.node[selected=true]").data();
+	},
 
 	usersettings: {},
 
@@ -96,8 +98,19 @@ documentmodengine = {
 addnewnode:function(type,viewid){
 	var newnode = configuration.nodes[type].new();
 	var view = documentmodengine.viewsdata[viewid];
-	configuration.adder(window.xml,view,newnode);
+	configuration.nodeadder(window.xml,view,newnode);
 	view.nodes.push(newnode);
+	var updatedsvg  = documentmodengine.updateLoadedView(viewid,documentmodengine.usersettings.lang);
+},
+addnewedge:function(type,viewid){
+	var newedge = configuration.edges[type].new();
+	var view = documentmodengine.viewsdata[viewid];
+	configuration.edgeadder(window.xml,view,newedge);
+	view.edges.push(newedge);
+	var selected = documentmodengine.nodeselection();
+	for(var i=0;i<selected.length;i++){
+		selected[i].updates.push(newedge.id);
+	}
 	var updatedsvg  = documentmodengine.updateLoadedView(viewid,documentmodengine.usersettings.lang);
 },
 
@@ -114,37 +127,6 @@ addnewnode:function(type,viewid){
 					documentmodengine.releaseModel();
 
 					var views = configuration.view_extraction(xml);
-
-					configuration.edge_extraction(views,xml).each(
-							function(i,e){
-								var relref = $(e).attr("relationshipref");
-								//references to nodes
-								var srcref_nd = $(e).attr("source");
-								var tarref_nd = $(e).attr("target");
-								if(relref){
-									var relationship_ref = $(xml).children().children("relationships").children('relationship[identifier="'+relref+'"]');
-									var srcref_el = $(relationship_ref).attr("source");
-									var tarref_el = $(relationship_ref).attr("target");
-									var sourceref_element = $(xml).children().children("elements").children('element[identifier="'+srcref_el+'"]');
-									var targetref_element = $(xml).children().children("elements").children('element[identifier="'+tarref_el+'"]');
-									$(relationship_ref).append("<source/>");
-									$(relationship_ref).children("source").append(sourceref_element.clone());
-									$(relationship_ref).append("<target/>");
-									$(relationship_ref).children("target").append(targetref_element.clone());
-									$(e).append(relationship_ref.clone());
-								}
-								if(srcref_nd){
-									var sourceref_node = $(views).find('node[identifier="'+srcref_nd+'"]');
-									$(e).append("<source/>");
-								}
-								if(tarref_nd){
-									var targetref_node = $(views).find('node[identifier="'+tarref_nd+'"]');
-									$(e).append("<target/>");
-								}
-							}
-					);
-					//preparation done;
-
 					//create tabs;
 					var view_ids = [];
 					for(var i = 0; i < views.children().size();i++){
@@ -498,6 +480,7 @@ addnewnode:function(type,viewid){
 
 		if(documentmodengine.usersettings.viewonly != true){
 			g.on('mousedown',function(d){
+				d3.selectAll("g.node[selected=true]").attr("selected","false");
 				d3.select(this).attr('selected',true);
 				var found = false;
 				var x = d3.event.offsetX;

@@ -142,7 +142,7 @@
       </paper-submenu>
     <paper-submenu label="Nodes">
       <paper-item class="menu-trigger">Nodes</paper-item>
-      <paper-menu class="menu-content sublist">
+      <paper-menu class="menu-content sublist" selected="{selectednode}">
         <template is="dom-repeat" items="[[nodes]]">
           <paper-item id="[[item.name]]" on-click="nodeselected">[[item.name]]</paper-item>
         </template>
@@ -150,7 +150,7 @@
     </paper-submenu>
     <paper-submenu label="Connections">
       <paper-item class="menu-trigger">Connections</paper-item>
-      <paper-menu class="menu-content sublist">
+      <paper-menu class="menu-content sublist" selected="{selectededge}">
           <template is="dom-repeat" items="[[edges]]">
             <paper-item id="[[item.name]]" on-click="edgeselected">[[item.name]]</paper-item>
           </template>
@@ -164,17 +164,22 @@
       properties: {
         nodes:Array,
         edges:Array,
-        views:Array
+        views:Array,
+        selectededge:Number,
+        selectednode:Number
       },
       nodeselected:function(e){
         var viewid      = menu.$.menuTabs.selectedItem.id.substr(3);
         documentmodengine.addnewnode(e.target.id,viewid);
+        this.selectednode = -1;
       },
       edgeselected:function(e){
-
+        var viewid      = menu.$.menuTabs.selectedItem.id.substr(3);
+        documentmodengine.addnewedge(e.target.id,viewid);
+        this.selectededge = -1;
       },
       changeedges:function(e){
-        //TODO: selected edges that can be inserted based on selection.
+        this.edges = [];
         if(e.detail.node.size() == 2){
           var nodetype_first = configuration.nodetype(e.detail.nodedata[0]);
           var nodetype_second = configuration.nodetype(e.detail.nodedata[1]);
@@ -755,26 +760,28 @@
             this.addinfo = $(a.detail.nodedata[0].element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
         }
         this.attributes = [];
-        var data = a.detail.nodedata[0];
-        var nodetype = configuration.nodetype(data);
-        nodetype = configuration.nodes[nodetype];
-        if(nodetype.attributes){
-          for (var key in nodetype.attributes) {
-            if (nodetype.attributes.hasOwnProperty(key)) {
-              var attr = {};
-              attr.object = data;
-              attr.attributename = key;
-              attr.disabled = false;
-              this.attributes.push(attr);
+        if(a.detail){
+          var data = a.detail.nodedata[0];
+          var nodetype = configuration.nodetype(data);
+          nodetype = configuration.nodes[nodetype];
+          if(nodetype.attributes){
+            for (var key in nodetype.attributes) {
+              if (nodetype.attributes.hasOwnProperty(key)) {
+                var attr = {};
+                attr.object = data;
+                attr.attributename = key;
+                attr.disabled = false;
+                this.attributes.push(attr);
+              }
             }
           }
-        }
-        this.attributes = this.attributes.concat([]);
+          this.attributes = this.attributes.concat([]);
 
-        mr.links = [];
-        if(window.links&&window.links[mr.label])
-          {
-            mr.links = mr.links.concat(window.links[mr.label]);
+          mr.links = [];
+          if(window.links&&window.links[mr.label])
+            {
+              mr.links = mr.links.concat(window.links[mr.label]);
+            }
           }
         }
     });
