@@ -4,8 +4,6 @@
 //This software was created with the help of the jquery and d3js library.
 //See https://d3js.org/ and https://jquery.com/ for more info.
 
-//TODO: create new node
-//TODO: create new relation
 //TODO: move by limits of nodes
 
 documentmodengine = {
@@ -16,12 +14,14 @@ documentmodengine = {
 	status	: undefined,
 	file		: undefined,
 	url			:	undefined,
-
+	mousedown : 0,
 
 	xml				: undefined,
 	views			: undefined,
 	viewsdata : undefined,
 	diagrams	: undefined,
+
+	nodeselection : [],
 
 	usersettings: {},
 
@@ -247,7 +247,10 @@ addnewnode:function(type,viewid){
 			g.on('mousedown',function(d){
 				if(!d3.event.altKey){
 					d3.selectAll(".nodeselector").remove();
+					d3.selectAll("g.node[selected=true]").attr("selected","false");
 				}
+
+
 				d3.select(this).attr('selected',true);
 				d3.select(this).attr('selected_x',d3.event.x-$(d3.select(this)[0]).attr("x"));
 				d3.select(this).attr('selected_y',d3.event.y-$(d3.select(this)[0]).attr("y"));
@@ -270,10 +273,13 @@ addnewnode:function(type,viewid){
 					.classed("nodeselector",true)
 					.attr("id","nodeselector"+":"+d3.select(this).attr("id"))
 					.attr("ref",d3.select(this).attr("id"));
+
+				var nodes = d3.selectAll("g.node[selected=true]");
+				var nodedata = nodes.data();
 				var ce = new CustomEvent("NodeSelected",{
 					detail: {
-						nodedata: d,
-						node: this
+						nodedata: nodedata,
+						node: nodes
 					}});
 				ce.detail = this;
 				document.dispatchEvent(ce);
@@ -787,9 +793,12 @@ addnewnode:function(type,viewid){
 		if(documentmodengine.usersettings.viewonly != true){
 			//interaction
 			svg
-			.on('mouseup',
-					function(d){
+			.on('mousedown',function(d){
+				documentmodengine.mousedown = 1;
+			})
+			.on('mouseup',function(d){
 
+				documentmodengine.mousedown = 0;
 				svg
 				.selectAll("g.connection[selected=true]").selectAll("circle[selected=true]").each(function(d){
 					// calculate new position
@@ -804,10 +813,11 @@ addnewnode:function(type,viewid){
 				.selectAll("g.connection[selected=true]").each(function(d){
 					d3.select(this).attr("selected", false);
 				});
-				if(!d3.event.altKey||svg.selectAll("g.node[selected=true]").size()<=1){
+
+				if(!d3.event.altKey&&svg.selectAll("g.node[selected=true]").size()==1){
 
 						svg.selectAll("g.node[selected=true]").each(function(d){
-							d3.select(this).attr("selected", false);
+							//d3.select(this).attr("selected", false);
 							documentmodengine.functions.updateNode(d3.select(this));
 						});
 
@@ -825,47 +835,50 @@ addnewnode:function(type,viewid){
 				if(svg
 				.selectAll("g.node[selected=true]").size()>1) return;
 
-				svg
-				.selectAll("g.node[selected=true]").each(function(d){
-					/* calculate new position */
-					var sel_x = parseInt(d3.select(this).attr('selected_x'));
-					var sel_y = parseInt(d3.select(this).attr('selected_y'));
-					var x = d3.event.x-sel_x;
-					var y = d3.event.y-sel_y;
+				if(documentmodengine.mousedown > 0){
 
-					var position = configuration.nodeposition(d3.select(this).data()[0]);
-					var orig_x = position.x;
-					var orig_y = position.y;
+					svg
+					.selectAll("g.node[selected=true]").each(function(d){
+						/* calculate new position */
+						var sel_x = parseInt(d3.select(this).attr('selected_x'));
+						var sel_y = parseInt(d3.select(this).attr('selected_y'));
+						var x = d3.event.x-sel_x;
+						var y = d3.event.y-sel_y;
 
-					var nodes = $(d3.select(this).data()).children("node");
+						var position = configuration.nodeposition(d3.select(this).data()[0]);
+						var orig_x = position.x;
+						var orig_y = position.y;
 
-					documentmodengine.functions.updateNodePosition(d3.select(this),x,y,orig_x,orig_y);
+						var nodes = $(d3.select(this).data()).children("node");
 
-					d3.select(".nodeselector").attr("x",x-configuration.edgedistance/2)
-					d3.select(".nodeselector").attr("y",y-configuration.edgedistance/2)
+						documentmodengine.functions.updateNodePosition(d3.select(this),x,y,orig_x,orig_y);
 
-				});
+						d3.select(".nodeselector").attr("x",x-configuration.edgedistance/2)
+						d3.select(".nodeselector").attr("y",y-configuration.edgedistance/2)
 
-				var hovercircle = svg.select(".hover.edge[selected=true]");
-				if(hovercircle.size()>0){
-					hovercircle.attr("moved",true);
-					var sel_x = hovercircle.attr('selected_x');
-					var sel_y = hovercircle.attr('selected_y');
-					var x = d3.event.offsetX-sel_x;
-					var y = d3.event.offsetY-sel_y;
-					var classstring = hovercircle.attr("id");
-					if(classstring){
-						var bendpointindex = classstring.split(":")[2];
-						if(bendpointindex){
-							var edge = d3.select("#"+classstring.split(":")[1]);
-							configuration.updateEdgePosition(edge.data()[0],bendpointindex,x,y);
-							hovercircle.attr("cx",x).attr("cy",y);
+					});
+
+					var hovercircle = svg.select(".hover.edge[selected=true]");
+					if(hovercircle.size()>0){
+						hovercircle.attr("moved",true);
+						var sel_x = hovercircle.attr('selected_x');
+						var sel_y = hovercircle.attr('selected_y');
+						var x = d3.event.offsetX-sel_x;
+						var y = d3.event.offsetY-sel_y;
+						var classstring = hovercircle.attr("id");
+						if(classstring){
+							var bendpointindex = classstring.split(":")[2];
+							if(bendpointindex){
+								var edge = d3.select("#"+classstring.split(":")[1]);
+								configuration.updateEdgePosition(edge.data()[0],bendpointindex,x,y);
+								hovercircle.attr("cx",x).attr("cy",y);
+							}
 						}
 					}
 				}
 			});
-		}
 
+		}
 		documentmodengine.drawNodes(svg,view_xml.nodes); //start Drawing Nodes
 		documentmodengine.drawEdges(svg,view_xml.edges); //start Drawing Edges
 
