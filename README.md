@@ -25,7 +25,7 @@ However, for a fully functional modeler certain elements are missing.
 
 
 ## TODOS
-1. configure connections of archimate
+1. configure connections of archimate (at moment only RealisationRelationship)
 2. make edit of attribtues by dialogue
 3. realize: stakeholder, driver, assessment, requirement, constraint, Work Package, Deliverable, Plateau, Gap
 4. handle relations by layers (node is on top or in other node)
