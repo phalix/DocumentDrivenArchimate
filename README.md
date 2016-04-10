@@ -25,7 +25,7 @@ However, for a fully functional modeler certain elements are missing.
 
 
 ## TODOS
-1. make edit of attribtues by dialogue
-2. realize: stakeholder, driver, assessment, requirement, constraint, Work Package, Deliverable, Plateau, Gap
-3. make it possible to add egdes based on selection
+1. configure connections of archimate
+2. make edit of attribtues by dialogue
+3. realize: stakeholder, driver, assessment, requirement, constraint, Work Package, Deliverable, Plateau, Gap
 4. handle relations by layers (node is on top or in other node)
