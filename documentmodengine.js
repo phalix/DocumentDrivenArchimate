@@ -177,13 +177,13 @@ deleteselection:function(viewid){
 						for(var j = 0;j< edges_ofview.size();j++){
 							var edgedata = {};
 							if(configuration.edge_datacollector){
-								edgedata = configuration.edge_datacollector(edges_ofview[j],xml);
+								edgedata = configuration.edge_datacollector(i,edges_ofview[j],xml);
 							}
 							edgedata.self = edges_ofview[j];
 							viewdata.edges.push(edgedata);
 						}
-
-						var result = documentmodengine.buildView_internal(viewdata,lang);
+						var viewid = i;
+						var result = documentmodengine.buildView_internal(i,viewdata,lang);
 						diagrams.push(result[0][0]);
 
 						var ce = new CustomEvent("DoneWithView",{
@@ -583,7 +583,14 @@ deleteselection:function(viewid){
 					}).attr("stroke-dasharray",function(d){
 						return documentmodengine.functions.getValueFromData(typeconf["stroke-dasharray"],d);
 					}).attr("style",function(d){
-						return documentmodengine.functions.getValueFromData(typeconf.style,d);
+
+						var result = documentmodengine.functions.getValueFromData(typeconf.style,d);
+						if(result){
+							//TODO: maybe in the future there is a better solution, but this is to differentiate the defs between the different views.
+							// Views are all in different svgs including the same defs -> problem.
+							result = result.replace('#','#'+d.viewid);
+						}
+						return result;
 					})
 					.style("stroke",function(d){
 						return documentmodengine.functions.getValueFromData(typeconf.stroke,d);
@@ -592,7 +599,13 @@ deleteselection:function(viewid){
 						return documentmodengine.functions.getValueFromData(typeconf["stroke-width"],d);
 					})
 					.attr("marker-end",function(d){
-						return documentmodengine.functions.getValueFromData(typeconf["marker-end"],d);
+						var result = documentmodengine.functions.getValueFromData(typeconf["marker-end"],d);
+						if(result){
+							//TODO: maybe in the future there is a better solution, but this is to differentiate the defs between the different views.
+							// Views are all in different svgs including the same defs -> problem.
+							result = result.replace('#','#'+d.viewid);
+						}
+						return result;
 					})
 					.style("fill","none");
 
@@ -748,7 +761,7 @@ deleteselection:function(viewid){
 		g.exit().remove();
 
 	},
-	buildView_internal: function(view_xml,lang){
+	buildView_internal: function(viewid,view_xml,lang){
 
 		//SETUP CANVAS
 		//view_node.selectAll("svg").remove();
@@ -760,7 +773,7 @@ deleteselection:function(viewid){
 			for(var i = 0;i<configuration.definitions.length;i++){
 				var definition = configuration.definitions[i];
 				var currentnode = defs.append(definition.type);
-				currentnode.attr("id",definition.id);
+				currentnode.attr("id",viewid+definition.id);
 				currentnode.attr("refX",definition.refX);
 				currentnode.attr("refY",definition.refY);
 				currentnode.attr("orient",definition.orient);
@@ -944,7 +957,7 @@ deleteselection:function(viewid){
 					}
 				}
 			},
-			updateEdge:function(edge){
+			updateEdge:function(viewid,edge){
 				drawEdge(edge);
 			},
 			getDistanceBetweenTwoPoints: function(x1,x2){
