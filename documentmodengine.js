@@ -113,6 +113,15 @@ addnewedge:function(type,viewid){
 	}
 	var updatedsvg  = documentmodengine.updateLoadedView(viewid,documentmodengine.usersettings.lang);
 },
+deleteselection:function(viewid){
+	var view = documentmodengine.viewsdata[viewid];
+	var selected = documentmodengine.nodeselection();
+	for(var element in selected){
+		configuration.deleteNode(window.xml,view,selected[element]);
+	}
+	//TODO: Refresh on Delete
+	documentmodengine.updateLoadedView(viewid,documentmodengine.usersettings.lang);
+},
 
  buildModel_internal: function(lang){
 				var ce = new CustomEvent("StartingProcessingXML",{
@@ -581,6 +590,9 @@ addnewedge:function(type,viewid){
 					})
 					.attr("stroke-width",function(d){
 						return documentmodengine.functions.getValueFromData(typeconf["stroke-width"],d);
+					})
+					.attr("marker-end",function(d){
+						return documentmodengine.functions.getValueFromData(typeconf["marker-end"],d);
 					})
 					.style("fill","none");
 

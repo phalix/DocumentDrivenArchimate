@@ -156,6 +156,7 @@
           </template>
         </paper-menu>
       </paper-submenu>
+      <paper-item id="dropbutton" on-click="dropselection">Drop Selection</paper-item>
     </paper-menu>
   </template>
   <script>
@@ -176,6 +177,11 @@
       edgeselected:function(e){
         var viewid      = menu.$.menuTabs.selectedItem.id.substr(3);
         documentmodengine.addnewedge(e.target.id,viewid);
+        this.selectededge = -1;
+      },
+      dropselection:function(e){
+        var viewid      = menu.$.menuTabs.selectedItem.id.substr(3);
+        documentmodengine.deleteselection(viewid);
         this.selectededge = -1;
       },
       changeedges:function(e){
