@@ -22,7 +22,16 @@ documentmodengine = {
 	diagrams	: undefined,
 
 	nodeselection : function(){
-		return d3.selectAll("g.node[selected=true]").data();
+		var result = d3.selectAll("g.node[selected=true]")[0];
+		result = result.sort(function(a,b){
+			var d3a = d3.select(a);
+			var d3b = d3.select(b);
+			return d3a.attr('whenselected') > d3b.attr('whenselected');
+		});
+		for(var i = 0;i < result.length;i++){
+			result[i] = d3.select(result[i]).data()[0];
+		};
+		return result;
 	},
 
 	usersettings: {},
@@ -104,6 +113,7 @@ addnewnode:function(type,viewid){
 },
 addnewedge:function(type,viewid){
 	var newedge = configuration.edges[type].new();
+	newedge.viewid = viewid;
 	var view = documentmodengine.viewsdata[viewid];
 	configuration.edgeadder(window.xml,view,newedge);
 	view.edges.push(newedge);
@@ -241,16 +251,18 @@ deleteselection:function(viewid){
 					d3.selectAll("g.node[selected=true]").attr("selected","false");
 				}
 
+				var d3selection = d3.select(this);
+				d3selection.attr('selected',true);
+				d3selection.attr('whenselected',Date.now());
 
-				d3.select(this).attr('selected',true);
-				d3.select(this).attr('selected_x',d3.event.x-$(d3.select(this)[0]).attr("x"));
-				d3.select(this).attr('selected_y',d3.event.y-$(d3.select(this)[0]).attr("y"));
+				d3selection.attr('selected_x',d3.event.x-$(d3.select(this)[0]).attr("x"));
+				d3selection.attr('selected_y',d3.event.y-$(d3.select(this)[0]).attr("y"));
 
-				var bbox = d3.select(this)[0][0].getBBox();
+				var bbox = d3selection[0][0].getBBox();
 				var x = bbox.x;
 				var y = bbox.y;
-				var x = d3.transform(d3.select(this).attr("transform")).translate[0];
-				var y = d3.transform(d3.select(this).attr("transform")).translate[1];
+				var x = d3.transform(d3selection.attr("transform")).translate[0];
+				var y = d3.transform(d3selection.attr("transform")).translate[1];
 
 				d3.select(this.parentElement)
 					.append("rect")
@@ -490,7 +502,9 @@ deleteselection:function(viewid){
 		if(documentmodengine.usersettings.viewonly != true){
 			g.on('mousedown',function(d){
 				d3.selectAll("g.node[selected=true]").attr("selected","false");
-				d3.select(this).attr('selected',true);
+				var d3selection = d3.select(this);
+				d3selection.attr('selected',true);
+				d3selection.attr('whenselected',Date.now());
 				var found = false;
 				var x = d3.event.offsetX;
 				var y = d3.event.offsetY;
