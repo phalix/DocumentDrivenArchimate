@@ -430,6 +430,17 @@ this.configuration = {
         new:function(){
           return configuration.createNewNode("Principle","My Principle");
         },
+        attributes:{
+          name:{
+            get:function(data){
+              return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
+            },
+            set:function(data,value){
+              return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text(value);
+            },
+            type:"String"
+          }
+        },
         look:
         [{
           type:"path",
@@ -519,6 +530,17 @@ this.configuration = {
           new:function(){
             return configuration.createNewNode("Requirement","My Requirement");
           },
+          attributes:{
+            name:{
+              get:function(data){
+                return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
+              },
+              set:function(data,value){
+                return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text(value);
+              },
+              type:"String"
+            }
+          },
           look:
           [{
             type:"path",
@@ -597,6 +619,17 @@ this.configuration = {
           }]},Goal:{
             new:function(){
               return configuration.createNewNode("Goal","My Goal");
+            },
+            attributes:{
+              name:{
+                get:function(data){
+                  return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
+                },
+                set:function(data,value){
+                  return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text(value);
+                },
+                type:"String"
+              }
             },
             look:
             [{
@@ -716,6 +749,17 @@ this.configuration = {
       new:function(){
         return configuration.createNewNode("BusinessObject","My Business Object");
       },
+      attributes:{
+        name:{
+          get:function(data){
+            return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
+          },
+          set:function(data,value){
+            return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text(value);
+          },
+          type:"String"
+        }
+      },
       look:
       [{
         type:"polygon",
@@ -779,6 +823,17 @@ this.configuration = {
     }},BusinessActor:{
       new:function(){
         return configuration.createNewNode("BusinessActor","My Business Actor");
+      },
+      attributes:{
+        name:{
+          get:function(data){
+            return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
+          },
+          set:function(data,value){
+            return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text(value);
+          },
+          type:"String"
+        }
       },
       look:
       [{
@@ -893,6 +948,17 @@ this.configuration = {
       new:function(){
         return configuration.createNewNode("BusinessInterface","My Business Interface");
       },
+      attributes:{
+        name:{
+          get:function(data){
+            return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
+          },
+          set:function(data,value){
+            return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text(value);
+          },
+          type:"String"
+        }
+      },
       look:
       [{
         type:"rect",
@@ -991,9 +1057,6 @@ this.configuration = {
           type:"String"
         }
       },
-      new:function(){
-        return configuration.createNewNode("InfrastructureInterface","My Infrastructure Interface");
-      },
       look:
       [{
         type:"rect",
@@ -1080,6 +1143,17 @@ this.configuration = {
     },ApplicationInterface:{
       new:function(){
         return configuration.createNewNode("ApplicationInterface","My Application Interface");
+      },
+      attributes:{
+        name:{
+          get:function(data){
+            return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
+          },
+          set:function(data,value){
+            return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text(value);
+          },
+          type:"String"
+        }
       },
       look:
       [{
@@ -1168,6 +1242,17 @@ this.configuration = {
     BusinessRole:{
       new:function(){
         return configuration.createNewNode("BusinessRole","My Business Role");
+      },
+      attributes:{
+        name:{
+          get:function(data){
+            return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
+          },
+          set:function(data,value){
+            return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text(value);
+          },
+          type:"String"
+        }
       },
       look:
       [{
@@ -1273,6 +1358,17 @@ this.configuration = {
     },BusinessInteraction:{
       new:function(){
         return configuration.createNewNode("BusinessInteraction","My Business Interaction");
+      },
+      attributes:{
+        name:{
+          get:function(data){
+            return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
+          },
+          set:function(data,value){
+            return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text(value);
+          },
+          type:"String"
+        }
       },
       look:
       [{
@@ -1382,6 +1478,17 @@ this.configuration = {
       new:function(){
         return configuration.createNewNode("BusinessCollaboration","My Business Collaboration");
       },
+      attributes:{
+        name:{
+          get:function(data){
+            return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
+          },
+          set:function(data,value){
+            return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text(value);
+          },
+          type:"String"
+        }
+      },
       look:
       [{
         type:"polygon",
@@ -1468,6 +1575,17 @@ this.configuration = {
       new:function(){
         return configuration.createNewNode("ApplicationCollaboration","My Application Collaboration");
       },
+      attributes:{
+        name:{
+          get:function(data){
+            return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
+          },
+          set:function(data,value){
+            return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text(value);
+          },
+          type:"String"
+        }
+      },
       look:
       [{
         type:"polygon",
@@ -1553,6 +1671,17 @@ this.configuration = {
     },ApplicationInteraction:{
       new:function(){
         return configuration.createNewNode("ApplicationInteraction","My Application Interaction");
+      },
+      attributes:{
+        name:{
+          get:function(data){
+            return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
+          },
+          set:function(data,value){
+            return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text(value);
+          },
+          type:"String"
+        }
       },
       look:
       [{
@@ -1659,6 +1788,17 @@ this.configuration = {
       new:function(){
         return configuration.createNewNode("BusinessService","My Business Service");
       },
+      attributes:{
+        name:{
+          get:function(data){
+            return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
+          },
+          set:function(data,value){
+            return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text(value);
+          },
+          type:"String"
+        }
+      },
       look:
       [{
         type:"rect",
@@ -1738,6 +1878,17 @@ this.configuration = {
       new:function(){
         return configuration.createNewNode("InfrastructureService","My Infrastructure Service");
       },
+      attributes:{
+        name:{
+          get:function(data){
+            return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
+          },
+          set:function(data,value){
+            return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text(value);
+          },
+          type:"String"
+        }
+      },
       look:
       [{
         type:"rect",
@@ -1816,6 +1967,17 @@ this.configuration = {
     },ApplicationService:{
       new:function(){
         return configuration.createNewNode("ApplicationService","My Application Service");
+      },
+      attributes:{
+        name:{
+          get:function(data){
+            return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
+          },
+          set:function(data,value){
+            return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text(value);
+          },
+          type:"String"
+        }
       },
       look:
       [{
@@ -1897,6 +2059,17 @@ this.configuration = {
       new:function(){
         return configuration.createNewNode("Value","My Value");
       },
+      attributes:{
+        name:{
+          get:function(data){
+            return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
+          },
+          set:function(data,value){
+            return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text(value);
+          },
+          type:"String"
+        }
+      },
       look:[{
         type:"ellipse",
         cx:function(data){return $(data.self).attr("w")/2},
@@ -1966,6 +2139,17 @@ this.configuration = {
       new:function(){
         return configuration.createNewNode("Contract","My Contract");
       },
+      attributes:{
+        name:{
+          get:function(data){
+            return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
+          },
+          set:function(data,value){
+            return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text(value);
+          },
+          type:"String"
+        }
+      },
       look:
       [{
         type:"polygon",
@@ -2026,6 +2210,17 @@ this.configuration = {
     }},DataObject:{
       new:function(){
         return configuration.createNewNode("DataObject","My Data Object");
+      },
+      attributes:{
+        name:{
+          get:function(data){
+            return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
+          },
+          set:function(data,value){
+            return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text(value);
+          },
+          type:"String"
+        }
       },
       look:
       [{
@@ -2091,6 +2286,17 @@ this.configuration = {
     }},Artifact:{
       new:function(){
         return configuration.createNewNode("Artifact","My Artifact");
+      },
+      attributes:{
+        name:{
+          get:function(data){
+            return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
+          },
+          set:function(data,value){
+            return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text(value);
+          },
+          type:"String"
+        }
       },
       look:
       [{
@@ -2171,6 +2377,17 @@ this.configuration = {
       new:function(){
         return configuration.createNewNode("ApplicationFunction","My Application Function");
       },
+      attributes:{
+        name:{
+          get:function(data){
+            return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
+          },
+          set:function(data,value){
+            return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text(value);
+          },
+          type:"String"
+        }
+      },
       look:
       [{
         type:"polygon",
@@ -2250,6 +2467,17 @@ this.configuration = {
       new:function(){
         return configuration.createNewNode("InfrastructureFunction","My Infrastructure Function");
       },
+      attributes:{
+        name:{
+          get:function(data){
+            return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
+          },
+          set:function(data,value){
+            return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text(value);
+          },
+          type:"String"
+        }
+      },
       look:
       [{
         type:"polygon",
@@ -2328,6 +2556,17 @@ this.configuration = {
     }},ApplicationComponent:{
       new:function(){
         return configuration.createNewNode("ApplicationComponent","My Application Component");
+      },
+      attributes:{
+        name:{
+          get:function(data){
+            return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
+          },
+          set:function(data,value){
+            return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text(value);
+          },
+          type:"String"
+        }
       },
       look:
       [{
@@ -2420,6 +2659,17 @@ this.configuration = {
     }},Node:{
       new:function(){
         return configuration.createNewNode("Node","My Node");
+      },
+      attributes:{
+        name:{
+          get:function(data){
+            return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
+          },
+          set:function(data,value){
+            return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text(value);
+          },
+          type:"String"
+        }
       },
       look:
       [{
@@ -2517,6 +2767,17 @@ this.configuration = {
       new:function(){
         return configuration.createNewNode("Device","My Device");
       },
+      attributes:{
+        name:{
+          get:function(data){
+            return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
+          },
+          set:function(data,value){
+            return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text(value);
+          },
+          type:"String"
+        }
+      },
       look:
       [{
         type:"polygon",
@@ -2597,6 +2858,17 @@ this.configuration = {
     }},SystemSoftware:{
       new:function(){
         return configuration.createNewNode("SystemSoftware","My System Software");
+      },
+      attributes:{
+        name:{
+          get:function(data){
+            return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
+          },
+          set:function(data,value){
+            return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text(value);
+          },
+          type:"String"
+        }
       },
       look:
       [{
@@ -2683,6 +2955,17 @@ this.configuration = {
     }},Network:{
       new:function(){
         return configuration.createNewNode("Network","My Network");
+      },
+      attributes:{
+        name:{
+          get:function(data){
+            return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
+          },
+          set:function(data,value){
+            return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text(value);
+          },
+          type:"String"
+        }
       },
       look:
       [{
@@ -2793,6 +3076,17 @@ this.configuration = {
       new:function(){
         return configuration.createNewNode("BusinessFunction","My Business Function");
       },
+      attributes:{
+        name:{
+          get:function(data){
+            return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
+          },
+          set:function(data,value){
+            return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text(value);
+          },
+          type:"String"
+        }
+      },
       look:
       [{
         type:"rect",
@@ -2875,6 +3169,17 @@ this.configuration = {
     }},BusinessProcess:{
       new:function(){
         return configuration.createNewNode("BusinessProcess","My Business Process");
+      },
+      attributes:{
+        name:{
+          get:function(data){
+            return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
+          },
+          set:function(data,value){
+            return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text(value);
+          },
+          type:"String"
+        }
       },
       look:
       [{
@@ -2959,6 +3264,17 @@ this.configuration = {
       new:function(){
         return configuration.createNewNode("BusinessEvent","My Business Event");
       },
+      attributes:{
+        name:{
+          get:function(data){
+            return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
+          },
+          set:function(data,value){
+            return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text(value);
+          },
+          type:"String"
+        }
+      },
       look:
       [{
         type:"rect",
@@ -3038,6 +3354,17 @@ this.configuration = {
       new:function(){
         return configuration.createNewNode("Representation","My Representation");
       },
+      attributes:{
+        name:{
+          get:function(data){
+            return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
+          },
+          set:function(data,value){
+            return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text(value);
+          },
+          type:"String"
+        }
+      },
       look:
       [{
         type:"path",
@@ -3105,12 +3432,12 @@ this.configuration = {
     AggregationRelationship:{
       new:function(){
         return configuration.createNewEdge("AggregationRelationship","MyAggregationRelationship")
-
       },
       relates:[
         {end:"Contract", begin:"Product"},
         {end:"BusinessService", begin:"Product"},
         {end:"BusinessActor", begin:"BusinessCollaboration"},
+        {end:"BusinessActor", begin:"BusinessActor"},
         {end:"ApplicationComponent", begin:"ApplicationCollaboration"}
       ],
       look:[

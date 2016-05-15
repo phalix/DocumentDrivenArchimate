@@ -562,8 +562,6 @@ deleteselection:function(viewid){
 					}else{
 						console.log("Configuration does not support bendpoints of edges");
 					}
-
-					//$(d.self).append("<bendpoint x='"+x+"' y='"+y+"' ></bendpoint>");
 					documentmodengine.drawEdge(d3.select(this));
 				}
 			});
