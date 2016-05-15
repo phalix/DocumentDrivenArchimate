@@ -23,15 +23,17 @@ documentmodengine = {
 
 	nodeselection : function(){
 		var result = d3.selectAll("g.node[selected=true]")[0];
+		var data = [];
 		result = result.sort(function(a,b){
 			var d3a = d3.select(a);
 			var d3b = d3.select(b);
 			return d3a.attr('whenselected') > d3b.attr('whenselected');
 		});
 		for(var i = 0;i < result.length;i++){
-			result[i] = d3.select(result[i]).data()[0];
+			data[i] = d3.select(result[i]).data()[0];
 		};
-		return result;
+		return {nodes:result, data:data};
+		//return result;
 	},
 
 	usersettings: {},
@@ -106,26 +108,32 @@ documentmodengine = {
 
 addnewnode:function(type,viewid){
 	var newnode = configuration.nodes[type].new();
-	var view = documentmodengine.viewsdata[viewid];
-	configuration.nodeadder(window.xml,view,newnode);
-	view.nodes.push(newnode);
-	var updatedsvg  = documentmodengine.updateLoadedView(viewid,documentmodengine.usersettings.lang);
+	if(newnode){
+		var view = documentmodengine.viewsdata[viewid];
+		configuration.nodeadder(window.xml,view,newnode);
+		view.nodes.push(newnode);
+		var updatedsvg  = documentmodengine.updateLoadedView(viewid,documentmodengine.usersettings.lang);
+	}else{
+		//TODO: Error Message
+	}
 },
 addnewedge:function(type,viewid){
 	var newedge = configuration.edges[type].new();
-	newedge.viewid = viewid;
-	var view = documentmodengine.viewsdata[viewid];
-	configuration.edgeadder(window.xml,view,newedge);
-	view.edges.push(newedge);
-	var selected = documentmodengine.nodeselection();
-	for(var i=0;i<selected.length;i++){
-		selected[i].updates.push(newedge.id);
+	if(newedge){
+		newedge.viewid = viewid;
+		var view = documentmodengine.viewsdata[viewid];
+		configuration.edgeadder(window.xml,view,newedge);
+		view.edges.push(newedge);
+		var selected = documentmodengine.nodeselection().data;
+		for(var i=0;i<selected.length;i++){
+			selected[i].updates.push(newedge.id);
+		}
+		var updatedsvg  = documentmodengine.updateLoadedView(viewid,documentmodengine.usersettings.lang);
 	}
-	var updatedsvg  = documentmodengine.updateLoadedView(viewid,documentmodengine.usersettings.lang);
 },
 deleteselection:function(viewid){
 	var view = documentmodengine.viewsdata[viewid];
-	var selected = documentmodengine.nodeselection();
+	var selected = documentmodengine.nodeselection().data;
 	for(var element in selected){
 		configuration.deleteNode(window.xml,view,selected[element]);
 	}
@@ -145,6 +153,9 @@ deleteselection:function(viewid){
 					documentmodengine.status = 1;
 					documentmodengine.releaseModel();
 
+					documentmodengine.node = d3.select(document.createElement("div"));
+					documentmodengine.svg = documentmodengine.node.append("svg")[0][0];
+
 					var views = configuration.view_extraction(xml);
 					//create tabs;
 					var view_ids = [];
@@ -152,17 +163,55 @@ deleteselection:function(viewid){
 						view_ids.push(i);
 					}
 
-					d3.select("body")
+
+
+
+
+					/*d3.select("body")
 					.select("iron-pages.tabcontents")
 					.selectAll("div")
 					.data(view_ids).enter()
 					.append("div")
 					.attr("id",function(d){
 						return "div"+d;
-					});
+					});*/
 
 					var viewsdata = [];
 					var diagrams = [];
+
+
+
+					//SETUP CANVAS
+					var defs = d3.select(documentmodengine.svg).append("defs");
+					//attach defs from configuration
+					if(configuration.definitions){
+						for(var i = 0;i<configuration.definitions.length;i++){
+							var definition = configuration.definitions[i];
+							var currentnode = defs.append(definition.type);
+							currentnode.attr("id",definition.id);
+							currentnode.attr("refX",definition.refX);
+							currentnode.attr("refY",definition.refY);
+							currentnode.attr("orient",definition.orient);
+							currentnode.attr("markerWidth",definition.markerWidth);
+							currentnode.attr("markerHeight",definition.markerHeight);
+
+							for(var j=0;j<definition.look.length;j++){
+								var currentelement = currentnode.append(definition.look[j].type);
+								currentelement.attr("id",definition.id+j);
+								if(definition.look[j].type=="circle"){
+									currentelement.attr("cx",definition.look[j].cx);
+									currentelement.attr("cy",definition.look[j].cy);
+									currentelement.attr("r",definition.look[j].r);
+									currentelement.attr("style",definition.look[j].style);
+								}else if(definition.look[j].type=="path"){
+									currentelement.attr("d",definition.look[j].d);
+									currentelement.attr("style",definition.look[j].style);
+								}
+							}
+						}
+					}else{
+						console.log("No definitons found.")
+					}
 
 					for(var i = 0; i < views.children().size();i++){
 						var view = views.children().eq(i);
@@ -193,7 +242,10 @@ deleteselection:function(viewid){
 							viewdata.edges.push(edgedata);
 						}
 						var viewid = i;
-						var result = documentmodengine.buildView_internal(i,viewdata,lang);
+
+
+						var result = documentmodengine.buildView_internal(d3.select(documentmodengine.svg),i,viewdata,lang);
+
 						diagrams.push(result[0][0]);
 
 						var ce = new CustomEvent("DoneWithView",{
@@ -222,15 +274,15 @@ deleteselection:function(viewid){
 	},
 	updateLoadedView: function(byid,lang){
 
-		var svg = d3.select(documentmodengine.diagrams[byid]);
+		//var svg = d3.select(documentmodengine.diagrams[byid]);
+		var svg = d3.select(documentmodengine.svg);
+		var viewg = svg.select("g.view[viewid='"+byid+"']");
 		var viewdata = documentmodengine.viewsdata[byid];
 		var nodes = viewdata.nodes;
 		var edges = viewdata.edges;
 
-		documentmodengine.drawNodes(svg,nodes);
-		documentmodengine.drawEdges(svg,edges);
-		//var view = documentmodengine.views.children("[identifier='"+byid+"']");
-		//return documentmodengine.buildView_internal(view,lang);
+		documentmodengine.drawNodes(viewg,nodes);
+		documentmodengine.drawEdges(viewg,edges);
 	},
 	drawNodes: function(svg,data){
 
@@ -277,12 +329,12 @@ deleteselection:function(viewid){
 					.attr("id","nodeselector"+":"+d3.select(this).attr("id"))
 					.attr("ref",d3.select(this).attr("id"));
 
-				var nodes = d3.selectAll("g.node[selected=true]");
-				var nodedata = nodes.data();
+				var nodes = documentmodengine.nodeselection();
+				var nodedata = nodes.data;
 				var ce = new CustomEvent("NodeSelected",{
 					detail: {
-						nodedata: nodedata,
-						node: nodes
+						nodedata: nodes.data,
+						node: nodes.nodes
 					}});
 				ce.detail = this;
 				document.dispatchEvent(ce);
@@ -602,7 +654,7 @@ deleteselection:function(viewid){
 						if(result){
 							//TODO: maybe in the future there is a better solution, but this is to differentiate the defs between the different views.
 							// Views are all in different svgs including the same defs -> problem.
-							result = result.replace('#','#'+d.viewid);
+							//result = result.replace('#','#'+d.viewid);
 						}
 						return result;
 					})
@@ -617,7 +669,7 @@ deleteselection:function(viewid){
 						if(result){
 							//TODO: maybe in the future there is a better solution, but this is to differentiate the defs between the different views.
 							// Views are all in different svgs including the same defs -> problem.
-							result = result.replace('#','#'+d.viewid);
+							//result = result.replace('#','#'+d.viewid);
 						}
 						return result;
 					})
@@ -775,43 +827,13 @@ deleteselection:function(viewid){
 		g.exit().remove();
 
 	},
-	buildView_internal: function(viewid,view_xml,lang){
+	buildView_internal: function(svg,viewid,view_xml,lang){
 
-		//SETUP CANVAS
-		//view_node.selectAll("svg").remove();
-		var node = d3.select(document.createElement("div"));
-		var svg = node.append("svg");
-		var defs = svg.append("defs");
-		//attach defs from configuration
-		if(configuration.definitions){
-			for(var i = 0;i<configuration.definitions.length;i++){
-				var definition = configuration.definitions[i];
-				var currentnode = defs.append(definition.type);
-				currentnode.attr("id",viewid+definition.id);
-				currentnode.attr("refX",definition.refX);
-				currentnode.attr("refY",definition.refY);
-				currentnode.attr("orient",definition.orient);
-				currentnode.attr("markerWidth",definition.markerWidth);
-				currentnode.attr("markerHeight",definition.markerHeight);
 
-				for(var j=0;j<definition.look.length;j++){
-					var currentelement = currentnode.append(definition.look[j].type);
-					currentelement.attr("id",definition.id+j);
-					if(definition.look[j].type=="circle"){
-						currentelement.attr("cx",definition.look[j].cx);
-						currentelement.attr("cy",definition.look[j].cy);
-						currentelement.attr("r",definition.look[j].r);
-						currentelement.attr("style",definition.look[j].style);
-					}else if(definition.look[j].type=="path"){
-						currentelement.attr("d",definition.look[j].d);
-						currentelement.attr("style",definition.look[j].style);
-					}
-				}
-			}
-		}else{
-			console.log("No definitons found.")
-		}
-
+		//attach view
+		var viewg = svg.append("g");
+		viewg.classed("view",true);
+		viewg.attr("viewid",viewid);
 		if(documentmodengine.usersettings.viewonly != true){
 			//interaction
 			svg
@@ -901,12 +923,10 @@ deleteselection:function(viewid){
 			});
 
 		}
-		documentmodengine.drawNodes(svg,view_xml.nodes); //start Drawing Nodes
-		documentmodengine.drawEdges(svg,view_xml.edges); //start Drawing Edges
+		documentmodengine.drawNodes(viewg,view_xml.nodes); //start Drawing Nodes
+		documentmodengine.drawEdges(viewg,view_xml.edges); //start Drawing Edges
 
-
-
-	return svg;
+		return viewg;
 	},
 
 	releaseModel: function(){

@@ -186,7 +186,7 @@
       },
       changeedges:function(e){
         this.edges = [];
-        if(e.detail.node.size() == 2){
+        if(e.detail.node.length == 2){
           var nodetype_first = configuration.nodetype(e.detail.nodedata[0]);
           var nodetype_second = configuration.nodetype(e.detail.nodedata[1]);
           for(key in configuration.edges){
@@ -195,8 +195,8 @@
 
               for(index in edge.relates){
                 var relations = edge.relates[index];
-                if((relations.begin == nodetype_first && relations.end == nodetype_second) ||
-                  (relations.begin == nodetype_second && relations.end == nodetype_first)){
+                if((relations.begin == nodetype_first && relations.end == nodetype_second) /*||
+                  (relations.begin == nodetype_second && relations.end == nodetype_first)*/){
                     //edge is valid, add to edges
                     var newelement = {};
                     newelement["name"] = key;
@@ -461,11 +461,12 @@
       </paper-tabs>
   </paper-toolbar>
 
-    <iron-pages id="menuPages" selected="{{selected}}">
+    <!--<iron-pages id="menuPages" selected="{{selected}}">
       <template is="dom-repeat" items="{{stuff}}">
         <div id="{{item.divid}}" style="overflow:auto"></div>
       </template>
-    </iron-pages>
+    </iron-pages>-->
+    <div id="div0" style="overflow:auto"></div>
   </template>
     <script>
     Polymer({
@@ -475,25 +476,45 @@
         selected: Number
       },
       refreshSvg: function(e){
-        for(var i = 0; i < documentmodengine.diagrams.length;i++){
+        for(var i = 0; i < 1;i++){
           var div = d3.select("div#div"+i);
           if(div.size()>0){
-            div[0][0].appendChild(documentmodengine.diagrams[i]);
+            div[0][0].appendChild(documentmodengine.svg);
             div.style("padding","5px");
-
-            var rect = div.select("svg")[0][0].getBBox();
+            var svg = d3.select(documentmodengine.svg);
+            var rect = documentmodengine.svg.getBBox();
 
             if(!documentmodengine.usersettings.zoom){
               documentmodengine.usersettings.zoom = 1.0
             }
-            div.select("svg").attr("width",rect.width*1.05*documentmodengine.usersettings.zoom);
-            div.select("svg").attr("height",rect.height*1.05*documentmodengine.usersettings.zoom);
-            div.select("svg").attr("viewBox",rect.x+","+rect.y+","+rect.width*1.05+","+rect.height*1.05);
+
+            svg
+            .attr("width",rect.width*1.05*documentmodengine.usersettings.zoom)
+            .attr("height",rect.height*1.05*documentmodengine.usersettings.zoom)
+            .attr("viewBox",rect.x+","+rect.y+","+rect.width*1.05+","+rect.height*1.05);
 
             div.style("width","100%");
             div.style("height",($(window).height()-300)+"px");
             if(e){
-                //documentmodengine.usersettings.currentview = e.path[1].id.substr(3);
+                documentmodengine.usersettings.currentview = e.path[1].id.substr(3);
+
+            }else{
+              documentmodengine.usersettings.currentview = "0";
+            }
+            var stop = true;
+            var start = 0;
+            while(stop){
+              var result = div.select("svg").select("g.view[viewid='"+start+"']");
+              if(result[0][0]){
+                if(start != documentmodengine.usersettings.currentview){
+                  result.attr("visibility","hidden");
+                }else{
+                  result.attr("visibility","visible");
+                }
+              }else{
+                stop = false;
+              }
+              start += 1;
             }
 
           }
@@ -687,7 +708,7 @@
         disabled: Boolean
       },
       zoomin: function(e){
-        var svg = d3.select("div.iron-selected").select("svg");
+        var svg = d3.select(documentmodengine.svg);
         if(!documentmodengine.usersettings.zoom){
           documentmodengine.usersettings.zoom = 1.0;
         }
@@ -698,7 +719,7 @@
         }
       },
       zoomout: function(e){
-        var svg = d3.select("div.iron-selected").select("svg");
+        var svg = d3.select(documentmodengine.svg);
         if(!documentmodengine.usersettings.zoom){
           documentmodengine.usersettings.zoom = 1.0;
         }

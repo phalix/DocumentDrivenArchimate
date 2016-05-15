@@ -63,7 +63,7 @@ this.configuration = {
 
   },
   createNewEdge:function(type,name,linecolorr,linecolorg,linecolorb){
-    var selected_nodes = documentmodengine.nodeselection();
+    var selected_nodes = documentmodengine.nodeselection().data;
 
     var element = {};
 
@@ -84,40 +84,41 @@ this.configuration = {
         }*/
 
       }
+      if(done){
+        var elementidsource = $(selected_nodes[a].element).attr("identifier");
+        var nodeidsource = $(selected_nodes[a].self).attr("identifier");
 
-      var elementidsource = $(selected_nodes[a].element).attr("identifier");
-      var nodeidsource = $(selected_nodes[a].self).attr("identifier");
+        var elementidtarget = $(selected_nodes[b].element).attr("identifier");
+        var nodeidtarget = $(selected_nodes[b].self).attr("identifier");
+        element.source = selected_nodes[a].element;
+        element.target = selected_nodes[b].element;
+        element.source_node = selected_nodes[a].self;
+        element.target_node = selected_nodes[b].self;
 
-      var elementidtarget = $(selected_nodes[b].element).attr("identifier");
-      var nodeidtarget = $(selected_nodes[b].self).attr("identifier");
-      element.source = selected_nodes[a].element;
-      element.target = selected_nodes[b].element;
-      element.source_node = selected_nodes[a].self;
-      element.target_node = selected_nodes[b].self;
+        var relationsshipid = configuration.idgenerator();
+        var connectionid = configuration.idgenerator();
+        var relationship = $("<relationship/>");
+        relationship.attr("identifier",relationsshipid);
+        relationship.attr("xsi:type",type);
+        relationship.attr("source",elementidsource);
+        relationship.attr("target",elementidtarget);
 
-      var relationsshipid = configuration.idgenerator();
-      var connectionid = configuration.idgenerator();
-      var relationship = $("<relationship/>");
-      relationship.attr("identifier",relationsshipid);
-      relationship.attr("xsi:type",type);
-      relationship.attr("source",elementidsource);
-      relationship.attr("target",elementidtarget);
+        var connection = $("<connection></connection>");
+        connection.attr("connection",connectionid);
+        connection.attr("relationshipref",relationsshipid);
+        connection.attr("source",nodeidsource);
+        connection.attr("target",nodeidtarget);
+        var style = $("<style/>");
+        //TODO: add rgb by parameters
+        var lineColor = $("<lineColor r='0' g='128' b='192' />");
+        style.append(lineColor);
+        connection.append(style);
+        element.self = connection[0];
+        element.element = relationship[0];
+        element.id = connectionid;
 
-      var connection = $("<connection></connection>");
-      connection.attr("connection",connectionid);
-      connection.attr("relationshipref",relationsshipid);
-      connection.attr("source",nodeidsource);
-      connection.attr("target",nodeidtarget);
-      var style = $("<style/>");
-      //TODO: add rgb by parameters
-      var lineColor = $("<lineColor r='0' g='128' b='192' />");
-      style.append(lineColor);
-      connection.append(style);
-      element.self = connection[0];
-      element.element = relationship[0];
-      element.id = connectionid;
-
-      return element;
+        return element;
+      }
     }
     return undefined;
   },
@@ -3167,6 +3168,7 @@ this.configuration = {
         {end:"Meaning",begin:"BusinessObject"},
         {end:"Node",begin:"CommunicationPath"},
         {end:"Device",begin:"Network"},
+        {end:"Network",begin:"Node"},
         {end:"Stakeholder",begin:"MotivationalElement"},
         {end:"Goal",begin:"Driver"},
         {end:"Assesment",begin:"Driver"},
