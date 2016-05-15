@@ -163,19 +163,6 @@ deleteselection:function(viewid){
 						view_ids.push(i);
 					}
 
-
-
-
-
-					/*d3.select("body")
-					.select("iron-pages.tabcontents")
-					.selectAll("div")
-					.data(view_ids).enter()
-					.append("div")
-					.attr("id",function(d){
-						return "div"+d;
-					});*/
-
 					var viewsdata = [];
 					var diagrams = [];
 

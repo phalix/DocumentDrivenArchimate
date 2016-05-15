@@ -51,6 +51,7 @@ this.configuration = {
     element.self = node[0];
     element.element = element[0];
     element.id = nodeid;
+    element.updates = [];
     return element;
   },
   deleteNode:function(xml,view,element){
@@ -976,6 +977,9 @@ this.configuration = {
           }
         }
     },InfrastructureInterface:{
+      new:function(){
+        return configuration.createNewNode("InfrastructureInterface","My Infrastructure Interface");
+      },
       attributes:{
         name:{
           get:function(data){
@@ -1375,6 +1379,9 @@ this.configuration = {
           }
         }
     },BusinessCollaboration:{
+      new:function(){
+        return configuration.createNewNode("BusinessCollaboration","My Business Collaboration");
+      },
       look:
       [{
         type:"polygon",
@@ -1458,6 +1465,9 @@ this.configuration = {
           }
         }
     },ApplicationCollaboration:{
+      new:function(){
+        return configuration.createNewNode("ApplicationCollaboration","My Application Collaboration");
+      },
       look:
       [{
         type:"polygon",
@@ -1541,6 +1551,9 @@ this.configuration = {
           }
         }
     },ApplicationInteraction:{
+      new:function(){
+        return configuration.createNewNode("ApplicationInteraction","My Application Interaction");
+      },
       look:
       [{
         type:"polygon",
@@ -1643,6 +1656,9 @@ this.configuration = {
           }
         }
     },BusinessService:{
+      new:function(){
+        return configuration.createNewNode("BusinessService","My Business Service");
+      },
       look:
       [{
         type:"rect",
@@ -1719,6 +1735,9 @@ this.configuration = {
           }
         }
     },InfrastructureService:{
+      new:function(){
+        return configuration.createNewNode("InfrastructureService","My Infrastructure Service");
+      },
       look:
       [{
         type:"rect",
@@ -1795,6 +1814,9 @@ this.configuration = {
           }
         }
     },ApplicationService:{
+      new:function(){
+        return configuration.createNewNode("ApplicationService","My Application Service");
+      },
       look:
       [{
         type:"rect",
@@ -1872,6 +1894,9 @@ this.configuration = {
         }
     },
     Value:{
+      new:function(){
+        return configuration.createNewNode("Value","My Value");
+      },
       look:[{
         type:"ellipse",
         cx:function(data){return $(data.self).attr("w")/2},
@@ -1938,6 +1963,9 @@ this.configuration = {
           }
         }
     },Contract:{
+      new:function(){
+        return configuration.createNewNode("Contract","My Contract");
+      },
       look:
       [{
         type:"polygon",
@@ -1996,6 +2024,9 @@ this.configuration = {
         return result;
       }
     }},DataObject:{
+      new:function(){
+        return configuration.createNewNode("DataObject","My Data Object");
+      },
       look:
       [{
         type:"polygon",
@@ -2058,6 +2089,9 @@ this.configuration = {
         return result;
       }
     }},Artifact:{
+      new:function(){
+        return configuration.createNewNode("Artifact","My Artifact");
+      },
       look:
       [{
         type:"polygon",
@@ -2134,6 +2168,9 @@ this.configuration = {
         return result;
       }
     }},ApplicationFunction:{
+      new:function(){
+        return configuration.createNewNode("ApplicationFunction","My Application Function");
+      },
       look:
       [{
         type:"polygon",
@@ -2210,6 +2247,9 @@ this.configuration = {
         return result;
       }
     }},InfrastructureFunction:{
+      new:function(){
+        return configuration.createNewNode("InfrastructureFunction","My Infrastructure Function");
+      },
       look:
       [{
         type:"polygon",
@@ -2286,6 +2326,9 @@ this.configuration = {
         return result;
       }
     }},ApplicationComponent:{
+      new:function(){
+        return configuration.createNewNode("ApplicationComponent","My Application Component");
+      },
       look:
       [{
         type:"polygon",
@@ -2375,6 +2418,9 @@ this.configuration = {
         return result;
       }
     }},Node:{
+      new:function(){
+        return configuration.createNewNode("Node","My Node");
+      },
       look:
       [{
         type:"polygon",
@@ -2468,6 +2514,9 @@ this.configuration = {
         return result;
       }
     }},Device:{
+      new:function(){
+        return configuration.createNewNode("Device","My Device");
+      },
       look:
       [{
         type:"polygon",
@@ -2546,6 +2595,9 @@ this.configuration = {
         return result;
       }
     }},SystemSoftware:{
+      new:function(){
+        return configuration.createNewNode("SystemSoftware","My System Software");
+      },
       look:
       [{
         type:"polygon",
@@ -2629,6 +2681,9 @@ this.configuration = {
         return result;
       }
     }},Network:{
+      new:function(){
+        return configuration.createNewNode("Network","My Network");
+      },
       look:
       [{
         type:"polygon",
@@ -2735,6 +2790,9 @@ this.configuration = {
         return result;
       }
     }},BusinessFunction:{
+      new:function(){
+        return configuration.createNewNode("BusinessFunction","My Business Function");
+      },
       look:
       [{
         type:"rect",
@@ -2815,6 +2873,9 @@ this.configuration = {
         return result;
       }
     }},BusinessProcess:{
+      new:function(){
+        return configuration.createNewNode("BusinessProcess","My Business Process");
+      },
       look:
       [{
         type:"rect",
@@ -2895,6 +2956,9 @@ this.configuration = {
         return result;
       }
     }},BusinessEvent:{
+      new:function(){
+        return configuration.createNewNode("BusinessEvent","My Business Event");
+      },
       look:
       [{
         type:"rect",
@@ -2971,7 +3035,9 @@ this.configuration = {
           }
         }
     },Representation:{
-
+      new:function(){
+        return configuration.createNewNode("Representation","My Representation");
+      },
       look:
       [{
         type:"path",
