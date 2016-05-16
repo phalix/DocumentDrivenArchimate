@@ -12,7 +12,6 @@ this.configuration = {
     return "xml";
   },
   idgenerator:function(){
-
     var result = '';
     var chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
     var length = 8;
@@ -20,17 +19,24 @@ this.configuration = {
     while(found){
         for (var i = length; i > 0; --i) result += chars[Math.floor(Math.random() * chars.length)];
         result = "id-"+result;
+        //Check that Node id and element id are not already in use.
         if($(documentmodengine.xml).find("[identifier='"+result+"']").size()==0){
           found = false;
         }
     }
     return result;
   },
-  createNewNode:function(type,name,x,y,w,h,fillcolorr,fillcolorg,fillcolorb,linecolorr,linecolorg,linecolorb){
-    //TODO: Generate Node and Element Id
-    //TODO: Check that Node id and element id are not already in use.
+  nodetype:function(data){
+    if($(data.element).attr("xsi:type")){
+        return $(data.element).attr("xsi:type")
+    }else{
+      return $(data.self).attr("type")
+    }
 
+  },
+  createNewNode:function(type,name,x,y,w,h,fillcolorr,fillcolorg,fillcolorb,linecolorr,linecolorg,linecolorb){
     var element = {};
+    //Generate Node and Element Id
     var nodeid = configuration.idgenerator();
     var elementid = configuration.idgenerator();
     var node = $("<node x='0' y='0' w='120' h='55'></node>");
@@ -39,7 +45,25 @@ this.configuration = {
     var style = $("<style></style>");
     node.append(style);
     var fillColor = $("<fillColor r='201' g='231' b='183' />");
+    if(fillcolorr){
+        fillColor.attr("r",fillcolorr);
+    }
+    if(fillcolorg){
+        fillColor.attr("g",fillcolorg);
+    }
+    if(fillcolorb){
+        fillColor.attr("b",fillcolorb);
+    }
     var lineColor = $("<lineColor r='92' g='92' b='92' />");
+    if(lineColorr){
+        lineColor.attr("r",lineColorr);
+    }
+    if(lineColorg){
+        lineColor.attr("g",lineColorg);
+    }
+    if(lineColorb){
+        lineColor.attr("b",lineColorb);
+    }
     style.append(fillColor);
     style.append(lineColor);
     var element = $("<element></element>");
@@ -54,112 +78,99 @@ this.configuration = {
     element.updates = [];
     return element;
   },
-  deleteNode:function(xml,view,element){
-
-
-      //$(view.self).find("[source='"+element.id+"']").remove();
-      //$(view.self).find("[target='"+element.id+"']").remove();
-      //$(view.self).children(element.self).remove();
-      element.self.remove();
-
-  },
+  edgetype:function(data){return $(data.element).attr("xsi:type")},
   createNewEdge:function(type,name,linecolorr,linecolorg,linecolorb){
+    //Fetch current selection
     var selected_nodes = documentmodengine.nodeselection().data;
+    var source = selected_nodes[0];
+    var target = selected_nodes[1];
 
+    //Create Element Data
     var element = {};
+    var relations = configuration.edges[type].relates;
+    var elementidsource = $(source.element).attr("identifier");
+    var nodeidsource = $(source.self).attr("identifier");
 
-    if(selected_nodes.length == 2){
-      var done = false;
-      var relations = configuration.edges[type].relates;
-      var a;
-      var b;
-      for(var  i= 0;i< relations.length && !done ;i++){
-        if(relations[i].begin == configuration.nodetype(selected_nodes[0]) && relations[i].end == configuration.nodetype(selected_nodes[1])){
-          a = 0;
-          b = 1;
-          done = true;
-        }/*else if(relations[i].begin == configuration.nodetype(selected_nodes[1]) && relations[i].end == configuration.nodetype(selected_nodes[0])){
-          a = 1;
-          b = 0;
-          done = true;
-        }*/
+    var elementidtarget = $(target.element).attr("identifier");
+    var nodeidtarget = $(target.self).attr("identifier");
+    element.source = source.element;
+    element.target = target.element;
+    element.source_node = source.self;
+    element.target_node = target.self;
 
-      }
-      if(done){
-        var elementidsource = $(selected_nodes[a].element).attr("identifier");
-        var nodeidsource = $(selected_nodes[a].self).attr("identifier");
+    var relationsshipid = configuration.idgenerator();
+    var connectionid = configuration.idgenerator();
+    var relationship = $("<relationship/>");
+    relationship.attr("identifier",relationsshipid);
+    relationship.attr("xsi:type",type);
+    relationship.attr("source",elementidsource);
+    relationship.attr("target",elementidtarget);
 
-        var elementidtarget = $(selected_nodes[b].element).attr("identifier");
-        var nodeidtarget = $(selected_nodes[b].self).attr("identifier");
-        element.source = selected_nodes[a].element;
-        element.target = selected_nodes[b].element;
-        element.source_node = selected_nodes[a].self;
-        element.target_node = selected_nodes[b].self;
-
-        var relationsshipid = configuration.idgenerator();
-        var connectionid = configuration.idgenerator();
-        var relationship = $("<relationship/>");
-        relationship.attr("identifier",relationsshipid);
-        relationship.attr("xsi:type",type);
-        relationship.attr("source",elementidsource);
-        relationship.attr("target",elementidtarget);
-
-        var connection = $("<connection></connection>");
-        connection.attr("connection",connectionid);
-        connection.attr("relationshipref",relationsshipid);
-        connection.attr("source",nodeidsource);
-        connection.attr("target",nodeidtarget);
-        var style = $("<style/>");
-        //TODO: add rgb by parameters
-        var lineColor = $("<lineColor r='0' g='128' b='192' />");
-        style.append(lineColor);
-        connection.append(style);
-        element.self = connection[0];
-        element.element = relationship[0];
-        element.id = connectionid;
-
-        return element;
-      }
+    var connection = $("<connection></connection>");
+    connection.attr("connection",connectionid);
+    connection.attr("relationshipref",relationsshipid);
+    connection.attr("source",nodeidsource);
+    connection.attr("target",nodeidtarget);
+    var style = $("<style/>");
+    var lineColor = $("<lineColor r='0' g='128' b='192' />");
+    //add rgb by parameters
+    if(linecolorr){
+      lineColor.attr("r",linecolorr);
     }
-    return undefined;
+    if(linecolorg){
+      lineColor.attr("g",linecolorg);
+    }
+    if(linecolorb){
+      lineColor.attr("b",linecolorb);
+    }
+    style.append(lineColor);
+    connection.append(style);
+    element.self = connection[0];
+    element.element = relationship[0];
+    element.id = connectionid;
+
+    return element;
+
+
+
   },
-  view_extraction:function(data){return $(data).children().children('views');},//.children().eq(view_sel)},
-  node_extraction:function(view,data){return $(view).find('node');},
-  node_datacollector:function(node,data){var result = {};
+  allviews:function(data){return $(data).children().children('views');},//.children().eq(view_sel)},
+  allnodes:function(view,data){return $(view).find('node');},
+  nodeid:function(node,data){
     var nodeid = $(node).attr("identifier");
+    return nodeid;
+  },
+  nodeelement:function(node,data){
+    //Retrieve the elements that is represented by the node
     var eref = $(node).attr("elementref");
+    var element_ref = undefined;
     if(eref){
-      var element_ref = $(data).children().children("elements").children('element[identifier="'+eref+'"]')[0];
-      //attach element to node.
-      result.element = element_ref;
+      element_ref = $(data).children().children("elements").children('element[identifier="'+eref+'"]')[0];
     }
-    result.updates = [];
+    return element_ref;
+  },
+  nodeupdates:function(node,data){
+    //Retrieve all elements that require an update, after a change
+    var updates = [];
+    var nodeid = this.nodeid(node,data);
     var nodes = $(node).find('node');
     for(var i=0;i<nodes.size();i++){
       var id = nodes.eq(i).attr("identifier");
-      result.updates.push(id);
+      updates.push(id);
     }
     var edges = $(data).find('[source="'+nodeid+'"]');
     for(var i=0;i<edges.size();i++){
       var id = edges.eq(i).attr("identifier");
-      result.updates.push(id);
+      updates.push(id);
     }
     var edges = $(data).find('[target="'+nodeid+'"]');
     for(var i=0;i<edges.size();i++){
       var id = edges.eq(i).attr("identifier");
-      result.updates.push(id);
+      updates.push(id);
     }
-    result.id = nodeid;
-    return result;
+    return updates;
   },
-  nodetype:function(data){
-    if($(data.element).attr("xsi:type")){
-        return $(data.element).attr("xsi:type")
-    }else{
-      return $(data.self).attr("type")
-    }
 
-  },
   nodeposition:function(node){
     var result = {};
     if(node.self){
@@ -176,18 +187,34 @@ this.configuration = {
 
     return result;
   },
-  edge_extraction:function(view,data){return $(view).find('connection');},
-
-  edge_datacollector:function(viewid,edge,data){
-    var result = {};
-    result.viewid = viewid;
-    var id = $(edge).attr("identifier");
+  alledges:function(view,data){return $(view).find('connection');},
+  edgeid:function(edge,data){
+    var edgeid = $(edge).attr("identifier");
+    return edgeid;
+  },
+  edgeelement:function(edge,data){
     var relref = $(edge).attr("relationshipref");
 
     if(relref){
       var relationship_ref = $(data).children().children("relationships").children('relationship[identifier="'+relref+'"]');
-      result.element = relationship_ref[0];
+      elementref = relationship_ref[0];
     }
+    return elementref;
+  },
+  edgesource:function(edge,data){
+
+  },
+  edgetarget:function(edge,data){
+
+  },
+  edge_datacollector:function(edge,data){
+    var result = {};
+
+    var id = configuration.edgeid(edge,data);
+
+    result.element = configuration.edgeelement(edge,data);
+
+    relationship_ref  = result.element;
     //references to elements
     var srcref_nd = $(edge).attr("source");
     if(srcref_nd){
@@ -217,24 +244,28 @@ this.configuration = {
   },
 
 
-  edgetype:function(data){return $(data.element).attr("xsi:type")},
+
+  nodeadder:function(xml,view,element){
+    $(xml).children("model").children("elements").append(element.element);
+    $(view.self).append(element.self);
+  },
   updateNodePosition: function(node,x,y){
     $(node.self).attr("x",x);
     $(node.self).attr("y",y);
+  },
+
+  deleteNode:function(xml,view,element){
+    $(element.self).remove();
+
+  },
+
+  addBendPoint:function(edge,x,y){
+    $(edge.self).append("<bendpoint x='"+x+"' y='"+y+"' ></bendpoint>");
   },updateEdgePosition: function(edge,index,x,y){
     $(edge.self).children("bendpoint").eq(index).attr("x",x)
     $(edge.self).children("bendpoint").eq(index).attr("y",y);
   },deleteEdge: function(edge,index){
     $(edge.self).children("bendpoint").eq(index).remove();
-  },
-  addBendPoint:function(edge,x,y){
-    $(edge.self).append("<bendpoint x='"+x+"' y='"+y+"' ></bendpoint>");
-  },
-  nodeadder:function(xml,view,element){
-
-      $(xml).children("model").children("elements").append(element.element);
-      $(view.self).append(element.self);
-
   },
   edgeadder:function(xml,view,element){
     $(xml).children("model").children("relationships").append(element.element);
