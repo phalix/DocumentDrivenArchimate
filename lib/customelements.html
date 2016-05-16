@@ -626,7 +626,7 @@
   <template>
     <div class="layout horizontal">
       <div class="flex">
-        <paper-input label="{{name}}" disabled$="{{disabled}}" value="{{value}}"></paper-input>
+        <paper-input label="{{name}}" disabled$="{{disabled}}" value="{{value}}" on-click="load"></paper-input>
       </div>
       <div>
         <paper-icon-button icon="save" title="save" on-click="save"></paper-icon-button>
@@ -753,7 +753,7 @@
 
 <dom-module id="model-references">
   <template>
-    <paper-listbox vertical-align="bottom" style="height:100%;padding-left:5%;padding-right:5%">
+    <paper-listbox vertical-align="bottom" style="height:100%;padding-left:5%;padding-right:5%" selectable="none">
       <iron-label>{{label}} {{addinfo}}</iron-label>
       <template is="dom-repeat" items="{{attributes}}">
         <model-attribute object={{item.object}} name="{{item.attributename}}" disabled$="{{item.disabled}}" value="{{item.value}}"></model-attribute>
@@ -776,6 +776,7 @@
         if(documentmodengine){
           var context = this;
           document.addEventListener('NodeSelected', function(e){context.refreshLinks(e)}, false);
+          document.addEventListener('EdgeSelected', function(e){context.refreshLinks(e)}, false);
           document.addEventListener('LinkAdded', function(e){context.refreshLinks(e)}, false);
         }else{
           console.log("documentmodengine not available");
@@ -783,6 +784,7 @@
       },
       refreshLinks : function (a) {
         if(a.detail&&a.detail.node&&a.detail.node[0]){
+
             this.label = $(a.detail.node[0]).attr("id");
             this.addinfo = $(a.detail.nodedata[0].element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
 
@@ -809,6 +811,10 @@
             if(window.links&&window.links[mr.label]){
               mr.links = mr.links.concat(window.links[mr.label]);
             }
+          }else if(a.detail&&a.detail.edge&&a.detail.edge[0]){
+            this.label = $(a.detail.edge[0]).attr("id");
+            this.addinfo = configuration.edgetype(a.detail.edgedata[0])
+            this.attributes = [];
           }
         }
     });

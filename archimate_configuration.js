@@ -135,9 +135,6 @@ this.configuration = {
     element.id = connectionid;
 
     return element;
-
-
-
   },
   allviews:function(data){return $(data).children().children('views');},//.children().eq(view_sel)},
   allnodes:function(view,data){return $(view).find('node');},
@@ -175,7 +172,6 @@ this.configuration = {
     }
     return updates;
   },
-
   nodeposition:function(node){
     var result = {};
     if(node.self){
@@ -205,12 +201,6 @@ this.configuration = {
       elementref = relationship_ref[0];
     }
     return elementref;
-  },
-  edgesource:function(edge,data){
-
-  },
-  edgetarget:function(edge,data){
-
   },
   edge_datacollector:function(edge,data){
     var result = {};
@@ -276,6 +266,27 @@ this.configuration = {
     $(xml).children("model").children("relationships").append(element.element);
     $(view.self).append(element.self);
   },
+  addNodeToGroup:function(data1,data2){
+    var actionrequired = this.nodeBelongsToGroup(data1,data2);
+    if(actionrequired){
+        $(data2.self).append(data1.self);
+        //TODO: also we need to create a model-relation for this.
+    }
+
+  },
+  removeFromGroup:function(data){
+
+    //If current parent is a node, move node one level higher;
+    var tagnameofparent = $(data.self.parentNode).prop("tagName");
+    if(data.self.parentNode.parentNode && tagnameofparent == "node"){
+      $(data.self.parentNode.parentNode).append(data.self);
+    }
+    // At the moment, an existing model-relation will not be destroyed, on destroying the group relation.
+  },
+  nodeBelongsToGroup:function(data1,data2){
+    var actionrequired = !$.contains( data2.self, data1.self );
+    return actionrequired;
+  },
   nodes:{
     undefined:{
       look:
@@ -291,7 +302,7 @@ this.configuration = {
       },{
           type:"text",
           innerHtml:function(data){
-            var text = $(data).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
+            var text = $(data.self).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
             return documentmodengine.functions.textDistributionToTSpan(text,$(data.self).attr("w"),$(data.self).attr("h"))},
           x:function(data){
             if($(data.self).children("node").size()>0){
@@ -475,7 +486,19 @@ this.configuration = {
               return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text(value);
             },
             type:"String"
+          },
+          "height and width":{
+            get:function(data){
+              return $(data.self).attr("h")+" "+$(data.self).attr("w");
+            },
+            set:function(data,value){
+              var newvalues = value.split(" ");
+              $(data.self).attr("h",newvalues[0]);
+              $(data.self).attr("w",newvalues[1]);
+            },
+            type:"String"
           }
+
         },
         look:
         [{
@@ -575,6 +598,17 @@ this.configuration = {
                 return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text(value);
               },
               type:"String"
+            },
+            "height and width":{
+              get:function(data){
+                return $(data.self).attr("h")+" "+$(data.self).attr("w");
+              },
+              set:function(data,value){
+                var newvalues = value.split(" ");
+                $(data.self).attr("h",newvalues[0]);
+                $(data.self).attr("w",newvalues[1]);
+              },
+              type:"String"
             }
           },
           look:
@@ -663,6 +697,17 @@ this.configuration = {
                 },
                 set:function(data,value){
                   return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text(value);
+                },
+                type:"String"
+              },
+              "height and width":{
+                get:function(data){
+                  return $(data.self).attr("h")+" "+$(data.self).attr("w");
+                },
+                set:function(data,value){
+                  var newvalues = value.split(" ");
+                  $(data.self).attr("h",newvalues[0]);
+                  $(data.self).attr("w",newvalues[1]);
                 },
                 type:"String"
               }
@@ -794,6 +839,17 @@ this.configuration = {
             return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text(value);
           },
           type:"String"
+        },
+        "height and width":{
+          get:function(data){
+            return $(data.self).attr("h")+" "+$(data.self).attr("w");
+          },
+          set:function(data,value){
+            var newvalues = value.split(" ");
+            $(data.self).attr("h",newvalues[0]);
+            $(data.self).attr("w",newvalues[1]);
+          },
+          type:"String"
         }
       },
       look:
@@ -867,6 +923,72 @@ this.configuration = {
           },
           set:function(data,value){
             return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text(value);
+          },
+          type:"String"
+        },
+        "height and width":{
+          get:function(data){
+            return "h:"+$(data.self).attr("h")+",w:"+$(data.self).attr("w");
+          },
+          set:function(data,value){
+            var newvalues = value.split(" ");
+            var newvalues = value.split(",");
+            for(var val in newvalues){
+              var vallist = newvalues[val].split(":");
+              if(vallist[0]=="h"){
+                  $(data.self).attr("h",vallist[1]);
+              }else
+              if(vallist[0]=="w"){
+                  $(data.self).attr("w",vallist[1]);
+              }
+            }
+          },
+          type:"String"
+        },
+        linecolor:{
+          get:function(data){
+            return "r:"+$(data.self).children("style").children("lineColor").attr("r")+","+
+            "g:"+$(data.self).children("style").children("lineColor").attr("g")+","+
+            "b:"+$(data.self).children("style").children("lineColor").attr("b")
+
+          },
+          set:function(data,value){
+            var newvalues = value.split(",");
+            for(var val in newvalues){
+              var vallist = newvalues[val].split(":");
+              if(vallist[0]=="r"){
+                  $(data.self).children("style").children("lineColor").attr("r",vallist[1]);
+              }else
+              if(vallist[0]=="g"){
+                  $(data.self).children("style").children("lineColor").attr("g",vallist[1]);
+              }else
+              if(vallist[0]=="b"){
+                  $(data.self).children("style").children("lineColor").attr("b",vallist[1]);
+              }
+            }
+          },
+          type:"String"
+        },
+        fillcolor:{
+          get:function(data){
+            return "r:"+$(data.self).children("style").children("fillColor").attr("r")+","+
+            "g:"+$(data.self).children("style").children("fillColor").attr("g")+","+
+            "b:"+$(data.self).children("style").children("fillColor").attr("b")
+          },
+          set:function(data,value){
+            var newvalues = value.split(",");
+            for(var val in newvalues){
+              var vallist = newvalues[val].split(":");
+              if(vallist[0]=="r"){
+                  $(data.self).children("style").children("fillColor").attr("r",vallist[1]);
+              }else
+              if(vallist[0]=="g"){
+                  $(data.self).children("style").children("fillColor").attr("g",vallist[1]);
+              }else
+              if(vallist[0]=="b"){
+                  $(data.self).children("style").children("fillColor").attr("b",vallist[1]);
+              }
+            }
           },
           type:"String"
         }
@@ -993,6 +1115,17 @@ this.configuration = {
             return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text(value);
           },
           type:"String"
+        },
+        "height and width":{
+          get:function(data){
+            return $(data.self).attr("h")+" "+$(data.self).attr("w");
+          },
+          set:function(data,value){
+            var newvalues = value.split(" ");
+            $(data.self).attr("h",newvalues[0]);
+            $(data.self).attr("w",newvalues[1]);
+          },
+          type:"String"
         }
       },
       look:
@@ -1089,6 +1222,17 @@ this.configuration = {
           },
           set:function(data,value){
             return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text(value);
+          },
+          type:"String"
+        },
+        "height and width":{
+          get:function(data){
+            return $(data.self).attr("h")+" "+$(data.self).attr("w");
+          },
+          set:function(data,value){
+            var newvalues = value.split(" ");
+            $(data.self).attr("h",newvalues[0]);
+            $(data.self).attr("w",newvalues[1]);
           },
           type:"String"
         }
@@ -1189,6 +1333,17 @@ this.configuration = {
             return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text(value);
           },
           type:"String"
+        },
+        "height and width":{
+          get:function(data){
+            return $(data.self).attr("h")+" "+$(data.self).attr("w");
+          },
+          set:function(data,value){
+            var newvalues = value.split(" ");
+            $(data.self).attr("h",newvalues[0]);
+            $(data.self).attr("w",newvalues[1]);
+          },
+          type:"String"
         }
       },
       look:
@@ -1286,6 +1441,17 @@ this.configuration = {
           },
           set:function(data,value){
             return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text(value);
+          },
+          type:"String"
+        },
+        "height and width":{
+          get:function(data){
+            return $(data.self).attr("h")+" "+$(data.self).attr("w");
+          },
+          set:function(data,value){
+            var newvalues = value.split(" ");
+            $(data.self).attr("h",newvalues[0]);
+            $(data.self).attr("w",newvalues[1]);
           },
           type:"String"
         }
@@ -1402,6 +1568,17 @@ this.configuration = {
           },
           set:function(data,value){
             return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text(value);
+          },
+          type:"String"
+        },
+        "height and width":{
+          get:function(data){
+            return $(data.self).attr("h")+" "+$(data.self).attr("w");
+          },
+          set:function(data,value){
+            var newvalues = value.split(" ");
+            $(data.self).attr("h",newvalues[0]);
+            $(data.self).attr("w",newvalues[1]);
           },
           type:"String"
         }
@@ -1523,6 +1700,17 @@ this.configuration = {
             return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text(value);
           },
           type:"String"
+        },
+        "height and width":{
+          get:function(data){
+            return $(data.self).attr("h")+" "+$(data.self).attr("w");
+          },
+          set:function(data,value){
+            var newvalues = value.split(" ");
+            $(data.self).attr("h",newvalues[0]);
+            $(data.self).attr("w",newvalues[1]);
+          },
+          type:"String"
         }
       },
       look:
@@ -1620,6 +1808,17 @@ this.configuration = {
             return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text(value);
           },
           type:"String"
+        },
+        "height and width":{
+          get:function(data){
+            return $(data.self).attr("h")+" "+$(data.self).attr("w");
+          },
+          set:function(data,value){
+            var newvalues = value.split(" ");
+            $(data.self).attr("h",newvalues[0]);
+            $(data.self).attr("w",newvalues[1]);
+          },
+          type:"String"
         }
       },
       look:
@@ -1715,6 +1914,17 @@ this.configuration = {
           },
           set:function(data,value){
             return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text(value);
+          },
+          type:"String"
+        },
+        "height and width":{
+          get:function(data){
+            return $(data.self).attr("h")+" "+$(data.self).attr("w");
+          },
+          set:function(data,value){
+            var newvalues = value.split(" ");
+            $(data.self).attr("h",newvalues[0]);
+            $(data.self).attr("w",newvalues[1]);
           },
           type:"String"
         }
@@ -1833,6 +2043,17 @@ this.configuration = {
             return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text(value);
           },
           type:"String"
+        },
+        "height and width":{
+          get:function(data){
+            return $(data.self).attr("h")+" "+$(data.self).attr("w");
+          },
+          set:function(data,value){
+            var newvalues = value.split(" ");
+            $(data.self).attr("h",newvalues[0]);
+            $(data.self).attr("w",newvalues[1]);
+          },
+          type:"String"
         }
       },
       look:
@@ -1923,6 +2144,17 @@ this.configuration = {
             return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text(value);
           },
           type:"String"
+        },
+        "height and width":{
+          get:function(data){
+            return $(data.self).attr("h")+" "+$(data.self).attr("w");
+          },
+          set:function(data,value){
+            var newvalues = value.split(" ");
+            $(data.self).attr("h",newvalues[0]);
+            $(data.self).attr("w",newvalues[1]);
+          },
+          type:"String"
         }
       },
       look:
@@ -2011,6 +2243,17 @@ this.configuration = {
           },
           set:function(data,value){
             return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text(value);
+          },
+          type:"String"
+        },
+        "height and width":{
+          get:function(data){
+            return $(data.self).attr("h")+" "+$(data.self).attr("w");
+          },
+          set:function(data,value){
+            var newvalues = value.split(" ");
+            $(data.self).attr("h",newvalues[0]);
+            $(data.self).attr("w",newvalues[1]);
           },
           type:"String"
         }
@@ -2104,8 +2347,20 @@ this.configuration = {
             return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text(value);
           },
           type:"String"
+        },
+        "height and width":{
+          get:function(data){
+            return $(data.self).attr("h")+" "+$(data.self).attr("w");
+          },
+          set:function(data,value){
+            var newvalues = value.split(" ");
+            $(data.self).attr("h",newvalues[0]);
+            $(data.self).attr("w",newvalues[1]);
+          },
+          type:"String"
         }
       },
+
       look:[{
         type:"ellipse",
         cx:function(data){return $(data.self).attr("w")/2},
@@ -2184,6 +2439,17 @@ this.configuration = {
             return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text(value);
           },
           type:"String"
+        },
+        "height and width":{
+          get:function(data){
+            return $(data.self).attr("h")+" "+$(data.self).attr("w");
+          },
+          set:function(data,value){
+            var newvalues = value.split(" ");
+            $(data.self).attr("h",newvalues[0]);
+            $(data.self).attr("w",newvalues[1]);
+          },
+          type:"String"
         }
       },
       look:
@@ -2254,6 +2520,17 @@ this.configuration = {
           },
           set:function(data,value){
             return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text(value);
+          },
+          type:"String"
+        },
+        "height and width":{
+          get:function(data){
+            return $(data.self).attr("h")+" "+$(data.self).attr("w");
+          },
+          set:function(data,value){
+            var newvalues = value.split(" ");
+            $(data.self).attr("h",newvalues[0]);
+            $(data.self).attr("w",newvalues[1]);
           },
           type:"String"
         }
@@ -2330,6 +2607,17 @@ this.configuration = {
           },
           set:function(data,value){
             return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text(value);
+          },
+          type:"String"
+        },
+        "height and width":{
+          get:function(data){
+            return $(data.self).attr("h")+" "+$(data.self).attr("w");
+          },
+          set:function(data,value){
+            var newvalues = value.split(" ");
+            $(data.self).attr("h",newvalues[0]);
+            $(data.self).attr("w",newvalues[1]);
           },
           type:"String"
         }
@@ -2422,6 +2710,17 @@ this.configuration = {
             return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text(value);
           },
           type:"String"
+        },
+        "height and width":{
+          get:function(data){
+            return $(data.self).attr("h")+" "+$(data.self).attr("w");
+          },
+          set:function(data,value){
+            var newvalues = value.split(" ");
+            $(data.self).attr("h",newvalues[0]);
+            $(data.self).attr("w",newvalues[1]);
+          },
+          type:"String"
         }
       },
       look:
@@ -2512,6 +2811,17 @@ this.configuration = {
             return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text(value);
           },
           type:"String"
+        },
+        "height and width":{
+          get:function(data){
+            return $(data.self).attr("h")+" "+$(data.self).attr("w");
+          },
+          set:function(data,value){
+            var newvalues = value.split(" ");
+            $(data.self).attr("h",newvalues[0]);
+            $(data.self).attr("w",newvalues[1]);
+          },
+          type:"String"
         }
       },
       look:
@@ -2600,6 +2910,17 @@ this.configuration = {
           },
           set:function(data,value){
             return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text(value);
+          },
+          type:"String"
+        },
+        "height and width":{
+          get:function(data){
+            return $(data.self).attr("h")+" "+$(data.self).attr("w");
+          },
+          set:function(data,value){
+            var newvalues = value.split(" ");
+            $(data.self).attr("h",newvalues[0]);
+            $(data.self).attr("w",newvalues[1]);
           },
           type:"String"
         }
@@ -2703,6 +3024,17 @@ this.configuration = {
           },
           set:function(data,value){
             return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text(value);
+          },
+          type:"String"
+        },
+        "height and width":{
+          get:function(data){
+            return $(data.self).attr("h")+" "+$(data.self).attr("w");
+          },
+          set:function(data,value){
+            var newvalues = value.split(" ");
+            $(data.self).attr("h",newvalues[0]);
+            $(data.self).attr("w",newvalues[1]);
           },
           type:"String"
         }
@@ -2812,6 +3144,17 @@ this.configuration = {
             return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text(value);
           },
           type:"String"
+        },
+        "height and width":{
+          get:function(data){
+            return $(data.self).attr("h")+" "+$(data.self).attr("w");
+          },
+          set:function(data,value){
+            var newvalues = value.split(" ");
+            $(data.self).attr("h",newvalues[0]);
+            $(data.self).attr("w",newvalues[1]);
+          },
+          type:"String"
         }
       },
       look:
@@ -2902,6 +3245,17 @@ this.configuration = {
           },
           set:function(data,value){
             return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text(value);
+          },
+          type:"String"
+        },
+        "height and width":{
+          get:function(data){
+            return $(data.self).attr("h")+" "+$(data.self).attr("w");
+          },
+          set:function(data,value){
+            var newvalues = value.split(" ");
+            $(data.self).attr("h",newvalues[0]);
+            $(data.self).attr("w",newvalues[1]);
           },
           type:"String"
         }
@@ -2999,6 +3353,17 @@ this.configuration = {
           },
           set:function(data,value){
             return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text(value);
+          },
+          type:"String"
+        },
+        "height and width":{
+          get:function(data){
+            return $(data.self).attr("h")+" "+$(data.self).attr("w");
+          },
+          set:function(data,value){
+            var newvalues = value.split(" ");
+            $(data.self).attr("h",newvalues[0]);
+            $(data.self).attr("w",newvalues[1]);
           },
           type:"String"
         }
@@ -3121,6 +3486,17 @@ this.configuration = {
             return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text(value);
           },
           type:"String"
+        },
+        "height and width":{
+          get:function(data){
+            return $(data.self).attr("h")+" "+$(data.self).attr("w");
+          },
+          set:function(data,value){
+            var newvalues = value.split(" ");
+            $(data.self).attr("h",newvalues[0]);
+            $(data.self).attr("w",newvalues[1]);
+          },
+          type:"String"
         }
       },
       look:
@@ -3213,6 +3589,17 @@ this.configuration = {
           },
           set:function(data,value){
             return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text(value);
+          },
+          type:"String"
+        },
+        "height and width":{
+          get:function(data){
+            return $(data.self).attr("h")+" "+$(data.self).attr("w");
+          },
+          set:function(data,value){
+            var newvalues = value.split(" ");
+            $(data.self).attr("h",newvalues[0]);
+            $(data.self).attr("w",newvalues[1]);
           },
           type:"String"
         }
@@ -3309,6 +3696,17 @@ this.configuration = {
             return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text(value);
           },
           type:"String"
+        },
+        "height and width":{
+          get:function(data){
+            return $(data.self).attr("h")+" "+$(data.self).attr("w");
+          },
+          set:function(data,value){
+            var newvalues = value.split(" ");
+            $(data.self).attr("h",newvalues[0]);
+            $(data.self).attr("w",newvalues[1]);
+          },
+          type:"String"
         }
       },
       look:
@@ -3397,6 +3795,17 @@ this.configuration = {
           },
           set:function(data,value){
             return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text(value);
+          },
+          type:"String"
+        },
+        "height and width":{
+          get:function(data){
+            return $(data.self).attr("h")+" "+$(data.self).attr("w");
+          },
+          set:function(data,value){
+            var newvalues = value.split(" ");
+            $(data.self).attr("h",newvalues[0]);
+            $(data.self).attr("w",newvalues[1]);
           },
           type:"String"
         }
@@ -3876,6 +4285,18 @@ this.configuration = {
         return result;
       }
     }
+  },
+  groups:{
+    AggregationGroup:{
+      relates:[
+        {end:"Contract", begin:"Product"},
+        {end:"BusinessService", begin:"Product"},
+        {end:"BusinessActor", begin:"BusinessCollaboration"},
+        {end:"BusinessActor", begin:"BusinessActor"},
+        {end:"ApplicationComponent", begin:"ApplicationCollaboration"}
+      ],
+    },
+    undefined:{}
   },
   definitions:[
     {

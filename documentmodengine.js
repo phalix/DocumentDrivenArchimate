@@ -6,6 +6,8 @@
 
 //TODO: move by limits of nodes
 //TODO: react if nodes overlap, and propose relation!
+//TODO: enable label for connections/edges
+
 
 documentmodengine = {
 	version : "1.0",
@@ -34,6 +36,21 @@ documentmodengine = {
 			data[i] = d3.select(result[i]).data()[0];
 		};
 		return {nodes:result, data:data};
+		//return result;
+	},
+
+	edgeselection : function(){
+		var result = d3.selectAll("g.connection[selected=true]")[0];
+		var data = [];
+		result = result.sort(function(a,b){
+			var d3a = d3.select(a);
+			var d3b = d3.select(b);
+			return d3a.attr('whenselected') > d3b.attr('whenselected');
+		});
+		for(var i = 0;i < result.length;i++){
+			data[i] = d3.select(result[i]).data()[0];
+		};
+		return {edges:result, data:data};
 		//return result;
 	},
 
@@ -321,6 +338,8 @@ deleteselection:function(viewid){
 		//this is always activated, so that the users can see the links
 		if(true||documentmodengine.usersettings.viewonly != true){
 			g.on('mousedown',function(d){
+				d3.selectAll("g.connection[selected=true]").attr("selected","false");
+
 				if(!d3.event.altKey){
 					d3.selectAll(".nodeselector").remove();
 					d3.selectAll("g.node[selected=true]").attr("selected","false");
@@ -353,14 +372,17 @@ deleteselection:function(viewid){
 					.attr("ref",d3.select(this).attr("id"));
 
 				var nodes = documentmodengine.nodeselection();
-				var nodedata = nodes.data;
-				var ce = new CustomEvent("NodeSelected",{
-					detail: {
-						nodedata: nodes.data,
-						node: nodes.nodes
-					}});
-				ce.detail = this;
-				document.dispatchEvent(ce);
+				if(nodes.nodes.length>0){
+					var nodedata = nodes.data;
+					var ce = new CustomEvent("NodeSelected",{
+						detail: {
+							nodedata: nodes.data,
+							node: nodes.nodes
+						}});
+					ce.detail = this;
+					document.dispatchEvent(ce);
+				}
+
 
 			})
 		}
@@ -576,14 +598,36 @@ deleteselection:function(viewid){
 
 		if(documentmodengine.usersettings.viewonly != true){
 			g.on('mousedown',function(d){
+
+				d3.selectAll(".nodeselector").remove();
 				d3.selectAll("g.node[selected=true]").attr("selected","false");
+
 				var d3selection = d3.select(this);
-				d3selection.attr('selected',true);
-				d3selection.attr('whenselected',Date.now());
+				var first = false;
+				if(d3selection.attr('selected')!="true"){
+					first = true;
+					svg.selectAll("g.connection[selected=true]").attr("selected", false);
+					d3selection.attr('selected',true);
+					d3selection.attr('whenselected',Date.now());
+
+					var edges = documentmodengine.edgeselection();
+					if(edges.edges.length>0){
+						var ce = new CustomEvent("EdgeSelected",{
+							detail: {
+								edgedata: edges.data,
+								edge: edges.edges
+							}});
+						ce.detail = this;
+						document.dispatchEvent(ce);
+					}
+
+
+				}
+
 				var found = false;
 				var x = d3.event.offsetX;
 				var y = d3.event.offsetY;
-				var hovercircle = d3.select(".hover.edge");
+				var hovercircle = d3.select(".hover.connection");
 				if(hovercircle.size()>0){
 					found = true;
 					hovercircle.attr("selected","true");
@@ -591,7 +635,7 @@ deleteselection:function(viewid){
 					hovercircle.attr('selected_y',y-parseInt(hovercircle.attr("cy")));
 				}
 
-				if(!found){
+				if(!found&&!first){
 					d3.select(this).attr("selected","false");
 					if(configuration.addBendPoint){
 							configuration.addBendPoint(d,x,y);
@@ -600,6 +644,7 @@ deleteselection:function(viewid){
 					}
 					documentmodengine.drawEdge(d3.select(this));
 				}
+
 			});
 		}
 
@@ -672,11 +717,7 @@ deleteselection:function(viewid){
 					}).attr("style",function(d){
 
 						var result = documentmodengine.functions.getValueFromData(typeconf.style,d);
-						if(result){
-							//TODO: maybe in the future there is a better solution, but this is to differentiate the defs between the different views.
-							// Views are all in different svgs including the same defs -> problem.
-							//result = result.replace('#','#'+d.viewid);
-						}
+
 						return result;
 					})
 					.style("stroke",function(d){
@@ -687,11 +728,7 @@ deleteselection:function(viewid){
 					})
 					.attr("marker-end",function(d){
 						var result = documentmodengine.functions.getValueFromData(typeconf["marker-end"],d);
-						if(result){
-							//TODO: maybe in the future there is a better solution, but this is to differentiate the defs between the different views.
-							// Views are all in different svgs including the same defs -> problem.
-							//result = result.replace('#','#'+d.viewid);
-						}
+
 						return result;
 					})
 					.style("fill","none");
@@ -802,8 +839,10 @@ deleteselection:function(viewid){
 
 							if(true || documentmodengine.usersettings.viewonly != true){
 								bendpointselector.on("mouseover",function(d){
-									//d3.select(this.parentElement).select("#hover\\:"+$(d3.select(this).data()).attr("id")).remove();
-									d3.selectAll(".hover.edge").remove();
+
+
+
+									d3.selectAll(".hover.connection").remove();
 									var arrayofattr = d3.select(this).attr("id").split(":")
 									d3.select(this.parentElement)
 									.append("circle")
@@ -815,7 +854,9 @@ deleteselection:function(viewid){
 									.attr("stroke-dasharray","2,2")
 									.attr("id","hover:"+arrayofattr[1]+":"+arrayofattr[2])
 									.classed("hover",true)
-									.classed("edge",true);
+									.classed("connection",true);
+
+
 								})
 								.on("mouseout",function(d){
 									d3.select(this.parentElement)
@@ -825,7 +866,7 @@ deleteselection:function(viewid){
 										.select("[id='hover\\:"+d3.select(this).attr("id").split(":")[1]+"\\:"+d3.select(this).attr("id").split(":")[2]+"']")
 										.remove();
 								}).on('mouseup',function(d){
-									var hovercircle = d3.select(".hover.edge[selected=true]");
+									var hovercircle = d3.select(".hover.connection[selected=true]");
 									if(hovercircle.size()>0 && !hovercircle.attr("moved")){
 										var bendpointinfo = d3.select(this).attr("id").split(":");
 										var hoverinfo = hovercircle.attr("id").split(":");
@@ -836,7 +877,7 @@ deleteselection:function(viewid){
 										}
 									}
 
-									d3.selectAll(".hover.edge").remove();
+									d3.selectAll(".hover.connection").remove();
 								});
 							}
 						}
@@ -874,23 +915,70 @@ deleteselection:function(viewid){
 					documentmodengine.drawEdge(currentedge);
 				});
 				//if no circle was selected but an edge; this is performed
-				svg
+				/*svg
 				.selectAll("g.connection[selected=true]").each(function(d){
 					d3.select(this).attr("selected", false);
-				});
+				});*/
 
 				if(!d3.event.altKey&&svg.selectAll("g.node[selected=true]").size()==1){
 
 						svg.selectAll("g.node[selected=true]").each(function(d){
-							//d3.select(this).attr("selected", false);
+
 							documentmodengine.functions.updateNode(d3.select(this));
+
+
+							function collisiondetector(element){
+								var currentid = d3.select(element).attr("id");
+								var movenode = element;
+								var counter = 0;
+								var collidedelement;
+								d3.select(element.parentNode).selectAll("g.node").each(function(d){
+									var nextid = d3.select(this).attr("id");
+									var refnode = this;
+									if(currentid == nextid){
+
+									}else{
+										var r1 = movenode.getBoundingClientRect();
+										var r2 = refnode.getBoundingClientRect();
+										var collision = !(r2.left > r1.right ||
+													 r2.right < r1.left ||
+													 r2.top > r1.bottom ||
+													 r2.bottom < r1.top);
+									 if(collision){
+										 	counter++;
+											collidedelement = refnode;
+									 }
+
+									}
+								});
+								//Remove Element from any other container
+								configuration.removeFromGroup(d3.select(movenode).data()[0]);
+								if(collidedelement){
+									//Add node to collided element
+									configuration.addNodeToGroup(d3.select(movenode).data()[0],d3.select(collidedelement).data()[0]);
+									//TODO: set element movenode behind element collidedelement in svg 
+									documentmodengine.functions.updateNode(d3.select(movenode));
+									documentmodengine.functions.updateNode(d3.select(collidedelement));
+									var updatedsvg = documentmodengine.updateLoadedView(viewid,documentmodengine.usersettings.lang);
+								}
+
+							}
+							var context = this;
+							setTimeout(function(){
+								collisiondetector(context)
+							},0);
+
+
+
 						});
+
+
 
 
 				}
 
 				d3.selectAll("#selector").remove();
-				d3.selectAll(".hover.edge").remove();
+				d3.selectAll(".hover.connection").remove();
 
 			})
 			.on('mousemove',
@@ -923,7 +1011,7 @@ deleteselection:function(viewid){
 
 					});
 
-					var hovercircle = svg.select(".hover.edge[selected=true]");
+					var hovercircle = svg.select(".hover.connection[selected=true]");
 					if(hovercircle.size()>0){
 						hovercircle.attr("moved",true);
 						var sel_x = hovercircle.attr('selected_x');
