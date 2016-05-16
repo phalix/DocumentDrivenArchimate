@@ -27,12 +27,17 @@ this.configuration = {
     return result;
   },
   nodetype:function(data){
+    var nodetype = undefined;
     if($(data.element).attr("xsi:type")){
-        return $(data.element).attr("xsi:type")
+        nodetype = $(data.element).attr("xsi:type")
     }else{
-      return $(data.self).attr("type")
+      nodetype = $(data.self).attr("type")
     }
-
+    if(this.nodes[nodetype]){
+      return nodetype;
+    }else{
+      undefined;
+    }
   },
   createNewNode:function(type,name,x,y,w,h,fillcolorr,fillcolorg,fillcolorb,linecolorr,linecolorg,linecolorb){
     var element = {};
@@ -3844,6 +3849,7 @@ this.configuration = {
       }
     },
     undefined:{
+      attributes:[],
       look:[
 
       ],
