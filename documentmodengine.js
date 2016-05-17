@@ -678,7 +678,6 @@ deleteselection:function(viewid){
 					.attr('class',function(d){
 						return 'connection '+configuration.edgetype(d)
 					})
-
 					//this draws the actual visible line
 					currentedge.append("svg\\:path")
 					.attr("d",function(d){
@@ -690,11 +689,8 @@ deleteselection:function(viewid){
 
 						//var points1 = $(sourceref_svg).attr("points");
 						//var points2 = [];
-						var edgetype = configuration.edges[configuration.edgetype(d)];
-						if(!edgetype){
-							edgetype = configuration.edges[undefined];
-						}
-						if(edgetype.points){
+
+						if(typeconf.points){
 							var type = configuration.edges[configuration.edgetype(d)]?configuration.edges[configuration.edgetype(d)]:configuration.edges[undefined];
 							var points = type.points(d);
 							var points1 = points.shape1;
@@ -742,13 +738,8 @@ deleteselection:function(viewid){
 						var lineColor = $( d ).children("style").children("lineColor");
 						var lineWidth = $( d ).children("style").attr("lineWidth") ? $( d ).children("style").attr("lineWidth") : 1;
 
-						//var points1 = $(sourceref_svg).attr("points");
-						//var points2 = [];
-						var edgetype = configuration.edges[configuration.edgetype(d)];
-						if(!edgetype){
-							edgetype = configuration.edges[undefined];
-						}
-						if(edgetype.points){
+
+						if(typeconf.points){
 							var type = configuration.edges[configuration.edgetype(d)]?configuration.edges[configuration.edgetype(d)]:configuration.edges[undefined];
 							var points = type.points(d);
 							var points1 = points.shape1;
@@ -778,50 +769,53 @@ deleteselection:function(viewid){
 						}
 					})
 					.style("fill","none");
-
-					currentedge.append('svg:text')
-					.text(function(d){
-						return $(d.self).children("relationship").children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text()
-					})
-					.attr("x",function(d){
-						var path = d3.select(this.parentElement).select("path");
-						if(path.size()>0){
-							var lines = documentmodengine.functions.getPointArrayFromString(path.attr("d"));
-							if((lines.length % 2) == 0){
-								var left = lines[(lines.length/2)-1];
-								var right = lines[(lines.length/2)];
-								return documentmodengine.functions.getDistanceBetweenTwoPoints(parseInt($(left).attr("x")), parseInt($(right).attr("x")))
-							}else{
-								var left = lines[0][(lines.length/2)-0.5];
-								return left.attr("x");
-							}
-						}else{
-							return 0;
+					for(var i in typeconf.look){
+						var look = typeconf.look[i];
+						if(look.type == "text"){
+							currentedge.append('svg:text')
+							.html(function(d){
+								return documentmodengine.functions.getValueFromData(look.innerHtml,d);
+							})
+							.attr("alignment-baseline",function(d){
+								return documentmodengine.functions.getValueFromData(look["alignment-baseline"],d);
+							})
+							.attr("x",function(d){
+								var path = d3.select(this.parentElement).select("path");
+								if(path.size()>0){
+									var lines = documentmodengine.functions.getPointArrayFromString(path.attr("d"));
+									if((lines.length % 2) == 0){
+										var left = lines[(lines.length/2)-1];
+										var right = lines[(lines.length/2)];
+										return documentmodengine.functions.getDistanceBetweenTwoPoints(parseInt($(left).attr("x")), parseInt($(right).attr("x")))
+									}else{
+										var left = lines[0][(lines.length/2)-0.5];
+										return left.attr("x");
+									}
+								}else{
+									return 0;
+								}
+							})
+							.attr("y",function(d){
+								var path = d3.select(this.parentElement).select("path");
+								if(path.size()>0){
+									var lines = documentmodengine.functions.getPointArrayFromString(path.attr("d"));
+									if((lines.length % 2) == 0){
+										var left = lines[(lines.length/2)-1];
+										var right = lines[(lines.length/2)];
+										return documentmodengine.functions.getDistanceBetweenTwoPoints(parseInt($(left).attr("y")), parseInt($(right).attr("y")))
+									}else{
+										var left = lines[0][(lines.length/2)-0.5];
+										return left.attr("y");
+									}
+								}else{
+									return 0;
+								}
+							});
 						}
-					})
-					.attr("y",function(d){
-						var path = d3.select(this.parentElement).select("path");
-						if(path.size()>0){
-							var lines = documentmodengine.functions.getPointArrayFromString(path.attr("d"));
-							if((lines.length % 2) == 0){
-								var left = lines[(lines.length/2)-1];
-								var right = lines[(lines.length/2)];
-								return documentmodengine.functions.getDistanceBetweenTwoPoints(parseInt($(left).attr("y")), parseInt($(right).attr("y")))
-							}else{
-								var left = lines[0][(lines.length/2)-0.5];
-								return left.attr("y");
-							}
-						}else{
-							return 0;
-						}
-					});
-
-
-					var edgetype = configuration.edges[configuration.edgetype(d)];
-					if(!edgetype){
-						edgetype = configuration.edges[undefined];
 					}
-					if(edgetype.points){
+
+
+					if(typeconf.points){
 						var type = configuration.edges[configuration.edgetype(d)]?configuration.edges[configuration.edgetype(d)]:configuration.edges[undefined];
 						var points = type.points(d);
 						for(var i = 0;i<points.path.length;i++){
@@ -984,7 +978,7 @@ deleteselection:function(viewid){
 										});
 										d3.select(collidedelement).data()[0].updates.push(movenode.id);
 
-										//This needs to be done, in this awkward fashion, because the algorithm, does not actual
+										//This needs to be done, in this awkward fashion, because the algorithm, does not actual work
 										//as intended as soon as a relation between two elements is zero!
 
 										//Set element movenode behind element collidedelement in svg

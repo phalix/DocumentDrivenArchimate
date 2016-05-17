@@ -3883,7 +3883,20 @@ this.configuration = {
         {end:"ApplicationComponent", begin:"ApplicationCollaboration"}
       ],
       look:[
-
+        {
+            type:"text",
+            innerHtml:function(data){
+              var text = $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text()
+              return text
+            },
+            x:function(data){
+              //TODO
+            },
+            y:function(data){
+              //TODO
+              },
+            "alignment-baseline":"auto"
+          }
       ],
       stroke:function(data){var fc = $( data.self ).children("style").children("lineColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
       "stroke-width":function(data){return $(data).children("style").attr("lineWidth")},
