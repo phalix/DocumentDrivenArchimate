@@ -4,10 +4,12 @@
 //This software was created with the help of the jquery and d3js library.
 //See https://d3js.org/ and https://jquery.com/ for more info.
 
-//TODO: move by limits of nodes
 //TODO: react if nodes overlap, and propose relation!
-//TODO: enable label for connections/edges
-
+//TODO: check for existencse of model relation; and reuse.
+//TODO: attributes edges
+//TODO: attributes views
+//TODO: update menu
+//TODO: show id of view in menu, if label is not available
 
 documentmodengine = {
 	version : "1.0",
@@ -123,9 +125,31 @@ documentmodengine = {
 					documentmodengine.buildModel_internal(lang);
 				});
 	},
+createNewView:function(){
+	var newview = configuration.createView(documentmodengine.xml);
+	if(newview){
 
+		var viewdata = {};
+		viewdata.self = newview[0];
+		viewdata.nodes = [];
+		viewdata.edges  = [];
+		var views = configuration.allviews(xml);
+		//create tabs;
+		for(var i = 0; i < views.children().size();i++){
+			if(views.children().eq(i)[0]==newview[0]){
+				var result = documentmodengine.buildView_internal(d3.select(documentmodengine.svg),i,viewdata,documentmodengine.usersettings.lang);
+				documentmodengine.diagrams.push(result[0][0]);
+			}
+
+		}
+
+
+	}else{
+		throw "ViewCreationFailed";
+	}
+},
 addnewnode:function(type,viewid){
-	var newnode = configuration.nodes[type].new();
+	var newnode = configuration.nodes[type].new(documentmodengine.xml);
 	if(newnode){
 		var view = documentmodengine.viewsdata[viewid];
 		configuration.nodeadder(window.xml,view,newnode);
@@ -153,7 +177,7 @@ addnewedge:function(type,viewid){
 		throw "NotExactlyTwoNodesSelected";
 	}
 	if(done){
-		var newedge = configuration.edges[type].new();
+		var newedge = configuration.edges[type].new(documentmodengine.xml);
 		if(newedge){
 			newedge.viewid = viewid;
 			var view = documentmodengine.viewsdata[viewid];
@@ -338,11 +362,11 @@ deleteselection:function(viewid){
 		//this is always activated, so that the users can see the links
 		if(true||documentmodengine.usersettings.viewonly != true){
 			g.on('mousedown',function(d){
+				documentmodengine.mousedown = 1;
 				d3.selectAll("g.connection[selected=true]").attr("selected","false");
 
 				if(!d3.event.altKey){
-					d3.selectAll(".nodeselector").remove();
-					d3.selectAll("g.node[selected=true]").attr("selected","false");
+					documentmodengine.deselection();
 				}
 
 				var d3selection = d3.select(this);
@@ -599,14 +623,15 @@ deleteselection:function(viewid){
 		if(documentmodengine.usersettings.viewonly != true){
 			g.on('mousedown',function(d){
 
-				d3.selectAll(".nodeselector").remove();
-				d3.selectAll("g.node[selected=true]").attr("selected","false");
+
+
+				documentmodengine.mousedown = 1;
 
 				var d3selection = d3.select(this);
 				var first = false;
 				if(d3selection.attr('selected')!="true"){
 					first = true;
-					svg.selectAll("g.connection[selected=true]").attr("selected", false);
+					documentmodengine.deselection();
 					d3selection.attr('selected',true);
 					d3selection.attr('whenselected',Date.now());
 
@@ -620,9 +645,9 @@ deleteselection:function(viewid){
 						ce.detail = this;
 						document.dispatchEvent(ce);
 					}
-
-
 				}
+
+
 
 				var found = false;
 				var x = d3.event.offsetX;
@@ -883,6 +908,16 @@ deleteselection:function(viewid){
 		g.exit().remove();
 
 	},
+	deselection:function(){
+		d3.selectAll(".nodeselector").remove();
+		d3.selectAll("g.node[selected=true]").attr("selected","false");
+		d3.selectAll("g.connection[selected=true]").attr("selected", false);
+
+		var ce = new CustomEvent("NodesDeselected",{
+			detail: {
+			}});
+		document.dispatchEvent(ce);
+	},
 	buildView_internal: function(svg,viewid,view_xml,lang){
 
 
@@ -893,11 +928,14 @@ deleteselection:function(viewid){
 		if(documentmodengine.usersettings.viewonly != true){
 			//interaction
 			svg
-			.on('mousedown',function(d){
-				documentmodengine.mousedown = 1;
+			.on('mousedown',function(d,e){
+				documentmodengine.mousedown += 1;
+				documentmodengine.lastselection = documentmodengine.nodeselection();
 			})
 			.on('mouseup',function(d){
-
+				if(documentmodengine.mousedown<2){
+					documentmodengine.deselection();
+				}
 				documentmodengine.mousedown = 0;
 				svg
 				.selectAll("g.connection[selected=true]").selectAll("circle[selected=true]").each(function(d){
@@ -908,11 +946,6 @@ deleteselection:function(viewid){
 					currentedge.attr("selected",false);
 					documentmodengine.drawEdge(currentedge);
 				});
-				//if no circle was selected but an edge; this is performed
-				/*svg
-				.selectAll("g.connection[selected=true]").each(function(d){
-					d3.select(this).attr("selected", false);
-				});*/
 
 				if(!d3.event.altKey&&svg.selectAll("g.node[selected=true]").size()==1){
 
@@ -950,6 +983,7 @@ deleteselection:function(viewid){
 									//Remove Element from any other container
 									configuration.removeFromGroup(d3.select(movenode).data()[0]);
 									var searchid = movenode.id;
+									//remove from updates
 									d3.select(movenode.parentNode).selectAll("g.node").each(function(d){
 
 										var index = d.updates.indexOf(searchid);
@@ -960,7 +994,7 @@ deleteselection:function(viewid){
 									});
 									if(collidedelement){
 										//Add node to collided element
-										configuration.addNodeToGroup(d3.select(movenode).data()[0],d3.select(collidedelement).data()[0]);
+										configuration.addNodeToGroup(documentmodengine.xml,d3.select(movenode).data()[0],d3.select(collidedelement).data()[0]);
 
 										d3.select(movenode).attr("sort","true");
 										//all sub elements of the moved element need to be sorted as well
@@ -1009,10 +1043,6 @@ deleteselection:function(viewid){
 
 
 						});
-
-
-
-
 				}
 
 				d3.selectAll("#selector").remove();

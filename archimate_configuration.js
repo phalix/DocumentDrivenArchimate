@@ -26,6 +26,31 @@ this.configuration = {
     }
     return result;
   },
+  createView:function(data){
+    var views = $(data).children("model").children("views");
+    var viewid = configuration.idgenerator();
+    var view = $("<view></view>");
+    view.attr("identifier",viewid);
+    var label = $("<label></label>");
+    label.attr("xml:lang",documentmodengine.usersettings.lang);
+    var documentation = $("<documentation></documentation>");
+    documentation.attr("xml:lang",documentmodengine.usersettings.lang);
+    view.append(label);
+    view.append(documentation);
+    views.append(view);
+    return view;
+  },
+  attributes:{
+    name:{
+      get:function(data){
+        return $(data.self).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
+      },
+      set:function(data,value){
+        return $(data.self).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text(value);
+      },
+      type:"String"
+    },
+  },
   nodetype:function(data){
     var nodetype = undefined;
     if($(data.element).attr("xsi:type")){
@@ -84,7 +109,7 @@ this.configuration = {
     return element;
   },
   edgetype:function(data){return $(data.element).attr("xsi:type")},
-  createNewEdge:function(type,name,linecolorr,linecolorg,linecolorb){
+  createNewEdge:function(xml,type,name,linecolorr,linecolorg,linecolorb){
     //Fetch current selection
     var selected_nodes = documentmodengine.nodeselection().data;
     var source = selected_nodes[0];
@@ -103,19 +128,15 @@ this.configuration = {
     element.source_node = source.self;
     element.target_node = target.self;
 
-    var relationsshipid = configuration.idgenerator();
-    var connectionid = configuration.idgenerator();
-    var relationship = $("<relationship/>");
-    relationship.attr("identifier",relationsshipid);
-    relationship.attr("xsi:type",type);
-    relationship.attr("source",elementidsource);
-    relationship.attr("target",elementidtarget);
+    var relationship = this.createRelationship(xml,type,source,target)
+    var relationsshipid = relationship.attr("identifier");
 
     var connection = $("<connection></connection>");
+    var connectionid = configuration.idgenerator();
     connection.attr("connection",connectionid);
     connection.attr("relationshipref",relationsshipid);
-    connection.attr("source",nodeidsource);
-    connection.attr("target",nodeidtarget);
+    connection.attr("source",elementidsource);
+    connection.attr("target",elementidtarget);
     var style = $("<style/>");
     var lineColor = $("<lineColor r='0' g='128' b='192' />");
     //add rgb by parameters
@@ -136,9 +157,30 @@ this.configuration = {
 
     return element;
   },
+  createRelationship:function(xml,type,source,target){
+
+    var relationship = this.checkRelationExistence(xml,source,target,type);
+    if(!relationship){
+      var relationsshipid = configuration.idgenerator();
+      var relationship = $("<relationship/>");
+      relationship.attr("identifier",relationsshipid);
+      relationship.attr("xsi:type",type);
+      relationship.attr("source",this.nodeid(source));
+      relationship.attr("target",this.nodeid(target));
+
+      $(xml).children("model").children("relationships").append(relationship);
+    }else{
+      relationship = $(relationship);
+    }
+    return relationship;
+  },
   allviews:function(data){return $(data).children().children('views');},
+  viewid:function(view){
+    var viewid = $(view).attr("identifier");
+    return viewid;
+  },
   allnodes:function(view,data){return $(view).find('node');},
-  nodeid:function(node,data){
+  nodeid:function(node){
     var nodeid = $(node).attr("identifier");
     return nodeid;
   },
@@ -154,7 +196,7 @@ this.configuration = {
   nodeupdates:function(node,data){
     //Retrieve all elements that require an update, after a change
     var updates = [];
-    var nodeid = this.nodeid(node,data);
+    var nodeid = this.nodeid(node);
     var nodes = $(node).find('node');
     for(var i=0;i<nodes.size();i++){
       var id = nodes.eq(i).attr("identifier");
@@ -189,6 +231,17 @@ this.configuration = {
     return result;
   },
   alledges:function(view,data){return $(view).find('connection');},
+  allgroups:function(view,data){
+    //not completed
+    var nodes = this.allnodes(view,data);
+    for(var i = 0;i<nodes.length;i++){
+      var node = nodes[i];
+      var sub_nodes = $(node).children("node");
+      for(var j = 0;j<sub_nodes.length;j++){
+        console.log(j);
+      }
+    }
+  },
   edgeid:function(edge,data){
     var edgeid = $(edge).attr("identifier");
     return edgeid;
@@ -260,14 +313,43 @@ this.configuration = {
     $(edge.self).children("bendpoint").eq(index).remove();
   },
   edgeadder:function(xml,view,element){
-    $(xml).children("model").children("relationships").append(element.element);
+    //$(xml).children("model").children("relationships").append(element.element);
     $(view.self).append(element.self);
   },
-  addNodeToGroup:function(data1,data2){
+  addNodeToGroup:function(xml,data1,data2){
     var actionrequired = !this.nodeBelongsToGroup(data1,data2);
     if(actionrequired){
         $(data2.self).append(data1.self);
-        //TODO: also we need to create a model-relation for this.
+        //check for available groups
+        var nodetype1 = this.nodetype(data1);
+        var nodetype2 = this.nodetype(data2);
+        //setup first to find as a relation
+        var found  = false;
+        var relation = undefined;
+        var group = undefined;
+        var groupid = undefined;
+        for(var i in this.edges){
+          if(!found){
+            groupid = i;
+            group = this.edges[i];
+            if(group.allowHierarchiallyGrouping){
+              for(var j = 0;j<group.relates.length&&!found;j++){
+                relation = group.relates[j];
+                if(relation.begin == nodetype1 && relation.end == nodetype2){
+                  found = true;
+                }
+              }
+            }
+          }
+
+
+        }
+        if(found&&group){
+            //we need to create a model-relation for this.
+            this.createRelationship(xml,groupid,data2,data1);
+
+        }
+
     }
 
   },
@@ -283,6 +365,13 @@ this.configuration = {
   nodeBelongsToGroup:function(data1,data2){
     var actionrequired = $.contains( data2.self, data1.self );
     return actionrequired;
+  },
+  checkRelationExistence:function(xml,data1,data2,relationsshiptype){
+    var result = $(xml).children("model").children("relationships").children("relationship[xsi\\:type='"+relationsshiptype+"'][source='"+this.nodeid(data1.element)+"'][target='"+this.nodeid(data2.element)+"']")
+    if(result.length>0){
+      return result[0]
+    }
+    return undefined;
   },
   nodes:{
     undefined:{
@@ -471,7 +560,7 @@ this.configuration = {
                 }
               }},
       Principle:{
-        new:function(){
+        new:function(xml){
           return configuration.createNewNode("Principle","My Principle");
         },
         attributes:{
@@ -583,7 +672,7 @@ this.configuration = {
           }
         }]},
         Requirement:{
-          new:function(){
+          new:function(xml){
             return configuration.createNewNode("Requirement","My Requirement");
           },
           attributes:{
@@ -684,7 +773,7 @@ this.configuration = {
               }
             }
           }]},Goal:{
-            new:function(){
+            new:function(xml){
               return configuration.createNewNode("Goal","My Goal");
             },
             attributes:{
@@ -824,7 +913,7 @@ this.configuration = {
               }
             }},
     BusinessObject:{
-      new:function(){
+      new:function(xml){
         return configuration.createNewNode("BusinessObject","My Business Object");
       },
       attributes:{
@@ -910,7 +999,7 @@ this.configuration = {
         return result;
       }
     }},BusinessActor:{
-      new:function(){
+      new:function(xml){
         return configuration.createNewNode("BusinessActor","My Business Actor");
       },
       attributes:{
@@ -1100,7 +1189,7 @@ this.configuration = {
           }
         }
     },BusinessInterface:{
-      new:function(){
+      new:function(xml){
         return configuration.createNewNode("BusinessInterface","My Business Interface");
       },
       attributes:{
@@ -1209,7 +1298,7 @@ this.configuration = {
           }
         }
     },InfrastructureInterface:{
-      new:function(){
+      new:function(xml){
         return configuration.createNewNode("InfrastructureInterface","My Infrastructure Interface");
       },
       attributes:{
@@ -1318,7 +1407,7 @@ this.configuration = {
           }
         }
     },ApplicationInterface:{
-      new:function(){
+      new:function(xml){
         return configuration.createNewNode("ApplicationInterface","My Application Interface");
       },
       attributes:{
@@ -1428,7 +1517,7 @@ this.configuration = {
         }
     },
     BusinessRole:{
-      new:function(){
+      new:function(xml){
         return configuration.createNewNode("BusinessRole","My Business Role");
       },
       attributes:{
@@ -1555,7 +1644,7 @@ this.configuration = {
           }
         }
     },BusinessInteraction:{
-      new:function(){
+      new:function(xml){
         return configuration.createNewNode("BusinessInteraction","My Business Interaction");
       },
       attributes:{
@@ -1685,7 +1774,7 @@ this.configuration = {
           }
         }
     },BusinessCollaboration:{
-      new:function(){
+      new:function(xml){
         return configuration.createNewNode("BusinessCollaboration","My Business Collaboration");
       },
       attributes:{
@@ -1793,7 +1882,7 @@ this.configuration = {
           }
         }
     },ApplicationCollaboration:{
-      new:function(){
+      new:function(xml){
         return configuration.createNewNode("ApplicationCollaboration","My Application Collaboration");
       },
       attributes:{
@@ -1901,7 +1990,7 @@ this.configuration = {
           }
         }
     },ApplicationInteraction:{
-      new:function(){
+      new:function(xml){
         return configuration.createNewNode("ApplicationInteraction","My Application Interaction");
       },
       attributes:{
@@ -2028,7 +2117,7 @@ this.configuration = {
           }
         }
     },BusinessService:{
-      new:function(){
+      new:function(xml){
         return configuration.createNewNode("BusinessService","My Business Service");
       },
       attributes:{
@@ -2129,7 +2218,7 @@ this.configuration = {
           }
         }
     },InfrastructureService:{
-      new:function(){
+      new:function(xml){
         return configuration.createNewNode("InfrastructureService","My Infrastructure Service");
       },
       attributes:{
@@ -2230,7 +2319,7 @@ this.configuration = {
           }
         }
     },ApplicationService:{
-      new:function(){
+      new:function(xml){
         return configuration.createNewNode("ApplicationService","My Application Service");
       },
       attributes:{
@@ -2332,7 +2421,7 @@ this.configuration = {
         }
     },
     Value:{
-      new:function(){
+      new:function(xml){
         return configuration.createNewNode("Value","My Value");
       },
       attributes:{
@@ -2424,7 +2513,7 @@ this.configuration = {
           }
         }
     },Contract:{
-      new:function(){
+      new:function(xml){
         return configuration.createNewNode("Contract","My Contract");
       },
       attributes:{
@@ -2507,7 +2596,7 @@ this.configuration = {
         return result;
       }
     }},DataObject:{
-      new:function(){
+      new:function(xml){
         return configuration.createNewNode("DataObject","My Data Object");
       },
       attributes:{
@@ -2594,7 +2683,7 @@ this.configuration = {
         return result;
       }
     }},Artifact:{
-      new:function(){
+      new:function(xml){
         return configuration.createNewNode("Artifact","My Artifact");
       },
       attributes:{
@@ -2695,7 +2784,7 @@ this.configuration = {
         return result;
       }
     }},ApplicationFunction:{
-      new:function(){
+      new:function(xml){
         return configuration.createNewNode("ApplicationFunction","My Application Function");
       },
       attributes:{
@@ -2796,7 +2885,7 @@ this.configuration = {
         return result;
       }
     }},InfrastructureFunction:{
-      new:function(){
+      new:function(xml){
         return configuration.createNewNode("InfrastructureFunction","My Infrastructure Function");
       },
       attributes:{
@@ -2897,7 +2986,7 @@ this.configuration = {
         return result;
       }
     }},ApplicationComponent:{
-      new:function(){
+      new:function(xml){
         return configuration.createNewNode("ApplicationComponent","My Application Component");
       },
       attributes:{
@@ -3011,7 +3100,7 @@ this.configuration = {
         return result;
       }
     }},Node:{
-      new:function(){
+      new:function(xml){
         return configuration.createNewNode("Node","My Node");
       },
       attributes:{
@@ -3129,7 +3218,7 @@ this.configuration = {
         return result;
       }
     }},Device:{
-      new:function(){
+      new:function(xml){
         return configuration.createNewNode("Device","My Device");
       },
       attributes:{
@@ -3232,7 +3321,7 @@ this.configuration = {
         return result;
       }
     }},SystemSoftware:{
-      new:function(){
+      new:function(xml){
         return configuration.createNewNode("SystemSoftware","My System Software");
       },
       attributes:{
@@ -3340,7 +3429,7 @@ this.configuration = {
         return result;
       }
     }},Network:{
-      new:function(){
+      new:function(xml){
         return configuration.createNewNode("Network","My Network");
       },
       attributes:{
@@ -3471,7 +3560,7 @@ this.configuration = {
         return result;
       }
     }},BusinessFunction:{
-      new:function(){
+      new:function(xml){
         return configuration.createNewNode("BusinessFunction","My Business Function");
       },
       attributes:{
@@ -3576,7 +3665,7 @@ this.configuration = {
         return result;
       }
     }},BusinessProcess:{
-      new:function(){
+      new:function(xml){
         return configuration.createNewNode("BusinessProcess","My Business Process");
       },
       attributes:{
@@ -3681,7 +3770,7 @@ this.configuration = {
         return result;
       }
     }},BusinessEvent:{
-      new:function(){
+      new:function(xml){
         return configuration.createNewNode("BusinessEvent","My Business Event");
       },
       attributes:{
@@ -3782,7 +3871,7 @@ this.configuration = {
           }
         }
     },Representation:{
-      new:function(){
+      new:function(xml){
         return configuration.createNewNode("Representation","My Representation");
       },
       attributes:{
@@ -3872,8 +3961,8 @@ this.configuration = {
   },
   edges:{
     AggregationRelationship:{
-      new:function(){
-        return configuration.createNewEdge("AggregationRelationship","MyAggregationRelationship")
+      new:function(xml){
+        return configuration.createNewEdge(xml,"AggregationRelationship","MyAggregationRelationship")
       },
       relates:[
         {end:"Contract", begin:"Product"},
@@ -3882,6 +3971,7 @@ this.configuration = {
         {end:"BusinessActor", begin:"BusinessActor"},
         {end:"ApplicationComponent", begin:"ApplicationCollaboration"}
       ],
+      allowHierarchiallyGrouping: true,
       look:[
         {
             type:"text",
@@ -3924,8 +4014,8 @@ this.configuration = {
       }
     },
     CompositionRelationship:{
-      new:function(){
-        return configuration.createNewEdge("CompositionRelationship","MyCompositionRelationship")
+      new:function(xml){
+        return configuration.createNewEdge(xml,"CompositionRelationship","MyCompositionRelationship")
 
       },
       relates:[
@@ -3963,8 +4053,8 @@ this.configuration = {
       }
     },
     RealisationRelationship:{
-      new:function(){
-        return configuration.createNewEdge("RealisationRelationship","MyRealisationRelationship")
+      new:function(xml){
+        return configuration.createNewEdge(xml,"RealisationRelationship","MyRealisationRelationship")
 
       },
       relates:[
@@ -4007,8 +4097,8 @@ this.configuration = {
       }
     },
     AssociationRelationship:{
-      new:function(){
-        return configuration.createNewEdge("AssociationRelationship","MyAssociationRelationship")
+      new:function(xml){
+        return configuration.createNewEdge(xml,"AssociationRelationship","MyAssociationRelationship")
       },
       relates:[
         {end:"Value", begin:"Product"},
@@ -4052,8 +4142,8 @@ this.configuration = {
       }
     },
     AssignmentRelationship:{
-      new:function(){
-        return configuration.createNewEdge("AssignmentRelationship","MyAssignmentRelationship")
+      new:function(xml){
+        return configuration.createNewEdge(xml,"AssignmentRelationship","MyAssignmentRelationship")
 
       },
       relates:[
@@ -4100,8 +4190,8 @@ this.configuration = {
       }
     },
     UsedByRelationship:{
-      new:function(){
-        return configuration.createNewEdge("UsedByRelationship","MyUsedByRelationship")
+      new:function(xml){
+        return configuration.createNewEdge(xml,"UsedByRelationship","MyUsedByRelationship")
 
       },
       relates:[
@@ -4176,8 +4266,8 @@ this.configuration = {
         return result;
       }
     },FlowRelationship:{
-      new:function(){
-        return configuration.createNewEdge("FlowRelationship","MyFlowRelationship")
+      new:function(xml){
+        return configuration.createNewEdge(xml,"FlowRelationship","MyFlowRelationship")
       },
       relates:[
         {end:"BusinessActor", begin:"BusinessActor"}
@@ -4295,18 +4385,6 @@ this.configuration = {
         return result;
       }
     }
-  },
-  groups:{
-    AggregationGroup:{
-      relates:[
-        {end:"Contract", begin:"Product"},
-        {end:"BusinessService", begin:"Product"},
-        {end:"BusinessActor", begin:"BusinessCollaboration"},
-        {end:"BusinessActor", begin:"BusinessActor"},
-        {end:"ApplicationComponent", begin:"ApplicationCollaboration"}
-      ],
-    },
-    undefined:{}
   },
   definitions:[
     {

@@ -135,9 +135,10 @@
         <paper-submenu label="Views">
           <paper-item class="menu-trigger">Views</paper-item>
           <paper-menu class="menu-content sublist">
-            <template is="dom-repeat" items="[[views]]">
-              <paper-item id="[[view.name]]" on-click="viewselected">[[view.name]]</paper-item>
-            </template>
+            <!-- <template is="dom-repeat" items="[[views]]"> -->
+              <paper-item id="addview" on-click="addview">Add View</paper-item>
+              <paper-item id="dropview" on-click="dropview">Drop View</paper-item>
+            <!-- </template> -->
         </paper-menu>
       </paper-submenu>
     <paper-submenu label="Nodes">
@@ -168,6 +169,12 @@
         views:Array,
         selectededge:Number,
         selectednode:Number
+      },
+      addview:function(e){
+        documentmodengine.createNewView();
+      },
+      dropview:function(e){
+
       },
       nodeselected:function(e){
         var viewid      = menu.$.menuTabs.selectedItem.id.substr(3);
@@ -237,18 +244,6 @@
           }else{
             console.log("documentmodengine not available");
           }
-          /*for(var edge in configuration.edges){
-            if(edge != "undefined"){
-
-              var newelement = {};
-              newelement["name"] = edge;
-              if(configuration.edges[edge].new){
-                this.edges = this.edges.concat([newelement]);
-              }
-
-            }
-          }*/
-
         }else{
           var context = this;
           setTimeout(function(){context.ready()},100);
@@ -660,21 +655,24 @@
 
       },
       load:function(){
-        if(this.object){
+        if(this.object&&this.type=="nodeattribute"){
           var nodetype = configuration.nodetype(this.object);
           nodetype = configuration.nodes[nodetype];
           this.value = nodetype.attributes[this.name].get(this.object);
+        }else if(this.object&&this.type=="viewattribute"){
+          this.value = configuration.attributes[this.name].get(this.object);
         }
 
       },
       save:function(){
-        if(this.object){
+        if(this.object&&this.type=="nodeattribute"){
           var nodetype = configuration.nodetype(this.object);
           nodetype = configuration.nodes[nodetype];
           nodetype.attributes[this.name].set(this.object,this.value);
-
           var viewid      = menu.$.menuTabs.selectedItem.id.substr(3);
           documentmodengine.updateLoadedView(viewid,documentmodengine.usersettings.lang);
+        }else if(this.object&&this.type=="viewattribute"){
+          configuration.attributes[this.name].set(this.object,this.value);
         }
 
       }
@@ -756,7 +754,7 @@
     <paper-listbox vertical-align="bottom" style="height:100%;padding-left:5%;padding-right:5%" selectable="none">
       <iron-label>{{label}} {{addinfo}}</iron-label>
       <template is="dom-repeat" items="{{attributes}}">
-        <model-attribute object={{item.object}} name="{{item.attributename}}" disabled$="{{item.disabled}}" value="{{item.value}}"></model-attribute>
+        <model-attribute object={{item.object}} name="{{item.attributename}}" disabled$="{{item.disabled}}" type="{{item.type}}" value="{{item.value}}"></model-attribute>
       </template>
       <template is="dom-repeat" items="{{links}}">
         <model-reference label="{{item.label}}" link="{{item.link}}" disabled$="[[item.disabled]]"></model-reference>
@@ -778,8 +776,9 @@
           document.addEventListener('NodeSelected', function(e){context.refreshLinks(e)}, false);
           document.addEventListener('EdgeSelected', function(e){context.refreshLinks(e)}, false);
           document.addEventListener('LinkAdded', function(e){context.refreshLinks(e)}, false);
+          document.addEventListener('NodesDeselected', function(e){context.refreshLinks(e)}, false);
         }else{
-          console.log("documentmodengine not available");
+          throw "DocumentModEngineNotAvailable"
         }
       },
       refreshLinks : function (a) {
@@ -800,6 +799,7 @@
                   var attr = {};
                   attr.object = data;
                   attr.attributename = key;
+                  attr.type = "nodeattribute";
                   attr.disabled = false;
                   //attr.value = "";
                   this.attributes.push(attr);
@@ -814,7 +814,30 @@
           }else if(a.detail&&a.detail.edge&&a.detail.edge[0]){
             this.label = $(a.detail.edge[0]).attr("id");
             this.addinfo = configuration.edgetype(a.detail.edgedata[0])
+            //TODO
             this.attributes = [];
+
+          }else if(a){
+            //nothing is selected. the view attributes are displayed;
+            var viewdata = documentmodengine.viewsdata[documentmodengine.usersettings.currentview];
+            this.label = configuration.viewid(viewdata.self);
+            this.addinfo = $(viewdata.self).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text()
+            this.attributes = [];
+            if(configuration.attributes){
+              for (var key in configuration.attributes) {
+                if (configuration.attributes.hasOwnProperty(key)) {
+                  var attr = {};
+                  attr.object = viewdata;
+                  attr.type = "viewattribute";
+                  attr.attributename = key;
+                  attr.disabled = false;
+                  //attr.value = "";
+                  this.attributes.push(attr);
+                }
+              }
+            }
+            this.attributes = this.attributes.concat([]);
+            mr.links = [];
           }
         }
     });
