@@ -940,10 +940,10 @@ deleteselection:function(viewid){
 									}else{
 										var r1 = movenode.getBoundingClientRect();
 										var r2 = refnode.getBoundingClientRect();
-										var collision = !(r2.left > r1.right ||
-													 r2.right < r1.left ||
-													 r2.top > r1.bottom ||
-													 r2.bottom < r1.top);
+										var collision = (r2.left < r1.left &&
+			 													 r2.right > r1.right &&
+			 													 r2.top < r1.top &&
+			 													 r2.bottom > r1.bottom);
 									 if(collision){
 										 	counter++;
 											collidedelement = refnode;
@@ -951,17 +951,61 @@ deleteselection:function(viewid){
 
 									}
 								});
-								//Remove Element from any other container
-								configuration.removeFromGroup(d3.select(movenode).data()[0]);
-								if(collidedelement){
-									//Add node to collided element
-									configuration.addNodeToGroup(d3.select(movenode).data()[0],d3.select(collidedelement).data()[0]);
-									//TODO: set element movenode behind element collidedelement in svg 
-									documentmodengine.functions.updateNode(d3.select(movenode));
-									documentmodengine.functions.updateNode(d3.select(collidedelement));
-									var updatedsvg = documentmodengine.updateLoadedView(viewid,documentmodengine.usersettings.lang);
-								}
+								//Do something, if no collided element, or collided element does not include element yet.
+								if(!collidedelement||!configuration.nodeBelongsToGroup(d3.select(movenode).data()[0],d3.select(collidedelement).data()[0])){
+									//Remove Element from any other container
+									configuration.removeFromGroup(d3.select(movenode).data()[0]);
+									var searchid = movenode.id;
+									d3.select(movenode.parentNode).selectAll("g.node").each(function(d){
 
+										var index = d.updates.indexOf(searchid);
+										if(index> -1){
+												d.updates.splice(index,1);
+												documentmodengine.functions.updateNode(d3.select(this));
+										}
+									});
+									if(collidedelement){
+										//Add node to collided element
+										configuration.addNodeToGroup(d3.select(movenode).data()[0],d3.select(collidedelement).data()[0]);
+
+										d3.select(movenode).attr("sort","true");
+										//all sub elements of the moved element need to be sorted as well
+										d3.select(movenode).each(function(d){
+											for(var i = 0 ; i<d.updates.length;i++){
+												d3.select("g.node[id='"+d.updates[i]+"']").attr("sort","true");
+											}
+										});
+										d3.select(collidedelement).attr("sort","true");
+										//all sub elements of the collided elements need to be sorted as well
+										d3.select(collidedelement).each(function(d){
+											for(var i = 0 ; i<d.updates.length;i++){
+												d3.select("g.node[id='"+d.updates[i]+"']").attr("sort","true");
+											}
+										});
+										d3.select(collidedelement).data()[0].updates.push(movenode.id);
+
+										//This needs to be done, in this awkward fashion, because the algorithm, does not actual
+										//as intended as soon as a relation between two elements is zero!
+
+										//Set element movenode behind element collidedelement in svg
+										d3.select(movenode.parentNode).selectAll("g.node[sort=true]").sort(function(a,b){
+											if(configuration.nodeBelongsToGroup(a,b)){
+												return 1;
+											}else if(configuration.nodeBelongsToGroup(b,a)){
+												return -1;
+											}else{
+												return 0;
+											}
+										});
+										d3.select(movenode).attr("sort","false");
+										d3.select(collidedelement).attr("sort","false");
+										//Redraw Node
+
+										documentmodengine.functions.updateNode(d3.select(movenode));
+										documentmodengine.functions.updateNode(d3.select(collidedelement));
+										var updatedsvg = documentmodengine.updateLoadedView(viewid,documentmodengine.usersettings.lang);
+									}
+								}
 							}
 							var context = this;
 							setTimeout(function(){

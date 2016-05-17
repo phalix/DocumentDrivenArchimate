@@ -136,7 +136,7 @@ this.configuration = {
 
     return element;
   },
-  allviews:function(data){return $(data).children().children('views');},//.children().eq(view_sel)},
+  allviews:function(data){return $(data).children().children('views');},
   allnodes:function(view,data){return $(view).find('node');},
   nodeid:function(node,data){
     var nodeid = $(node).attr("identifier");
@@ -237,9 +237,6 @@ this.configuration = {
     result.id = id;
     return result;
   },
-
-
-
   nodeadder:function(xml,view,element){
     $(xml).children("model").children("elements").append(element.element);
     $(view.self).append(element.self);
@@ -267,7 +264,7 @@ this.configuration = {
     $(view.self).append(element.self);
   },
   addNodeToGroup:function(data1,data2){
-    var actionrequired = this.nodeBelongsToGroup(data1,data2);
+    var actionrequired = !this.nodeBelongsToGroup(data1,data2);
     if(actionrequired){
         $(data2.self).append(data1.self);
         //TODO: also we need to create a model-relation for this.
@@ -284,7 +281,7 @@ this.configuration = {
     // At the moment, an existing model-relation will not be destroyed, on destroying the group relation.
   },
   nodeBelongsToGroup:function(data1,data2){
-    var actionrequired = !$.contains( data2.self, data1.self );
+    var actionrequired = $.contains( data2.self, data1.self );
     return actionrequired;
   },
   nodes:{
