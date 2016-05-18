@@ -219,16 +219,32 @@ addnewedge:function(type,viewid){
 },
 deleteselection:function(viewid){
 	var view = documentmodengine.viewsdata[viewid];
-	var selected = documentmodengine.nodeselection().data;
-	for(var element in selected){
-		var index = view.nodes.indexOf(selected[element]);
+	var selected = documentmodengine.nodeselection();
+	for(var element in selected.data){
+		var index = view.nodes.indexOf(selected.data[element]);
+		var node = selected.data[element].self;
 		if(index>-1){
-			configuration.deleteNode(window.xml,view,selected[element]);
+			for(var i  = 0;i<view.edges.length;i++){
+				if(documentmodengine.viewsdata[viewid].edges[i].source_node==node){
+					configuration.deleteEdge(documentmodengine.xml,view,documentmodengine.viewsdata[viewid].edges[i]);
+					view.edges.splice(index,1);
+				}else if(documentmodengine.viewsdata[viewid].edges[i].target_node==node){
+					configuration.deleteEdge(documentmodengine.xml,view,documentmodengine.viewsdata[viewid].edges[i]);
+					view.edges.splice(index,1);
+				}
+
+			}
+			configuration.deleteNode(documentmodengine.xml,view,selected.data[element]);
 			view.nodes.splice(index,1);
 		}
 
 	}
 
+	var selected = documentmodengine.edgeselection();
+	for(var element in selected.data){
+		configuration.deleteEdge(documentmodengine.xml,view,selected.data[element]);
+		view.edges.splice(element,1);
+	}
 
 
 	//Refresh on Delete
@@ -922,7 +938,7 @@ deleteselection:function(viewid){
 										var hoverinfo = hovercircle.attr("id").split(":");
 										if(bendpointinfo[2]==hoverinfo[2]&&bendpointinfo[1]==hoverinfo[1]){
 											//delete bendpoint
-											configuration.deleteEdge(d,bendpointinfo[2])
+											configuration.deleteEdgeBendpoint(d,bendpointinfo[2])
 											documentmodengine.drawEdge(d3.select(this.parentElement));
 										}
 									}

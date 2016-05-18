@@ -133,10 +133,10 @@ this.configuration = {
 
     var connection = $("<connection></connection>");
     var connectionid = configuration.idgenerator();
-    connection.attr("connection",connectionid);
+    connection.attr("identifier",connectionid);
     connection.attr("relationshipref",relationsshipid);
-    connection.attr("source",elementidsource);
-    connection.attr("target",elementidtarget);
+    connection.attr("source",nodeidsource);
+    connection.attr("target",nodeidtarget);
     var style = $("<style/>");
     var lineColor = $("<lineColor r='0' g='128' b='192' />");
     //add rgb by parameters
@@ -165,8 +165,8 @@ this.configuration = {
       var relationship = $("<relationship/>");
       relationship.attr("identifier",relationsshipid);
       relationship.attr("xsi:type",type);
-      relationship.attr("source",this.nodeid(source));
-      relationship.attr("target",this.nodeid(target));
+      relationship.attr("source",this.elementid(source));
+      relationship.attr("target",this.elementid(target));
 
       $(xml).children("model").children("relationships").append(relationship);
     }else{
@@ -183,6 +183,10 @@ this.configuration = {
   nodeid:function(node){
     var nodeid = $(node).attr("identifier");
     return nodeid;
+  },
+  elementid:function(data){
+    var id = $(data.element).attr("identifier");
+    return id;
   },
   nodeelement:function(node,data){
     //Retrieve the elements that is represented by the node
@@ -301,15 +305,17 @@ this.configuration = {
 
   deleteNode:function(xml,view,element){
     $(element.self).remove();
-
   },
-
+  deleteEdge:function(xml,view,element){
+    $(element.self).remove();
+  },
   addBendPoint:function(edge,x,y){
     $(edge.self).append("<bendpoint x='"+x+"' y='"+y+"' ></bendpoint>");
   },updateEdgePosition: function(edge,index,x,y){
     $(edge.self).children("bendpoint").eq(index).attr("x",x)
     $(edge.self).children("bendpoint").eq(index).attr("y",y);
-  },deleteEdge: function(edge,index){
+  },
+  deleteEdgeBendpoint: function(edge,index){
     $(edge.self).children("bendpoint").eq(index).remove();
   },
   edgeadder:function(xml,view,element){
@@ -367,7 +373,7 @@ this.configuration = {
     return actionrequired;
   },
   checkRelationExistence:function(xml,data1,data2,relationsshiptype){
-    var result = $(xml).children("model").children("relationships").children("relationship[xsi\\:type='"+relationsshiptype+"'][source='"+this.nodeid(data1.element)+"'][target='"+this.nodeid(data2.element)+"']")
+    var result = $(xml).children("model").children("relationships").children("relationship[xsi\\:type='"+relationsshiptype+"'][source='"+this.elementid(data1)+"'][target='"+this.elementid(data2)+"']")
     if(result.length>0){
       return result[0]
     }
