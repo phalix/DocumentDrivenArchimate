@@ -510,8 +510,9 @@
             }
 
           }
-
+          documentmodengine.deselection();
         }
+
       },
       ready:function(){
         if(documentmodengine){
@@ -519,6 +520,9 @@
           document.addEventListener("DoneWithLoading",function(e){
             context.setupTabsAndPages();
           });
+          document.addEventListener('ViewCreated', function(e){
+            context.setupTabsAndPages();
+          }, false);
         }else{
           console.log("documentmodengine not available");
         }
@@ -536,6 +540,10 @@
         for(var i=0;i < documentmodengine.views.children().size();i++){
           var tab = {};
           tab.tabtext = $(documentmodengine.views.children().eq(i)).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
+          //Show label id, if no name is available
+          if(tab.tabtext .length == 0){
+            tab.tabtext  = i;
+          }
           tab.divid = "div"+i;
           tab.tabid = "tab"+i;
           tab.content = documentmodengine.diagrams[i]
@@ -545,7 +553,12 @@
           }
           this.stuff = this.stuff.concat([tab]);
         }
-        this.selected = 0;
+        if(documentmodengine.usersettings.currentview){
+            this.selected = documentmodengine.usersettings.currentview;
+        }else{
+          this.selected = 0;
+        }
+
         this.refreshSvg();
       },
       ModelSelectionDialog:function(){
@@ -639,16 +652,7 @@
         disabled: Boolean
       },
       ready:function(){
-        this.load();/*
-        if(this.object){
-
-        }else{
-          var context = this;
-          setTimeout(function(){
-            context.ready();
-          },500);
-        }*/
-
+        this.load();
       },
       attributeChanged:function(){
         this.load();
@@ -673,6 +677,7 @@
           documentmodengine.updateLoadedView(viewid,documentmodengine.usersettings.lang);
         }else if(this.object&&this.type=="viewattribute"){
           configuration.attributes[this.name].set(this.object,this.value);
+          menu.setupTabsAndPages();
         }
 
       }

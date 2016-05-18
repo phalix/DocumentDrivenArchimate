@@ -85,13 +85,13 @@ this.configuration = {
         fillColor.attr("b",fillcolorb);
     }
     var lineColor = $("<lineColor r='92' g='92' b='92' />");
-    if(lineColorr){
+    if(linecolorr){
         lineColor.attr("r",lineColorr);
     }
-    if(lineColorg){
+    if(linecolorg){
         lineColor.attr("g",lineColorg);
     }
-    if(lineColorb){
+    if(linecolorb){
         lineColor.attr("b",lineColorb);
     }
     style.append(fillColor);
@@ -179,7 +179,7 @@ this.configuration = {
     var viewid = $(view).attr("identifier");
     return viewid;
   },
-  allnodes:function(view,data){return $(view).find('node');},
+  allnodes:function(viewid,data){return $(data).children('model').children("views").children("view").eq(viewid).find("node");},
   nodeid:function(node){
     var nodeid = $(node).attr("identifier");
     return nodeid;
@@ -230,7 +230,7 @@ this.configuration = {
 
     return result;
   },
-  alledges:function(view,data){return $(view).find('connection');},
+  alledges:function(viewid,data){ return $(data).children('model').children("views").children("view").eq(viewid).find('connection');},
   allgroups:function(view,data){
     //not completed
     var nodes = this.allnodes(view,data);
