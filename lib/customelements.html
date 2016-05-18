@@ -441,6 +441,7 @@
       <paper-menu-button>
         <paper-icon-button icon="menu" class="dropdown-trigger"></paper-icon-button>
         <paper-menu class="dropdown-content">
+          <paper-item on-click="ModelNewDialog">New</paper-item>
           <paper-item on-click="ModelSelectionDialog">Open</paper-item>
           <paper-item on-click="ModelSaveDialog">Save</paper-item>
           <!-- <paper-item>Settings</paper-item>
@@ -482,11 +483,12 @@
             if(!documentmodengine.usersettings.zoom){
               documentmodengine.usersettings.zoom = 1.0
             }
-
+            var width = Math.max(rect.width,1000)
+            var height = Math.max(rect.height,568)
             svg
-            .attr("width",rect.width*1.05*documentmodengine.usersettings.zoom)
-            .attr("height",rect.height*1.05*documentmodengine.usersettings.zoom)
-            .attr("viewBox",rect.x+","+rect.y+","+rect.width*1.05+","+rect.height*1.05);
+            .attr("width",width*1.05*documentmodengine.usersettings.zoom)
+            .attr("height",height*1.05*documentmodengine.usersettings.zoom)
+            .attr("viewBox",rect.x+","+rect.y+","+width*1.05+","+height*1.05);
 
             div.style("width","100%");
             div.style("height",($(window).height()-300)+"px");
@@ -511,6 +513,7 @@
 
           }
           documentmodengine.deselection();
+
         }
 
       },
@@ -579,6 +582,9 @@
         element.click();
 
         document.body.removeChild(element);
+      },
+      ModelNewDialog:function(){
+        documentmodengine.prepareEmptyModel('en');
       }
       });
       this.stuff = [];
@@ -825,24 +831,28 @@
           }else if(a){
             //nothing is selected. the view attributes are displayed;
             var viewdata = documentmodengine.viewsdata[documentmodengine.usersettings.currentview];
-            this.label = configuration.viewid(viewdata.self);
-            this.addinfo = $(viewdata.self).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text()
             this.attributes = [];
-            if(configuration.attributes){
-              for (var key in configuration.attributes) {
-                if (configuration.attributes.hasOwnProperty(key)) {
-                  var attr = {};
-                  attr.object = viewdata;
-                  attr.type = "viewattribute";
-                  attr.attributename = key;
-                  attr.disabled = false;
-                  //attr.value = "";
-                  this.attributes.push(attr);
+            mr.links = [];
+            if(viewdata)
+            {
+              this.label = configuration.viewid(viewdata.self);
+              this.addinfo = $(viewdata.self).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text()
+
+              if(configuration.attributes){
+                for (var key in configuration.attributes) {
+                  if (configuration.attributes.hasOwnProperty(key)) {
+                    var attr = {};
+                    attr.object = viewdata;
+                    attr.type = "viewattribute";
+                    attr.attributename = key;
+                    attr.disabled = false;
+                    //attr.value = "";
+                    this.attributes.push(attr);
+                  }
                 }
               }
+              this.attributes = this.attributes.concat([]);
             }
-            this.attributes = this.attributes.concat([]);
-            mr.links = [];
           }
         }
     });

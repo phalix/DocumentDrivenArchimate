@@ -4,12 +4,9 @@
 //This software was created with the help of the jquery and d3js library.
 //See https://d3js.org/ and https://jquery.com/ for more info.
 
-//TODO: react if nodes overlap, and propose relation!
-//TODO: check for existencse of model relation; and reuse.
 //TODO: attributes edges
-//TODO: attributes views
 //TODO: update menu
-
+//TODO: do not use the order of the views in the xml, rather use the viewid for managing views, everywhere where allviews is used.
 
 documentmodengine = {
 	version : "1.0",
@@ -78,7 +75,7 @@ documentmodengine = {
 		var context = this;
 		reader.onload = function(event) {
 			var xml = $.parseXML(event.target.result);
-			window.xml = xml;
+
 			documentmodengine.xml = xml;
 
 			var ce = new CustomEvent("DoneLoadingAFile",{
@@ -120,23 +117,45 @@ documentmodengine = {
 				}).done(function(xml){
 					//prepare xml file.
 					//I need all data for each connection and each node!
-					window.xml = xml;
+					documentmodengine.xml = xml;
 					documentmodengine.xml = xml;
 					documentmodengine.buildModel_internal(lang);
 				});
+	},
+
+	prepareEmptyModel:function(lang){
+		if(!configuration){return null;}
+
+		var ce = new CustomEvent("StartingLoadingAnEmptyModel",{
+			detail: {
+				lang: lang,
+				loader: this
+			}});
+		document.dispatchEvent(ce);
+
+		window.done = 1;
+		documentmodengine.status = 1;
+		documentmodengine.usersettings.lang = lang;
+		documentmodengine.xml = configuration.newmodel(lang);
+		var context = this;
+
+		setTimeout(function(){
+			documentmodengine.buildModel_internal(lang)
+		},0)
+
 	},
 createNewView:function(){
 	var newview = configuration.createView(documentmodengine.xml);
 	if(newview){
 
 		var viewdata = {};
-		viewdata.self = newview[0];
+		viewdata.self = newview;
 		viewdata.nodes = [];
 		viewdata.edges  = [];
-		var views = configuration.allviews(xml);
+		var views = configuration.allviews(documentmodengine.xml);
 		//create tabs;
 		for(var i = 0; i < views.children().size();i++){
-			if(views.children().eq(i)[0]==newview[0]){
+			if(views.children().eq(i)[0]==newview){
 				documentmodengine.viewsdata[i] = viewdata
 				var result = documentmodengine.buildView_internal(d3.select(documentmodengine.svg),i,viewdata,documentmodengine.usersettings.lang);
 				documentmodengine.diagrams.push(result[0][0]);
@@ -159,7 +178,7 @@ addnewnode:function(type,viewid){
 	var newnode = configuration.nodes[type].new(documentmodengine.xml);
 	if(newnode){
 		var view = documentmodengine.viewsdata[viewid];
-		configuration.nodeadder(window.xml,view,newnode);
+		configuration.nodeadder(documentmodengine.xml,view,newnode);
 		view.nodes.push(newnode);
 		var updatedsvg  = documentmodengine.updateLoadedView(viewid,documentmodengine.usersettings.lang);
 	}else{
@@ -195,7 +214,7 @@ addnewedge:function(type,viewid){
 		if(newedge){
 			newedge.viewid = viewid;
 			var view = documentmodengine.viewsdata[viewid];
-			configuration.edgeadder(window.xml,view,newedge);
+			configuration.edgeadder(documentmodengine.xml,view,newedge);
 			view.edges.push(newedge);
 			var selected = documentmodengine.nodeselection().data;
 			for(var i=0;i<selected.length;i++){
@@ -266,7 +285,7 @@ deleteselection:function(viewid){
 					documentmodengine.node = d3.select(document.createElement("div"));
 					documentmodengine.svg = documentmodengine.node.append("svg")[0][0];
 
-					var views = configuration.allviews(xml);
+					var views = configuration.allviews(documentmodengine.xml);
 					//create tabs;
 					var view_ids = [];
 					for(var i = 0; i < views.children().size();i++){
@@ -353,28 +372,28 @@ deleteselection:function(viewid){
 		//prepare data structure
 
 
-		var nodes_ofview = configuration.allnodes(byid,xml)
+		var nodes_ofview = configuration.allnodes(byid,documentmodengine.xml)
 		for(var j = 0;j< nodes_ofview.size();j++){
 			var nodedata = {};
 			if(configuration.nodeid){
-				nodedata.id = configuration.nodeid(nodes_ofview[j],xml);
+				nodedata.id = configuration.nodeid(nodes_ofview[j],documentmodengine.xml);
 			}
 			if(configuration.nodeelement){
-				nodedata.element = configuration.nodeelement(nodes_ofview[j],xml);
+				nodedata.element = configuration.nodeelement(nodes_ofview[j],documentmodengine.xml);
 			}
 			if(configuration.nodeupdates){
-				nodedata.updates = configuration.nodeupdates(nodes_ofview[j],xml);
+				nodedata.updates = configuration.nodeupdates(nodes_ofview[j],documentmodengine.xml);
 			}
 			nodedata.self = nodes_ofview[j];
 			nodedata.viewid = byid;
 			viewdata.nodes.push(nodedata);
 		}
 
-		var edges_ofview = configuration.alledges(byid,xml);
+		var edges_ofview = configuration.alledges(byid,documentmodengine.xml);
 		for(var j = 0;j< edges_ofview.size();j++){
 			var edgedata = {};
 			if(configuration.edge_datacollector){
-				edgedata = configuration.edge_datacollector(edges_ofview[j],xml);
+				edgedata = configuration.edge_datacollector(edges_ofview[j],documentmodengine.xml);
 			}
 			edgedata.viewid = byid;
 			edgedata.self = edges_ofview[j];
@@ -392,8 +411,11 @@ deleteselection:function(viewid){
 		var nodes = viewdata.nodes;
 		var edges = viewdata.edges;
 
+		documentmodengine.deselection();
+
 		documentmodengine.drawNodes(viewg,nodes);
 		documentmodengine.drawEdges(viewg,edges);
+
 	},
 	drawNodes: function(svg,data){
 
@@ -708,7 +730,7 @@ deleteselection:function(viewid){
 				}
 
 				if(!found&&!first){
-					d3.select(this).attr("selected","false");
+					//d3.select(this).attr("selected","false");
 					if(configuration.addBendPoint){
 							configuration.addBendPoint(d,x,y);
 					}else{
@@ -905,9 +927,6 @@ deleteselection:function(viewid){
 
 							if(true || documentmodengine.usersettings.viewonly != true){
 								bendpointselector.on("mouseover",function(d){
-
-
-
 									d3.selectAll(".hover.connection").remove();
 									var arrayofattr = d3.select(this).attr("id").split(":")
 									d3.select(this.parentElement)
@@ -959,6 +978,8 @@ deleteselection:function(viewid){
 		d3.selectAll(".nodeselector").remove();
 		d3.selectAll("g.node[selected=true]").attr("selected","false");
 		d3.selectAll("g.connection[selected=true]").attr("selected", false);
+
+
 
 		var ce = new CustomEvent("NodesDeselected",{
 			detail: {
@@ -1280,12 +1301,23 @@ deleteselection:function(viewid){
 				}
 
 			},
-			textDistributionToTSpan: function(text,width,height,ref_x,ref_y){
-				if(!ref_x){
-					ref_x = width/2
-				}
-				if(!ref_y){
-					ref_y = height/Math.round(height / configuration.globalTextlines)
+			textDistributionToTSpan: function(text,width,height,linebyline){
+				var ref_x = undefined;
+				var ref_y = undefined;
+				if(linebyline){
+					if(!ref_x){
+						ref_x = 8;
+					}
+					if(!ref_y){
+						ref_y = 6;
+					}
+				}else{
+					if(!ref_x){
+						ref_x = width/2;
+					}
+					if(!ref_y){
+						ref_y = height/Math.round(height / configuration.globalTextlines);
+					}
 				}
 				var result = "";
 				if(text.length < (width/configuration.globalCharheight)-configuration.globalParagraph){
@@ -1314,7 +1346,8 @@ deleteselection:function(viewid){
 					}
 
 					var i = 0;
-					for(;i<Math.min(texts.length,Math.round(height / configuration.globalTextlines));i++){
+					var numoflines = Math.min(texts.length,Math.floor(height / configuration.globalTextlines));
+					for(;i<numoflines;i++){
 
 						var addtext = "";
 						if((i+1==Math.min(texts.length,Math.round(height / configuration.globalTextlines))
@@ -1328,11 +1361,14 @@ deleteselection:function(viewid){
 							addtext = texts[i];
 						}
 
-
-						var diff = Math.round(height / configuration.globalTextlines) - Math.min(texts.length,Math.round(height / configuration.globalTextlines));
-						var dy = 15*(i+(diff/2));
+						var dy = height/numoflines*(i);//+configuration.globalTextlines/2;
+						//dy = dy - ref_y;
+						if(linebyline){
+							dy = ref_y+((i)*configuration.globalTextlines);
+						}
 
 						result +="<tspan x='"+ref_x+"' y='"+ref_y+"' dy='"+dy+"'>"+addtext+"</tspan>";
+
 
 					}
 				}

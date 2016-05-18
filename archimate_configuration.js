@@ -2,9 +2,62 @@
 this.configuration = {
   globalDelimiter: 50,
   globalParagraph: 4,
-  globalTextlines: 20,
+  globalTextlines: 13,
   globalCharheight: 8,
   edgedistance: 10,
+  newmodel:function(lang){
+    var xml = '<?xml version="1.0"?><model/>';
+    var result = jQuery.parseXML(xml);
+    var model = $(result).children("model");
+    model.attr("xmlns",'http://www.opengroup.org/xsd/archimate');
+    model.attr("xmlns:dc",'http://purl.org/dc/elements/1.1/');
+    model.attr("xmlns:xsi",'http://www.w3.org/2001/XMLSchema-instance');
+    model.attr("xsi:schemaLocation",'http://www.opengroup.org/xsd/archimate archimate_v2p1.xsd http://purl.org/dc/elements/1.1/ http://dublincore.org/schemas/xmls/qdc/2008/02/11/dc.xsd');
+    model.attr("identifier",configuration.idgenerator());
+
+    var metadata = $("<metadata></metadata>");
+    var schema = $("<schema></schema>");
+    metadata.append(schema);
+    var schemaversion = $("<schemaversion></schemaversion>");
+    metadata.append(schemaversion);
+    var title = $("<dc:title></dc:title>");
+    metadata.append(title);
+    var creator = $("<dc:creator></dc:creator>");
+    metadata.append(creator);
+    var subject = $("<dc:subject></dc:subject>");
+    metadata.append(subject);
+    var description = $("<dc:description></dc:description>");
+    metadata.append(description);
+    var format = $("<dc:format></dc:format>");
+    metadata.append(format);
+    var language = $("<dc:language></dc:language>");
+    metadata.append(language);
+    model.append(metadata);
+
+    var documentation = $("<documentation></documentation>");
+    documentation.attr("xml:lang",lang);
+    model.append(documentation);
+
+    var name = $("<name></name>");
+    name.attr("xml:lang",lang);
+    model.append(name);
+
+    var properties = $("<properties></properties>");
+    model.append(properties);
+    var elements = $("<elements></elements>");
+    model.append(elements);
+    var relationships = $("<relationships></relationships>");
+    model.append(relationships);
+    var organization = $("<organization></organization>");
+    model.append(organization);
+    var propertydefs = $("<propertydefs></propertydefs>");
+    model.append(propertydefs);
+    var views = $("<views></views>");
+    model.append(views);
+
+
+    return result;
+  },
   modelname:function(data){
     return $(data).children("name[xml\\:lang="+documentmodengine.usersettings.lang+"]").text()
   },
@@ -38,7 +91,7 @@ this.configuration = {
     view.append(label);
     view.append(documentation);
     views.append(view);
-    return view;
+    return view[0];
   },
   attributes:{
     name:{
@@ -302,12 +355,15 @@ this.configuration = {
     $(node.self).attr("x",x);
     $(node.self).attr("y",y);
   },
-
   deleteNode:function(xml,view,element){
     $(element.self).remove();
+    //TODO:check if element is referenced anywhere, if not delte element as well
+    //element.element
   },
   deleteEdge:function(xml,view,element){
     $(element.self).remove();
+    //TODO: check if relation is referenced anywhere, either by an edge or a group,
+    // if not delete relation as well.
   },
   addBendPoint:function(edge,x,y){
     $(edge.self).append("<bendpoint x='"+x+"' y='"+y+"' ></bendpoint>");
@@ -1143,7 +1199,21 @@ this.configuration = {
           type:"text",
           innerHtml:function(data){
             var text = $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
-            return documentmodengine.functions.textDistributionToTSpan(text,$(data.self).attr("w"),$(data.self).attr("h"))},
+            var x = 0;
+            if($(data.self).children("node").size()>0){
+              x = 6;
+            }else{
+              x = $(data.self).attr('w')/2
+            }
+            var y = 0;
+            if($(data.self).children("node").size()>0){
+              y = 8;
+            }else
+              {
+                y = $(data.self).attr('h')/2
+              }
+            var linebyline = $(data.self).children("node").size()>0
+            return documentmodengine.functions.textDistributionToTSpan(text,$(data.self).attr("w"),$(data.self).attr("h"),linebyline,x,y)},
           x:function(data){
             if($(data.self).children("node").size()>0){
               return 6;

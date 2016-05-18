@@ -27,5 +27,3 @@ However, for a fully functional modeler certain elements are missing.
 ## TODOS
 3. realize: stakeholder, driver, assessment, requirement, constraint, Work Package, Deliverable, Plateau, Gap
 5. Placement of labels is not so optimal at the moment
-6. The selection indicator should be updated, on resize, delete.
-7. after creation of an edge, the selection shown is not valid.
