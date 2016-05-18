@@ -8,6 +8,7 @@
 //TODO: update menu
 //TODO: do not use the order of the views in the xml, rather use the viewid for managing views, everywhere where allviews is used.
 
+
 documentmodengine = {
 	version : "1.0",
 	author 	: "Sebastian Bittmann",

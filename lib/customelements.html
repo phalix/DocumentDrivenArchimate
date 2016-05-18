@@ -1,5 +1,5 @@
 <!--
-//TODO: Complete coponent for adding nodes, edges and views
+//TODO: A fixed layout is required for better working with the tool.
 -->
 <dom-module id="link-dialog">
   <template>
@@ -100,6 +100,7 @@
       },false);
       document.addEventListener("fileselected",function(e){
         if(documentmodengine){
+          if(documentmodengine.svg){d3.select(documentmodengine.svg).remove();};
           console.log(ms.file);
           setTimeout(context.start(e),10);
           setTimeout(documentmodengine.prepareFile,50,e.detail.file,'en');
@@ -483,12 +484,14 @@
             if(!documentmodengine.usersettings.zoom){
               documentmodengine.usersettings.zoom = 1.0
             }
-            var width = Math.max(rect.width,1000)
-            var height = Math.max(rect.height,568)
+            var width = Math.max(rect.width,1000);
+            var height = Math.max(rect.height,568);
+            var x = 0;
+            var y = 0;
             svg
             .attr("width",width*1.05*documentmodengine.usersettings.zoom)
             .attr("height",height*1.05*documentmodengine.usersettings.zoom)
-            .attr("viewBox",rect.x+","+rect.y+","+width*1.05+","+height*1.05);
+            .attr("viewBox",x+","+y+","+width*1.05+","+height*1.05);
 
             div.style("width","100%");
             div.style("height",($(window).height()-300)+"px");
@@ -568,12 +571,12 @@
         document.querySelector("#ms").open();
       },
       ModelSaveDialog:function(){
-        //window.xml.firstChild.outerHTML
+        //documentmodengine.xml.firstChild.outerHTML
         var element = document.createElement('a');
-        element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(window.xml.firstChild.outerHTML));
-        var name = configuration.modelname(window.xml.firstChild);
+        element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(documentmodengine.xml.firstChild.outerHTML));
+        var name = configuration.modelname(documentmodengine.xml.firstChild);
         name = name.replace(" ","_");
-        var type = configuration.modelfiletype(window.xml.firstChild);
+        var type = configuration.modelfiletype(documentmodengine.xml.firstChild);
         element.setAttribute('download', name+"."+type);
 
         element.style.display = 'none';

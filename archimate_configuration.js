@@ -1,3 +1,7 @@
+//TODO: Configuration of text layout should be copied from business actor to other nodes.
+//TODO: Configure stakeholder, driver, assessment, requirement, constraint, Work Package, Deliverable, Plateau, Gap
+//TODO: summarize operations to node operation, edge operations, view operations and model operations
+//TODO: the summarized operations should be structured in a similiar manner, new, add, drop, change, get id and so on.
 
 this.configuration = {
   globalDelimiter: 50,
