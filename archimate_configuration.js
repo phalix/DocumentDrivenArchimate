@@ -2,6 +2,7 @@
 //TODO: Configure stakeholder, driver, assessment, requirement, constraint, Work Package, Deliverable, Plateau, Gap
 //TODO: summarize operations to node operation, edge operations, view operations and model operations
 //TODO: the summarized operations should be structured in a similiar manner, new, add, drop, change, get id and so on.
+//TODO: use colors better!
 
 this.configuration = {
   globalDelimiter: 50,
