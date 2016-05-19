@@ -56,22 +56,25 @@
 
 
 <model-selection id="ms"></model-selection>
-<div class="layout vertical">
-  <div class="flex">
+
     <div class="layout horizontal">
       <div class="flex">
-        <model-menu id="menu"></model-menu>
+        <div class="layout vertical">
+          <div class="flex">
+            <model-menu id="menu"></model-menu>
+        </div>
+        <div>
+        <model-zoom></model-zoom>
+        <model-references id="mr"></model-references>
+        </div>
+        </div>
+
       </div>
       <div>
         <model-editor id="me"></model-editor>
       </div>
     </div>
-  </div>
-  <div>
-    <model-zoom></model-zoom>
-    <model-references id="mr"></model-references>
-  </div>
-</div>
+
 
 <model-action-display id="md"></model-action-display>
 

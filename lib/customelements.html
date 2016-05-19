@@ -1,6 +1,7 @@
 <!--
 //TODO: A fixed layout is required for better working with the tool.
 //TODO: sort nodes and connections
+//TODO: The notifier "model-action-display" should react to more events of the documentmodenegine, node deleted, edge deleted and so on.
 -->
 <dom-module id="link-dialog">
   <template>
@@ -528,7 +529,7 @@
             context.setupTabsAndPages();
           });
           document.addEventListener('ViewCreated', function(e){
-            context.setupTabsAndPages();
+            context.pushNewView();
           }, false);
         }else{
           console.log("documentmodengine not available");
@@ -541,6 +542,10 @@
           var context = this;
           setTimeout(function(){context.ready()},100);
         }
+      },
+      pushNewView:function(){
+        documentmodengine.usersettings.currentview = documentmodengine.views.children().size()-1;
+        this.setupTabsAndPages();
       },
       setupTabsAndPages:function(){
         this.stuff = [];
