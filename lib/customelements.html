@@ -180,25 +180,51 @@
 
       },
       nodeselected:function(e){
-        var viewid      = menu.$.menuTabs.selectedItem.id.substr(3);
+
+        var int         = menu.$.menuTabs.selectedItem.id.substr(3);
+        var viewid      = $(documentmodengine.svg).find("g.view").eq(int).attr("id");
         documentmodengine.addnewnode(e.target.id,viewid);
         this.selectednode = -1;
       },
       edgeselected:function(e){
-        var viewid      = menu.$.menuTabs.selectedItem.id.substr(3);
+        var int         = menu.$.menuTabs.selectedItem.id.substr(3);
+        var viewid      = $(documentmodengine.svg).find("g.view").eq(int).attr("id");
         documentmodengine.addnewedge(e.target.id,viewid);
         this.selectededge = -1;
       },
       dropselection:function(e){
-        var viewid      = menu.$.menuTabs.selectedItem.id.substr(3);
+        var int         = menu.$.menuTabs.selectedItem.id.substr(3);
+        var viewid      = $(documentmodengine.svg).find("g.view").eq(int).attr("id");
         documentmodengine.deleteselection(viewid);
         this.selectededge = -1;
+      },
+      sortnodes:function(e){
+        this.nodes = this.nodes.sort(function(a,b){
+          if(a["name"]==b["name"]){
+            return 0;
+          }else if(a["name"]<b["name"]){
+            return -1;
+          }else{
+            return 1;
+          }
+        });
+      },
+      sortedges:function(e){
+        this.edges = this.edges.sort(function(a,b){
+          if(a["name"]==b["name"]){
+            return 0;
+          }else if(a["name"]<b["name"]){
+            return -1;
+          }else{
+            return 1;
+          }
+        });
       },
       changeedges:function(e){
         this.edges = [];
         if(e.detail.node.length == 2){
-          var nodetype_first = configuration.nodetype(e.detail.nodedata[0]);
-          var nodetype_second = configuration.nodetype(e.detail.nodedata[1]);
+          var nodetype_first = configuration.modelelement.type(e.detail.nodedata[0].element);
+          var nodetype_second = configuration.modelelement.type(e.detail.nodedata[1].element);
           for(key in configuration.edges){
             var edge = configuration.edges[key];
             if(edge.relates){
@@ -216,6 +242,7 @@
               }
             }
           }
+          this.sortedges();
         }
 
       },
@@ -247,6 +274,7 @@
           }else{
             console.log("documentmodengine not available");
           }
+          this.sortnodes();
         }else{
           var context = this;
           setTimeout(function(){context.ready()},100);
@@ -498,24 +526,24 @@
             div.style("width","100%");
             div.style("height",($(window).height()-300)+"px");
 
-            documentmodengine.usersettings.currentview = this.selected;
+            if(!this.selected){
+              this.selected = 0;
+            }
+            documentmodengine.usersettings.currentview = $(documentmodengine.svg).find("g.view").eq(this.selected).attr("id");
+
+
 
             var stop = true;
             var start = 0;
-            while(stop){
-              var result = div.select("svg").select("g.view[viewid='"+start+"']");
-              if(result[0][0]){
-                if(start != documentmodengine.usersettings.currentview){
-                  result.attr("visibility","hidden");
+            var views = $(documentmodengine.svg).find("g.view");
+            for(var i = 0;i < views.size();i++){
+                var curid = views.eq(i).attr("id");
+                if(curid != documentmodengine.usersettings.currentview){
+                  views.eq(i).attr("visibility","hidden");
                 }else{
-                  result.attr("visibility","visible");
+                  views.eq(i).attr("visibility","visible");
                 }
-              }else{
-                stop = false;
-              }
-              start += 1;
             }
-
           }
           documentmodengine.deselection();
 
@@ -544,17 +572,19 @@
         }
       },
       pushNewView:function(){
-        documentmodengine.usersettings.currentview = documentmodengine.views.children().size()-1;
+        var views = $(documentmodengine.svg).find("g.view");
+        documentmodengine.usersettings.currentview = views.eq(views.size()-1).attr("id");
         this.setupTabsAndPages();
       },
       setupTabsAndPages:function(){
         this.stuff = [];
-        for(var i=0;i < documentmodengine.views.children().size();i++){
+        var views = configuration.model.views(documentmodengine.xml);
+        for(var i=0;i < views.size();i++){
           var tab = {};
-          tab.tabtext = $(documentmodengine.views.children().eq(i)).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
+          tab.tabtext = configuration.view.attributes.name.get(views[i]);
           //Show label id, if no name is available
           if(tab.tabtext .length == 0){
-            tab.tabtext  = i;
+            tab.tabtext  = configuration.view.id(views[i]);
           }
           tab.divid = "div"+i;
           tab.tabid = "tab"+i;
@@ -566,8 +596,15 @@
           this.stuff = this.stuff.concat([tab]);
         }
         if(documentmodengine.usersettings.currentview){
-            this.selected = documentmodengine.usersettings.currentview;
-        }else{
+            var views = $(documentmodengine.svg).find("g.view");
+            for(var i = 0;i<views.size();i++){
+              if(views.eq(i).attr("id")==documentmodengine.usersettings.currentview){
+                this.selected = i;
+              }
+            }
+        }
+        if(!this.selected)
+        {
           this.selected = 0;
         }
 
@@ -580,7 +617,7 @@
         //documentmodengine.xml.firstChild.outerHTML
         var element = document.createElement('a');
         element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(documentmodengine.xml.firstChild.outerHTML));
-        var name = configuration.modelname(documentmodengine.xml.firstChild);
+        var name = configuration.model.name(documentmodengine.xml.firstChild);
         name = name.replace(" ","_");
         var type = configuration.modelfiletype(documentmodengine.xml.firstChild);
         element.setAttribute('download', name+"."+type);
@@ -675,23 +712,26 @@
       },
       load:function(){
         if(this.object&&this.type=="nodeattribute"){
-          var nodetype = configuration.nodetype(this.object);
-          nodetype = configuration.nodes[nodetype];
-          this.value = nodetype.attributes[this.name].get(this.object);
+          var nodetype = configuration.modelelement.type(configuration.node.modelelement(documentmodengine.xml,this.object.self));
+          if(nodetype){
+            nodetype = configuration.nodes[nodetype];
+            this.value = nodetype.attributes[this.name].get(this.object);
+          }
         }else if(this.object&&this.type=="viewattribute"){
-          this.value = configuration.attributes[this.name].get(this.object);
+          this.value = configuration.view.attributes[this.name].get(this.object);
         }
 
       },
       save:function(){
         if(this.object&&this.type=="nodeattribute"){
-          var nodetype = configuration.nodetype(this.object);
+          var nodetype = configuration.modelelement.type(configuration.node.modelelement(documentmodengine.xml,this.object.self));
           nodetype = configuration.nodes[nodetype];
           nodetype.attributes[this.name].set(this.object,this.value);
-          var viewid      = menu.$.menuTabs.selectedItem.id.substr(3);
+          var int         = menu.$.menuTabs.selectedItem.id.substr(3);
+          var viewid      = $(documentmodengine.svg).find("g.view").eq(int).attr("id");
           documentmodengine.updateLoadedView(viewid,documentmodengine.usersettings.lang);
         }else if(this.object&&this.type=="viewattribute"){
-          configuration.attributes[this.name].set(this.object,this.value);
+          configuration.view.attributes[this.name].set(this.object,this.value);
           menu.setupTabsAndPages();
         }
 
@@ -811,7 +851,7 @@
             this.attributes = [];
 
             var data = a.detail.nodedata[0];
-            var nodetype = configuration.nodetype(data);
+            var nodetype = configuration.modelelement.type(configuration.node.modelelement(documentmodengine.xml,data.self));
             nodetype = configuration.nodes[nodetype];
             if(nodetype.attributes){
               for (var key in nodetype.attributes) {
@@ -833,9 +873,10 @@
             }
           }else if(a.detail&&a.detail.edge&&a.detail.edge[0]){
             this.label = $(a.detail.edge[0]).attr("id");
-            this.addinfo = configuration.edgetype(a.detail.edgedata[0])
+            this.addinfo = configuration.relation.type(configuration.edge.relation(documentmodengine.xml,a.detail.edgedata[0].self))
             //TODO
             this.attributes = [];
+            this.attributes = this.attributes.concat([]);
 
           }else if(a){
             //nothing is selected. the view attributes are displayed;
@@ -844,12 +885,12 @@
             mr.links = [];
             if(viewdata)
             {
-              this.label = configuration.viewid(viewdata.self);
+              this.label = configuration.view.id(viewdata.self);
               this.addinfo = $(viewdata.self).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text()
 
-              if(configuration.attributes){
-                for (var key in configuration.attributes) {
-                  if (configuration.attributes.hasOwnProperty(key)) {
+              if(configuration.view.attributes){
+                for (var key in configuration.view.attributes) {
+                  if (configuration.view.attributes.hasOwnProperty(key)) {
                     var attr = {};
                     attr.object = viewdata;
                     attr.type = "viewattribute";

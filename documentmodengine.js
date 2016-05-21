@@ -4,9 +4,8 @@
 //This software was created with the help of the jquery and d3js library.
 //See https://d3js.org/ and https://jquery.com/ for more info.
 
-//TODO: attributes edges
 //TODO: update menu
-//TODO: do not use the order of the views in the xml, rather use the viewid for managing views, everywhere where allviews is used.
+//TODO: do not use the order of the views in the xml, rather use the viewid for managing views, everywhere where model.views is used.
 
 
 documentmodengine = {
@@ -137,7 +136,7 @@ documentmodengine = {
 		window.done = 1;
 		documentmodengine.status = 1;
 		documentmodengine.usersettings.lang = lang;
-		documentmodengine.xml = configuration.newmodel(lang);
+		documentmodengine.xml = configuration.model.new(lang);
 		var context = this;
 
 		setTimeout(function(){
@@ -146,17 +145,17 @@ documentmodengine = {
 
 	},
 createNewView:function(){
-	var newview = configuration.createView(documentmodengine.xml);
+	var newview = configuration.view.new(documentmodengine.xml);
 	if(newview){
 
 		var viewdata = {};
 		viewdata.self = newview;
 		viewdata.nodes = [];
 		viewdata.edges  = [];
-		var views = configuration.allviews(documentmodengine.xml);
+		var views = configuration.model.views(documentmodengine.xml);
 		//create tabs;
-		for(var i = 0; i < views.children().size();i++){
-			if(views.children().eq(i)[0]==newview){
+		for(var i = 0; i < views.size();i++){
+			if(views.eq(i)[0]==newview){
 				documentmodengine.viewsdata[i] = viewdata
 				var result = documentmodengine.buildView_internal(d3.select(documentmodengine.svg),i,viewdata,documentmodengine.usersettings.lang);
 				documentmodengine.diagrams.push(result[0][0]);
@@ -178,9 +177,9 @@ createNewView:function(){
 addnewnode:function(type,viewid){
 	var newnode = configuration.nodes[type].new(documentmodengine.xml);
 	if(newnode){
-		var view = documentmodengine.viewsdata[viewid];
+		var view = configuration.view.byid(documentmodengine.xml,viewid)
 		configuration.nodeadder(documentmodengine.xml,view,newnode);
-		view.nodes.push(newnode);
+		//view.nodes.push(newnode);
 		var updatedsvg  = documentmodengine.updateLoadedView(viewid,documentmodengine.usersettings.lang);
 	}else{
 		throw "NodeCreationFailed";
@@ -201,7 +200,7 @@ addnewedge:function(type,viewid){
 		var a;
 		var b;
 		for(var  i= 0;i< relations.length && !done ;i++){
-			if(relations[i].begin == configuration.nodetype(selected_nodes[0]) && relations[i].end == configuration.nodetype(selected_nodes[1])){
+			if(relations[i].begin == configuration.modelelement.type(selected_nodes[0].element) && relations[i].end == configuration.modelelement.type(selected_nodes[1].element)){
 				a = 0;
 				b = 1;
 				done = true;
@@ -214,12 +213,11 @@ addnewedge:function(type,viewid){
 		var newedge = configuration.edges[type].new(documentmodengine.xml);
 		if(newedge){
 			newedge.viewid = viewid;
-			var view = documentmodengine.viewsdata[viewid];
+			var view = configuration.view.byid(documentmodengine.xml,viewid)
 			configuration.edgeadder(documentmodengine.xml,view,newedge);
-			view.edges.push(newedge);
 			var selected = documentmodengine.nodeselection().data;
 			for(var i=0;i<selected.length;i++){
-				selected[i].updates.push(newedge.id);
+				selected[i].edgeupdates.push(newedge.id);
 			}
 			var updatedsvg  = documentmodengine.updateLoadedView(viewid,documentmodengine.usersettings.lang);
 		}else{
@@ -237,36 +235,95 @@ addnewedge:function(type,viewid){
 	}
 
 },
+deletenode:function(view,nodedata){
+
+	var node = nodedata.self;
+
+	var nodeupdates = nodedata.updates;
+	var edgeupdates = nodedata.edgeupdates;
+
+	//var index = view.nodes.indexOf(nodedata);
+	var index = -1;
+	for(var i = 0;i<view.nodes.length;i++){
+		if(view.nodes[i].id == nodedata.id){
+			index  = i;
+		}
+	}
+	if(index>-1){
+		if(nodeupdates.length>0){
+			//delete associated nodes
+			for(var i = 0;i<view.nodes.length;i++){
+				var nodedataobject = view.nodes[i];
+				var nodeid = configuration.node.id(nodedataobject.self);
+				if(nodeupdates.indexOf(nodeid)>-1){
+					documentmodengine.deletenode(view,nodedataobject);
+					i -= 1;
+				}
+				//TODO: How do we delete relationsship from a hierarchy here.
+			}
+		}
+		if(edgeupdates.length>0){
+			//delete associated edges
+			for(var i  = 0;i<view.edges.length;i++){
+				var edgedataobject = view.edges[i];
+				var edgeid = configuration.edge.id(edgedataobject);
+				if(edgeupdates.indexOf(edgeid)>-1){
+					var deletetrigger = false;
+					configuration.edge.delete(documentmodengine.xml,view,edgedataobject);
+					var relation  = configuration.edge.relation(documentmodengine.xml,edgedataobject);
+					if(!configuration.relation.used(documentmodengine.xml,relation)){
+						configuration.relation.delete(documentmodengine.xml,relation);
+						i -= 1;
+					}
+
+					view.edges.splice(i,1);
+				}
+			}
+		}
+
+		//delete actual node
+		configuration.node.delete(documentmodengine.xml,view,nodedata.self);
+		if(!configuration.modelelement.used(documentmodengine.xml,nodedata.element)){
+			configuration.modelelement.delete(documentmodengine.xml,nodedata.element);
+			documentmodengine.deletenotusedrelations();
+		}
+		view.nodes.splice(index,1);
+	}
+
+},
+deletenotusedrelations:function(){
+	//identify left over relationsship
+	//All relations are check for consitency. This can be done in the background, because relations are not displayed directly.
+	var relations = configuration.model.relations(documentmodengine.xml);
+	for(var i = 0;i< relations.length;i++){
+
+		setTimeout(function(relation){
+			if(!configuration.relation.used(documentmodengine.xml,relation)){
+				configuration.relation.delete(documentmodengine.xml,relation);
+			}
+		}.bind(null,relations[i]),0)
+	}
+},
 deleteselection:function(viewid){
 	var view = documentmodengine.viewsdata[viewid];
 	var selected = documentmodengine.nodeselection();
 	for(var element in selected.data){
-		var index = view.nodes.indexOf(selected.data[element]);
-		var node = selected.data[element].self;
-		if(index>-1){
-			for(var i  = 0;i<view.edges.length;i++){
-				if(documentmodengine.viewsdata[viewid].edges[i].source_node==node){
-					configuration.deleteEdge(documentmodengine.xml,view,documentmodengine.viewsdata[viewid].edges[i]);
-					view.edges.splice(index,1);
-				}else if(documentmodengine.viewsdata[viewid].edges[i].target_node==node){
-					configuration.deleteEdge(documentmodengine.xml,view,documentmodengine.viewsdata[viewid].edges[i]);
-					view.edges.splice(index,1);
-				}
+		var selection  = selected.data[element];
+		documentmodengine.deletenode(view,selection);
+		//documentmodengine.deletenode(view,selected.data[element]);
+		setTimeout(function(){
 
-			}
-			configuration.deleteNode(documentmodengine.xml,view,selected.data[element]);
-			view.nodes.splice(index,1);
-		}
-
+		},0)
 	}
 
 	var selected = documentmodengine.edgeselection();
 	for(var element in selected.data){
-		configuration.deleteEdge(documentmodengine.xml,view,selected.data[element]);
+		configuration.edge.delete(documentmodengine.xml,view,selected.data[element]);
+		if(!configuration.relation.used(documentmodengine.xml,edgedataobject.element)){
+			configuration.relation.delete(documentmodengine.xml,edgedataobject);
+		}
 		view.edges.splice(element,1);
 	}
-
-
 	//Refresh on Delete
 	documentmodengine.updateLoadedView(viewid,documentmodengine.usersettings.lang);
 },
@@ -283,13 +340,21 @@ deleteselection:function(viewid){
 					documentmodengine.status = 1;
 					documentmodengine.releaseModel();
 
+					if(documentmodengine.svg){
+						d3.select(documentmodengine.svg).remove();
+					}
+
+					if(documentmodengine.node){
+						d3.select(documentmodengine.node).remove();
+					}
+
 					documentmodengine.node = d3.select(document.createElement("div"));
 					documentmodengine.svg = documentmodengine.node.append("svg")[0][0];
 
-					var views = configuration.allviews(documentmodengine.xml);
+					var views = configuration.model.views(documentmodengine.xml);
 					//create tabs;
 					var view_ids = [];
-					for(var i = 0; i < views.children().size();i++){
+					for(var i = 0; i < views.size();i++){
 						view_ids.push(i);
 					}
 
@@ -330,10 +395,10 @@ deleteselection:function(viewid){
 						console.log("No definitons found.")
 					}
 
-					for(var i = 0; i < views.children().size();i++){
-						var view = views.children().eq(i);
+					for(var i = 0; i < views.size();i++){
+						var view = views[i];
 
-						var viewid = i;
+						var viewid = configuration.view.id(view);
 						var viewdata = {};
 						viewdata.nodes = [];
 						viewdata.edges  = [];
@@ -341,8 +406,12 @@ deleteselection:function(viewid){
 
 						documentmodengine.prepareViewData(viewid,viewdata);
 
+						var viewnode = d3.select(documentmodengine.svg).append("g");
+						viewnode.classed("view",true);
+						viewnode.attr("id",viewid);
+						viewnode.data([view]);
 
-						var result = documentmodengine.buildView_internal(d3.select(documentmodengine.svg),i,viewdata,lang);
+						var result = documentmodengine.buildView_internal(viewnode,viewdata,lang);
 						diagrams.push(result[0][0]);
 
 						var ce = new CustomEvent("DoneWithView",{
@@ -361,6 +430,9 @@ deleteselection:function(viewid){
 					documentmodengine.views = views;
 					documentmodengine.viewsdata = viewsdata;
 					documentmodengine.diagrams = diagrams;
+
+					documentmodengine.createUserInteraction();
+
 					var ce = new CustomEvent("DoneWithLoading",{
 						detail: {
 							views: views
@@ -373,48 +445,40 @@ deleteselection:function(viewid){
 		//prepare data structure
 
 
-		var nodes_ofview = configuration.allnodes(byid,documentmodengine.xml)
+		var nodes_ofview = configuration.view.nodes(documentmodengine.xml,byid)
 		for(var j = 0;j< nodes_ofview.size();j++){
 			var nodedata = {};
-			if(configuration.nodeid){
-				nodedata.id = configuration.nodeid(nodes_ofview[j],documentmodengine.xml);
+			if(configuration.node.id){
+				nodedata.id = configuration.node.id(nodes_ofview[j],documentmodengine.xml);
 			}
-			if(configuration.nodeelement){
-				nodedata.element = configuration.nodeelement(nodes_ofview[j],documentmodengine.xml);
+			if(configuration.node.modelelement){
+				nodedata.element = configuration.node.modelelement(documentmodengine.xml,nodes_ofview[j]);
 			}
 			if(configuration.nodeupdates){
 				nodedata.updates = configuration.nodeupdates(nodes_ofview[j],documentmodengine.xml);
+			}
+			if(configuration.edgeupdates){
+				nodedata.edgeupdates = configuration.edgeupdates(nodes_ofview[j],documentmodengine.xml);
 			}
 			nodedata.self = nodes_ofview[j];
 			nodedata.viewid = byid;
 			viewdata.nodes.push(nodedata);
 		}
 
-		var edges_ofview = configuration.alledges(byid,documentmodengine.xml);
-		for(var j = 0;j< edges_ofview.size();j++){
-			var edgedata = {};
-			if(configuration.edge_datacollector){
-				edgedata = configuration.edge_datacollector(edges_ofview[j],documentmodengine.xml);
-			}
-			edgedata.viewid = byid;
-			edgedata.self = edges_ofview[j];
-			viewdata.edges.push(edgedata);
-		}
+		return viewdata;
 	},
 	updateLoadedView: function(byid,lang){
 
 		var svg = d3.select(documentmodengine.svg);
-		var viewg = svg.select("g.view[viewid='"+byid+"']");
-		var viewdata = documentmodengine.viewsdata[byid];
+		var viewg = svg.select("g.view[id='"+byid+"']");
+		var viewdata = {};//documentmodengine.viewsdata[byid];
 		viewdata.nodes = [];
 		viewdata.edges = [];
 		documentmodengine.prepareViewData(byid,viewdata);
-		var nodes = viewdata.nodes;
-		var edges = viewdata.edges;
-
 		documentmodengine.deselection();
 
-		documentmodengine.drawNodes(viewg,nodes);
+		documentmodengine.drawNodes(viewg,viewdata.nodes);
+		var edges = configuration.view.edges(documentmodengine.xml,configuration.view.id(viewg.data()));
 		documentmodengine.drawEdges(viewg,edges);
 
 	},
@@ -482,7 +546,7 @@ deleteselection:function(viewid){
 		}
 
 		g.attr('class',function(d){
-			return 'node '+configuration.nodetype(d)
+			return 'node '+configuration.modelelement.type(configuration.node.modelelement(documentmodengine.xml,d.self))
 		})
 		.attr('id',function(d){
 			return d.id;
@@ -493,7 +557,7 @@ deleteselection:function(viewid){
 			var g_svg = node;
 			var type = node.each(
 					function(d,i){
-						var type = configuration.nodetype(d)
+						var type = configuration.modelelement.type(configuration.node.modelelement(documentmodengine.xml,d.self))
 						var typeconf = configuration.nodes[type];
 						if(!typeconf){
 							typeconf = configuration.nodes[undefined];
@@ -516,7 +580,7 @@ deleteselection:function(viewid){
 										//return "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")";
 									})
 									.attr("points",function(d){
-										return documentmodengine.functions.getValueFromData(lookelements[i].points,d);
+										return documentmodengine.functions.getValueFromData(lookelements[i].points,d.self);
 										//return documentmodengine.functions.getPointsStringFromConfiguration(lookelements[i].points,d);
 									});
 								}else if(lookelements[i].type == "circle"){
@@ -662,13 +726,13 @@ deleteselection:function(viewid){
 
 			g_svg.attr("x",
 					function(d) {
-				return configuration.nodeposition(d).x;
+				return configuration.node.position(d.self).x;
 			}).attr("y",
 					function(d) {
-				return configuration.nodeposition(d).y;
+				return configuration.node.position(d.self).y;
 			}).attr("transform",
 					function(d) {
-				return "translate(" + configuration.nodeposition(d).x + "," + configuration.nodeposition(d).y + ")";
+				return "translate(" + configuration.node.position(d.self).x + "," + configuration.node.position(d.self).y + ")";
 			});
 		}
 		this.drawNode(g);
@@ -748,7 +812,7 @@ deleteselection:function(viewid){
 
 				var currentedge = d3.select(this);
 
-				var type = configuration.edgetype(d)
+				var type = configuration.relation.type(configuration.edge.relation(documentmodengine.xml,d))
 				var typeconf = configuration.edges[type];
 				if(!typeconf){
 					typeconf = configuration.edges[undefined];
@@ -762,32 +826,29 @@ deleteselection:function(viewid){
 
 					currentedge
 					.attr("id",function(d){
-						return d.id;
+						return configuration.edge.id(d);
 					})
 					.attr("source_node_id",function(d){
-						return $(d.self).attr("source")
+						return configuration.node.id(configuration.edge.source(documentmodengine.xml,d));
 					})
 					.attr("target_node_id",function(d){
-						return $(d.self).attr("target")
+						return configuration.node.id(configuration.edge.target(documentmodengine.xml,d));
 					})
 					.attr('class',function(d){
-						return 'connection '+configuration.edgetype(d)
+
+						return 'connection '+configuration.relation.type(configuration.edge.relation(documentmodengine.xml,d))
 					})
 					//this draws the actual visible line
 					currentedge.append("svg\\:path")
 					.attr("d",function(d){
 						var current = 0;
 						var result = "M ";
-						var sourceref_svg = $(d3.select("#"+$(d.self).attr("source"))[0]);
-						var lineColor = $( d ).children("style").children("lineColor");
-						var lineWidth = $( d ).children("style").attr("lineWidth") ? $( d ).children("style").attr("lineWidth") : 1;
-
-						//var points1 = $(sourceref_svg).attr("points");
-						//var points2 = [];
 
 						if(typeconf.points){
-							var type = configuration.edges[configuration.edgetype(d)]?configuration.edges[configuration.edgetype(d)]:configuration.edges[undefined];
-							var points = type.points(d);
+							var type = configuration.edges[configuration.relation.type(configuration.edge.relation(d))]
+												?configuration.edges[configuration.relation.type(configuration.edge.relation(d))]
+												:configuration.edges[undefined];
+							var points = type.points(documentmodengine.xml,d);
 							var points1 = points.shape1;
 							for(var i = 0;i<points.path.length;i++){
 								var points2 = [points.path[i]];
@@ -829,14 +890,10 @@ deleteselection:function(viewid){
 					.attr("d",function(d){
 						var current = 0;
 						var result = "M ";
-						var sourceref_svg = $(d3.select("#"+$(d.self).attr("source"))[0]);
-						var lineColor = $( d ).children("style").children("lineColor");
-						var lineWidth = $( d ).children("style").attr("lineWidth") ? $( d ).children("style").attr("lineWidth") : 1;
-
 
 						if(typeconf.points){
-							var type = configuration.edges[configuration.edgetype(d)]?configuration.edges[configuration.edgetype(d)]:configuration.edges[undefined];
-							var points = type.points(d);
+							var type = configuration.edges[configuration.relation.type(d)]?configuration.edges[configuration.relation.type(d)]:configuration.edges[undefined];
+							var points = type.points(documentmodengine.xml,d);
 							var points1 = points.shape1;
 							for(var i = 0;i<points.path.length;i++){
 								var points2 = [points.path[i]];
@@ -911,8 +968,8 @@ deleteselection:function(viewid){
 
 
 					if(typeconf.points){
-						var type = configuration.edges[configuration.edgetype(d)]?configuration.edges[configuration.edgetype(d)]:configuration.edges[undefined];
-						var points = type.points(d);
+						var type = configuration.edges[configuration.relation.type(d)]?configuration.edges[configuration.relation.type(d)]:configuration.edges[undefined];
+						var points = type.points(documentmodengine.xml,d);
 						for(var i = 0;i<points.path.length;i++){
 							var points2 = [points.path[i]];
 
@@ -987,16 +1044,27 @@ deleteselection:function(viewid){
 			}});
 		document.dispatchEvent(ce);
 	},
-	buildView_internal: function(svg,viewid,view_xml,lang){
-
+	//buildView_internal: function(svg,viewid,view_xml,lang){
+	buildView_internal: function(viewnode,viewdata,lang){
 
 		//attach view
-		var viewg = svg.append("g");
+		/*var viewg = svg.append("g");
 		viewg.classed("view",true);
-		viewg.attr("viewid",viewid);
+		viewg.attr("viewid",viewid);*/
+		var viewg = viewnode;
+		var viewid = configuration.view.id(viewnode.data())
+
+		var nodes = configuration.view.nodes(documentmodengine.xml,viewid);
+		var edges = configuration.view.edges(documentmodengine.xml,viewid);
+		documentmodengine.drawNodes(viewg,viewdata.nodes); //start Drawing Nodes
+		documentmodengine.drawEdges(viewg,edges); //start Drawing Edges
+
+		return viewg;
+	},
+	createUserInteraction:function(){
 		if(documentmodengine.usersettings.viewonly != true){
 			//interaction
-			svg
+			d3.select(documentmodengine.svg)
 			.on('mousedown',function(d,e){
 				documentmodengine.mousedown += 1;
 				documentmodengine.lastselection = documentmodengine.nodeselection();
@@ -1006,7 +1074,7 @@ deleteselection:function(viewid){
 					documentmodengine.deselection();
 				}
 				documentmodengine.mousedown = 0;
-				svg
+				d3.select(documentmodengine.svg)
 				.selectAll("g.connection[selected=true]").selectAll("circle[selected=true]").each(function(d){
 					// calculate new position
 					var currentcircle = d3.select(this);
@@ -1016,9 +1084,9 @@ deleteselection:function(viewid){
 					documentmodengine.drawEdge(currentedge);
 				});
 
-				if(!d3.event.altKey&&svg.selectAll("g.node[selected=true]").size()==1){
+				if(!d3.event.altKey&&d3.select(documentmodengine.svg).selectAll("g.node[selected=true]").size()==1){
 
-						svg.selectAll("g.node[selected=true]").each(function(d){
+						d3.select(documentmodengine.svg).selectAll("g.node[selected=true]").each(function(d){
 
 							documentmodengine.functions.updateNode(d3.select(this));
 
@@ -1048,9 +1116,10 @@ deleteselection:function(viewid){
 									}
 								});
 								//Do something, if no collided element, or collided element does not include element yet.
-								if(!collidedelement||!configuration.nodeBelongsToGroup(d3.select(movenode).data()[0],d3.select(collidedelement).data()[0])){
+								if(!collidedelement||!configuration.node.nodeBelongsToGroup(d3.select(movenode).data()[0].self,d3.select(collidedelement).data()[0].self)){
 									//Remove Element from any other container
-									configuration.removeFromGroup(d3.select(movenode).data()[0]);
+									configuration.node.removeFromGroup(documentmodengine.xml,d3.select(movenode).data()[0].self);
+
 									var searchid = movenode.id;
 									//remove from updates
 									d3.select(movenode.parentNode).selectAll("g.node").each(function(d){
@@ -1063,7 +1132,7 @@ deleteselection:function(viewid){
 									});
 									if(collidedelement){
 										//Add node to collided element
-										configuration.addNodeToGroup(documentmodengine.xml,d3.select(movenode).data()[0],d3.select(collidedelement).data()[0]);
+										configuration.node.addNodeToGroup(documentmodengine.xml,d3.select(movenode).data()[0].self,d3.select(collidedelement).data()[0].self);
 
 										d3.select(movenode).attr("sort","true");
 										//all sub elements of the moved element need to be sorted as well
@@ -1085,9 +1154,9 @@ deleteselection:function(viewid){
 
 										//Set element movenode behind element collidedelement in svg
 										d3.select(movenode.parentNode).selectAll("g.node[sort=true]").sort(function(a,b){
-											if(configuration.nodeBelongsToGroup(a,b)){
+											if(configuration.node.nodeBelongsToGroup(a.self,b.self)){
 												return 1;
-											}else if(configuration.nodeBelongsToGroup(b,a)){
+											}else if(configuration.node.nodeBelongsToGroup(b.self,a.self)){
 												return -1;
 											}else{
 												return 0;
@@ -1101,6 +1170,7 @@ deleteselection:function(viewid){
 										documentmodengine.functions.updateNode(d3.select(collidedelement));
 										//var updatedsvg = documentmodengine.updateLoadedView(viewid,documentmodengine.usersettings.lang);
 									}
+									documentmodengine.deletenotusedrelations();
 								}else{
 									documentmodengine.functions.updateNode(d3.select(movenode));
 								}
@@ -1123,12 +1193,12 @@ deleteselection:function(viewid){
 					function(d){
 				if(d3.event.altKey) return;
 
-				if(svg
+				if(d3.select(documentmodengine.svg)
 				.selectAll("g.node[selected=true]").size()>1) return;
 
 				if(documentmodengine.mousedown > 0){
 
-					svg
+					d3.select(documentmodengine.svg)
 					.selectAll("g.node[selected=true]").each(function(d){
 						/* calculate new position */
 						var sel_x = parseInt(d3.select(this).attr('selected_x'));
@@ -1136,7 +1206,7 @@ deleteselection:function(viewid){
 						var x = d3.event.x-sel_x;
 						var y = d3.event.y-sel_y;
 
-						var position = configuration.nodeposition(d3.select(this).data()[0]);
+						var position = configuration.node.position(d3.select(this).data()[0].self);
 						var orig_x = position.x;
 						var orig_y = position.y;
 
@@ -1149,7 +1219,7 @@ deleteselection:function(viewid){
 
 					});
 
-					var hovercircle = svg.select(".hover.connection[selected=true]");
+					var hovercircle = d3.select(documentmodengine.svg).select(".hover.connection[selected=true]");
 					if(hovercircle.size()>0){
 						hovercircle.attr("moved",true);
 						var sel_x = hovercircle.attr('selected_x');
@@ -1170,12 +1240,7 @@ deleteselection:function(viewid){
 			});
 
 		}
-		documentmodengine.drawNodes(viewg,view_xml.nodes); //start Drawing Nodes
-		documentmodengine.drawEdges(viewg,view_xml.edges); //start Drawing Edges
-
-		return viewg;
 	},
-
 	releaseModel: function(){
 		if(documentmodengine.diagrams){
 			for(var i = 0;i<documentmodengine.diagrams.length;i++){
@@ -1201,7 +1266,7 @@ deleteselection:function(viewid){
 					for(var i = 0 ; i< updates.length;i++){
 						var sub_node = d3.select("g.node[id='"+updates[i]+"']");
 						if(sub_node.size()>0){
-							var sub_pos = configuration.nodeposition(sub_node.data()[0]);
+							var sub_pos = configuration.node.position(sub_node.data()[0].self);
 							x_sub = parseInt(sub_pos.x);
 							y_sub = parseInt(sub_pos.y);
 							documentmodengine.functions.updateNodePosition(sub_node,
@@ -1212,7 +1277,6 @@ deleteselection:function(viewid){
 						}
 					}
 				}
-
 				configuration.updateNodePosition(node.data()[0],x,y);
 			},
 			updateNode: function(node){
@@ -1228,12 +1292,16 @@ deleteselection:function(viewid){
 						var current = d3.select("g.node[id='"+curId+"']");
 						if(current.size()>0){
 							documentmodengine.functions.updateNode(current);
-						}else{
-							current = d3.select("g.connection[id='"+curId+"']");
-							if(current.size()>0){
-								documentmodengine.drawEdge(current);
-							}
-
+						}
+					}
+				}
+				var edgeupdates = node.data()[0].edgeupdates;
+				if(edgeupdates){
+					for(var i=0;i<edgeupdates.length;i++){
+						var curId = edgeupdates[i];
+						current = d3.select("g.connection[id='"+curId+"']");
+						if(current.size()>0){
+							documentmodengine.drawEdge(current);
 						}
 					}
 				}
@@ -1397,7 +1465,7 @@ deleteselection:function(viewid){
 			},
 			getValueFromData: function(value,data){
 				if(typeof value == "function"){
-					return value(data);
+					return value(documentmodengine.xml,data);
 				}else{
 					return value;
 				}

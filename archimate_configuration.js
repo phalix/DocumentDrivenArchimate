@@ -1,72 +1,18 @@
-//TODO: Configuration of text layout should be copied from business actor to other nodes.
 //TODO: Configure stakeholder, driver, assessment, requirement, constraint, Work Package, Deliverable, Plateau, Gap
-//TODO: summarize operations to node operation, edge operations, view operations and model operations
-//TODO: the summarized operations should be structured in a similiar manner, new, add, drop, change, get id and so on.
-//TODO: use colors better! 
+//TODO: care for junctinos in the future
+//TODO: care for edge attribtues
 
 this.configuration = {
+
+  author:"Sebastian Bittmann",
+  email:"SebastianBittmann@gmail.com",
+
   globalDelimiter: 50,
   globalParagraph: 4,
   globalTextlines: 13,
   globalCharheight: 8,
   edgedistance: 10,
-  newmodel:function(lang){
-    var xml = '<?xml version="1.0"?><model/>';
-    var result = jQuery.parseXML(xml);
-    var model = $(result).children("model");
-    model.attr("xmlns",'http://www.opengroup.org/xsd/archimate');
-    model.attr("xmlns:dc",'http://purl.org/dc/elements/1.1/');
-    model.attr("xmlns:xsi",'http://www.w3.org/2001/XMLSchema-instance');
-    model.attr("xsi:schemaLocation",'http://www.opengroup.org/xsd/archimate archimate_v2p1.xsd http://purl.org/dc/elements/1.1/ http://dublincore.org/schemas/xmls/qdc/2008/02/11/dc.xsd');
-    model.attr("identifier",configuration.idgenerator());
-
-    var metadata = $("<metadata></metadata>");
-    var schema = $("<schema></schema>");
-    metadata.append(schema);
-    var schemaversion = $("<schemaversion></schemaversion>");
-    metadata.append(schemaversion);
-    var title = $("<dc:title></dc:title>");
-    metadata.append(title);
-    var creator = $("<dc:creator></dc:creator>");
-    metadata.append(creator);
-    var subject = $("<dc:subject></dc:subject>");
-    metadata.append(subject);
-    var description = $("<dc:description></dc:description>");
-    metadata.append(description);
-    var format = $("<dc:format></dc:format>");
-    metadata.append(format);
-    var language = $("<dc:language></dc:language>");
-    metadata.append(language);
-    model.append(metadata);
-
-    var documentation = $("<documentation></documentation>");
-    documentation.attr("xml:lang",lang);
-    model.append(documentation);
-
-    var name = $("<name></name>");
-    name.attr("xml:lang",lang);
-    model.append(name);
-
-    var properties = $("<properties></properties>");
-    model.append(properties);
-    var elements = $("<elements></elements>");
-    model.append(elements);
-    var relationships = $("<relationships></relationships>");
-    model.append(relationships);
-    var organization = $("<organization></organization>");
-    model.append(organization);
-    var propertydefs = $("<propertydefs></propertydefs>");
-    model.append(propertydefs);
-    var views = $("<views></views>");
-    model.append(views);
-
-
-    return result;
-  },
-  modelname:function(data){
-    return $(data).children("name[xml\\:lang="+documentmodengine.usersettings.lang+"]").text()
-  },
-  modelfiletype:function(data){
+  modelfiletype:function(xml,data){
     return "xml";
   },
   idgenerator:function(){
@@ -84,186 +30,431 @@ this.configuration = {
     }
     return result;
   },
-  createView:function(data){
-    var views = $(data).children("model").children("views");
-    var viewid = configuration.idgenerator();
-    var view = $("<view></view>");
-    view.attr("identifier",viewid);
-    var label = $("<label></label>");
-    label.attr("xml:lang",documentmodengine.usersettings.lang);
-    var documentation = $("<documentation></documentation>");
-    documentation.attr("xml:lang",documentmodengine.usersettings.lang);
-    view.append(label);
-    view.append(documentation);
-    views.append(view);
-    return view[0];
+  models:function(xml){return $(xml).children("model");},
+  model:{
+    new:function(lang){
+      var xml = '<?xml version="1.0"?><model/>';
+      var result = jQuery.parseXML(xml);
+      var model = $(result).children("model");
+      model.attr("xmlns",'http://www.opengroup.org/xsd/archimate');
+      model.attr("xmlns:dc",'http://purl.org/dc/elements/1.1/');
+      model.attr("xmlns:xsi",'http://www.w3.org/2001/XMLSchema-instance');
+      model.attr("xsi:schemaLocation",'http://www.opengroup.org/xsd/archimate archimate_v2p1.xsd http://purl.org/dc/elements/1.1/ http://dublincore.org/schemas/xmls/qdc/2008/02/11/dc.xsd');
+      model.attr("identifier",configuration.idgenerator());
+
+      var metadata = $("<metadata></metadata>");
+      var schema = $("<schema></schema>");
+      metadata.append(schema);
+      var schemaversion = $("<schemaversion></schemaversion>");
+      metadata.append(schemaversion);
+      var title = $("<dc:title></dc:title>");
+      metadata.append(title);
+      var creator = $("<dc:creator></dc:creator>");
+      metadata.append(creator);
+      var subject = $("<dc:subject></dc:subject>");
+      metadata.append(subject);
+      var description = $("<dc:description></dc:description>");
+      metadata.append(description);
+      var format = $("<dc:format></dc:format>");
+      metadata.append(format);
+      var language = $("<dc:language></dc:language>");
+      metadata.append(language);
+      model.append(metadata);
+
+      var documentation = $("<documentation></documentation>");
+      documentation.attr("xml:lang",lang);
+      model.append(documentation);
+
+      var name = $("<name></name>");
+      name.attr("xml:lang",lang);
+      model.append(name);
+
+      var properties = $("<properties></properties>");
+      model.append(properties);
+      var elements = $("<elements></elements>");
+      model.append(elements);
+      var relationships = $("<relationships></relationships>");
+      model.append(relationships);
+      var organization = $("<organization></organization>");
+      model.append(organization);
+      var propertydefs = $("<propertydefs></propertydefs>");
+      model.append(propertydefs);
+      var views = $("<views></views>");
+      model.append(views);
+
+
+      return result;
+    },
+    name:function(xml,data){
+      return $(data).children("name[xml\\:lang="+documentmodengine.usersettings.lang+"]").text()
+    },
+    views:function(model){return $(model).children().children('views').children();},
+    id:function(model){return $(model).attr("identifier")},
+    byid:function(xml,modelid){return $(xml).children("model[identifier='"+modelid+"'")[0];},
+    modelelements:function(model){
+      return $(model).find("element");
+    },
+    relations:function(model){
+      return $(model).find("relationship");
+    }
   },
-  attributes:{
-    name:{
-      get:function(data){
-        return $(data.self).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
+  view:{
+    new:function(xml){
+      var views = $(xml).children("model").children("views");
+      var viewid = configuration.idgenerator();
+      var view = $("<view></view>");
+      view.attr("identifier",viewid);
+      var label = $("<label></label>");
+      label.attr("xml:lang",documentmodengine.usersettings.lang);
+      var documentation = $("<documentation></documentation>");
+      documentation.attr("xml:lang",documentmodengine.usersettings.lang);
+      view.append(label);
+      view.append(documentation);
+      views.append(view);
+      return view[0];
+    },
+    id:function(view){
+      var viewid = $(view).attr("identifier");
+      return viewid;
+    },
+    byid:function(model,viewid){
+      return $(model).children('model').children("views").children("view[identifier='"+viewid+"']")[0];
+    },
+    edges:function(xml,viewid){
+      return $(xml).children('model').children("views").children("view[identifier='"+viewid+"']").find("connection");
+    },
+    nodes:function(xml,viewid){
+      return $(xml).children('model').children("views").children("view[identifier='"+viewid+"']").find("node");
+    },
+    attributes:{
+      name:{
+        get:function(data){
+          return $(data).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
+        },
+        set:function(data,value){
+          return $(data).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text(value);
+        },
+        type:"String"
       },
-      set:function(data,value){
-        return $(data.self).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text(value);
-      },
-      type:"String"
+    }
+  },
+  node:{
+    delete:function(xml,view,data){
+      $(data).remove();
+    },
+    type:function(xml,data){
+      var nodetype = undefined;
+      nodetype = $(data).attr("xsi:type")
+      return nodetype;
+    },
+    new:function(xml,type,name,fillcolorr,fillcolorg,fillcolorb,linecolorr,linecolorg,linecolorb,x,y,w,h){
+      var element = {};
+      //Generate Node and Element Id
+      var nodeid = configuration.idgenerator();
+      var elementid = configuration.idgenerator();
+      var node = $("<node x='0' y='0' w='120' h='55'></node>");
+      node.attr("identifier",nodeid);
+      node.attr("elementref",elementid);
+      var style = $("<style></style>");
+      node.append(style);
+      var fillColor = $("<fillColor r='201' g='231' b='183' />");
+      if(fillcolorr){
+          fillColor.attr("r",fillcolorr);
+      }
+      if(fillcolorg){
+          fillColor.attr("g",fillcolorg);
+      }
+      if(fillcolorb){
+          fillColor.attr("b",fillcolorb);
+      }
+      var lineColor = $("<lineColor r='92' g='92' b='92' />");
+      if(linecolorr){
+          lineColor.attr("r",linecolorr);
+      }
+      if(linecolorg){
+          lineColor.attr("g",linecolorg);
+      }
+      if(linecolorb){
+          lineColor.attr("b",linecolorb);
+      }
+      style.append(fillColor);
+      style.append(lineColor);
+      var element = $("<element></element>");
+      element.attr("identifier",elementid);
+      element.attr("xsi:type",type);
+      var label = $("<label xml\:lang='en'></label>");
+      label.text(name);
+      element.append(label);
+      configuration.modelelement.add(xml,element);
+      return node[0];
+    },
+    id:function(node){
+      var nodeid = $(node).attr("identifier");
+      return nodeid;
+    },
+    byid:function(xml,id){
+      return $(xml).find("node[identifier='"+id+"']");
+    },
+    position:function(node){
+      var result = {};
+      result.x = $(node).attr('x');
+      result.y = $(node).attr('y');
+      result.width = $(node).attr('w');
+      result.height = $(node).attr('h');
+
+
+      return result;
+    },
+    modelelement:function(xml,node){
+      //Retrieve the elements that is represented by the node
+      var eref = $(node).attr("elementref");
+      var element_ref = undefined;
+      if(eref){
+        element_ref = $(xml).children().children("elements").children('element[identifier="'+eref+'"]')[0];
+      }
+      return element_ref;
+    },
+    nodeBelongsToGroup:function(data1,data2){
+      var actionrequired = $.contains( data2, data1 );
+      return actionrequired;
+    },
+    removeFromGroup:function(xml,data){
+
+      //If current parent is a node, move node one level higher;
+      var tagnameofparent = $(data.parentNode).prop("tagName");
+      if(data.parentNode.parentNode && tagnameofparent == "node"){
+        $(data.parentNode.parentNode).append(data);
+      }
+
+    },
+    addNodeToGroup:function(xml,data1,data2){
+      var actionrequired = !configuration.node.nodeBelongsToGroup(data1,data2);
+      if(actionrequired){
+          $(data2).append(data1);
+          //check for available groups
+          var element1 = configuration.node.modelelement(xml,data1);
+          var element2 = configuration.node.modelelement(xml,data2);
+          var nodetype1 = configuration.modelelement.type(element1);
+          var nodetype2 = configuration.modelelement.type(element2);
+          //setup first to find as a relation
+          var found  = false;
+          var relation = undefined;
+          var group = undefined;
+          var groupid = undefined;
+          for(var i in configuration.edges){
+            if(!found){
+              groupid = i;
+              group = configuration.edges[i];
+              if(group.allowHierarchiallyGrouping){
+                for(var j = 0;j<group.relates.length&&!found;j++){
+                  relation = group.relates[j];
+                  if(relation.begin == nodetype1 && relation.end == nodetype2){
+                    found = true;
+                  }
+                }
+              }
+            }
+
+
+          }
+          if(found&&group){
+              //we need to create a model-relation for configuration.
+              configuration.relation.new(xml,groupid,element2,element1);
+
+          }
+
+      }
+
+    }
+  },
+  edge:{
+    id:function(edge,data){
+      var edgeid = $(edge).attr("identifier");
+      return edgeid;
+    },
+    byid:function(xml,id){
+      return $(xml).find("connection[identifier='"+id+"']")[0];
+    },
+    delete:function(xml,view,edge){
+      $(edge).remove();
+    },
+    source:function(xml,edge){
+      var srcref_nd = $(edge).attr("source");
+      var sourceref_node = $(xml).children().find('node[identifier="'+srcref_nd+'"]')[0];
+      return sourceref_node;
+    },
+    target:function(xml,edge){
+      var srcref_nd = $(edge).attr("target");
+      var sourceref_node = $(xml).children().find('node[identifier="'+srcref_nd+'"]')[0];
+      return sourceref_node;
+    },
+    relation:function(xml,edge){
+      var relref = $(edge).attr("relationshipref");
+
+      if(relref){
+        var relationship_ref = $(xml).children().children("relationships").children('relationship[identifier="'+relref+'"]');
+        elementref = relationship_ref[0];
+      }
+      return elementref;
+    },
+    new:function(xml,type,name,linecolorr,linecolorg,linecolorb){
+      //Fetch current selection
+      var selected_nodes = documentmodengine.nodeselection().data;
+      var source = selected_nodes[0];
+      var target = selected_nodes[1];
+
+      //Create Element Data
+      var element = {};
+      var relations = configuration.edges[type].relates;
+      var elementidsource = $(source.element).attr("identifier");
+      var nodeidsource = $(source.self).attr("identifier");
+
+      var elementidtarget = $(target.element).attr("identifier");
+      var nodeidtarget = $(target.self).attr("identifier");
+      element.source = source.element;
+      element.target = target.element;
+      element.source_node = source.self;
+      element.target_node = target.self;
+
+      var relationship = configuration.relation.new(xml,type,source,target)
+      var relationsshipid = relationship.attr("identifier");
+
+      var connection = $("<connection></connection>");
+      var connectionid = configuration.idgenerator();
+      connection.attr("identifier",connectionid);
+      connection.attr("relationshipref",relationsshipid);
+      connection.attr("source",nodeidsource);
+      connection.attr("target",nodeidtarget);
+      var style = $("<style/>");
+      var lineColor = $("<lineColor r='0' g='0' b='0' />");
+      //add rgb by parameters
+      if(linecolorr){
+        lineColor.attr("r",linecolorr);
+      }
+      if(linecolorg){
+        lineColor.attr("g",linecolorg);
+      }
+      if(linecolorb){
+        lineColor.attr("b",linecolorb);
+      }
+      style.append(lineColor);
+      connection.append(style);
+      element.self = connection[0];
+      element.element = relationship[0];
+      element.id = connectionid;
+
+      return element;
     },
   },
-  nodetype:function(data){
-    var nodetype = undefined;
-    if($(data.element).attr("xsi:type")){
-        nodetype = $(data.element).attr("xsi:type")
-    }else{
-      nodetype = $(data.self).attr("type")
+  modelelement:{
+    id:function(xml,data){
+      var id = $(data).attr("identifier");
+      return id;
+    },
+    type:function(modelelement){
+      return $(modelelement).attr("xsi:type");
+    },
+    delete:function(xml,modelelement){
+      $(modelelement).remove();
+    },
+    used:function(xml,data){
+      var elementid = $(data).attr("identifier");
+      var refs = $(xml).find("node[elementref='"+elementid+"']");
+      if(refs.size()>0){
+        return true
+      }else{
+        return false;
+      }
+    },
+    add:function(xml,modelelement){
+      $(documentmodengine.xml).children("model").children("elements").append(modelelement);
     }
-    if(this.nodes[nodetype]){
-      return nodetype;
-    }else{
-      undefined;
-    }
-  },
-  createNewNode:function(type,name,x,y,w,h,fillcolorr,fillcolorg,fillcolorb,linecolorr,linecolorg,linecolorb){
-    var element = {};
-    //Generate Node and Element Id
-    var nodeid = configuration.idgenerator();
-    var elementid = configuration.idgenerator();
-    var node = $("<node x='0' y='0' w='120' h='55'></node>");
-    node.attr("identifier",nodeid);
-    node.attr("elementref",elementid);
-    var style = $("<style></style>");
-    node.append(style);
-    var fillColor = $("<fillColor r='201' g='231' b='183' />");
-    if(fillcolorr){
-        fillColor.attr("r",fillcolorr);
-    }
-    if(fillcolorg){
-        fillColor.attr("g",fillcolorg);
-    }
-    if(fillcolorb){
-        fillColor.attr("b",fillcolorb);
-    }
-    var lineColor = $("<lineColor r='92' g='92' b='92' />");
-    if(linecolorr){
-        lineColor.attr("r",lineColorr);
-    }
-    if(linecolorg){
-        lineColor.attr("g",lineColorg);
-    }
-    if(linecolorb){
-        lineColor.attr("b",lineColorb);
-    }
-    style.append(fillColor);
-    style.append(lineColor);
-    var element = $("<element></element>");
-    element.attr("identifier",elementid);
-    element.attr("xsi:type",type);
-    var label = $("<label xml\:lang='en'></label>");
-    label.text(name);
-    element.append(label);
-    element.self = node[0];
-    element.element = element[0];
-    element.id = nodeid;
-    element.updates = [];
-    return element;
-  },
-  edgetype:function(data){return $(data.element).attr("xsi:type")},
-  createNewEdge:function(xml,type,name,linecolorr,linecolorg,linecolorb){
-    //Fetch current selection
-    var selected_nodes = documentmodengine.nodeselection().data;
-    var source = selected_nodes[0];
-    var target = selected_nodes[1];
 
-    //Create Element Data
-    var element = {};
-    var relations = configuration.edges[type].relates;
-    var elementidsource = $(source.element).attr("identifier");
-    var nodeidsource = $(source.self).attr("identifier");
-
-    var elementidtarget = $(target.element).attr("identifier");
-    var nodeidtarget = $(target.self).attr("identifier");
-    element.source = source.element;
-    element.target = target.element;
-    element.source_node = source.self;
-    element.target_node = target.self;
-
-    var relationship = this.createRelationship(xml,type,source,target)
-    var relationsshipid = relationship.attr("identifier");
-
-    var connection = $("<connection></connection>");
-    var connectionid = configuration.idgenerator();
-    connection.attr("identifier",connectionid);
-    connection.attr("relationshipref",relationsshipid);
-    connection.attr("source",nodeidsource);
-    connection.attr("target",nodeidtarget);
-    var style = $("<style/>");
-    var lineColor = $("<lineColor r='0' g='128' b='192' />");
-    //add rgb by parameters
-    if(linecolorr){
-      lineColor.attr("r",linecolorr);
-    }
-    if(linecolorg){
-      lineColor.attr("g",linecolorg);
-    }
-    if(linecolorb){
-      lineColor.attr("b",linecolorb);
-    }
-    style.append(lineColor);
-    connection.append(style);
-    element.self = connection[0];
-    element.element = relationship[0];
-    element.id = connectionid;
-
-    return element;
   },
-  createRelationship:function(xml,type,source,target){
+  relation:{
+    id:function(relation){
+      return $(relation).attr("identifier");
+    },
+    new:function(xml,type,source,target){
 
-    var relationship = this.checkRelationExistence(xml,source,target,type);
-    if(!relationship){
-      var relationsshipid = configuration.idgenerator();
-      var relationship = $("<relationship/>");
-      relationship.attr("identifier",relationsshipid);
-      relationship.attr("xsi:type",type);
-      relationship.attr("source",this.elementid(source));
-      relationship.attr("target",this.elementid(target));
+      var relationship = configuration.relation.exists(xml,source,target,type);
+      if(!relationship){
+        var relationsshipid = configuration.idgenerator();
+        var relationship = $("<relationship/>");
+        relationship.attr("identifier",relationsshipid);
+        relationship.attr("xsi:type",type);
+        relationship.attr("source",configuration.modelelement.id(xml,source));
+        relationship.attr("target",configuration.modelelement.id(xml,target));
 
-      $(xml).children("model").children("relationships").append(relationship);
-    }else{
-      relationship = $(relationship);
-    }
-    return relationship;
+        $(xml).children("model").children("relationships").append(relationship);
+      }else{
+        relationship = $(relationship);
+      }
+      return relationship;
+    },
+    exists:function(xml,modelelement1,modelelement2,relationsshiptype){
+      var result = $(xml).children("model").children("relationships").children("relationship[xsi\\:type='"+relationsshiptype+"'][source='"+configuration.modelelement.id(xml,modelelement1)+"'][target='"+configuration.modelelement.id(xml,modelelement2)+"']")
+      if(result.length>0){
+        return result[0]
+      }
+      return undefined;
+    },
+    delete:function(xml,data){
+      $(data).remove();
+    },
+    source:function(xml,relation){
+      var srcref_el = $(relation).attr("source");
+      var sourceref_element = $(xml).children().children("elements").children('element[identifier="'+srcref_el+'"]')[0];
+      return sourceref_element;
+    },
+    target:function(xml,relation){
+      var srcref_el = $(relation).attr("target");
+      var sourceref_element = $(xml).children().children("elements").children('element[identifier="'+srcref_el+'"]')[0];
+      return sourceref_element;
+    },
+    type:function(relation){return $(relation).attr("xsi:type");},
+    used:function(xml,relation){
+      var elementid = configuration.relation.id(relation);
+      var refs = $(xml).find("connection[relationshipref='"+elementid+"']");
+      if(refs.size()>0){
+        return true
+      }else{
+        //Check if a hierarchial reltation exists
+        var edgetype = configuration.relation.type(relation);
+        edgetype = configuration.edges[edgetype];
+        if(edgetype.allowHierarchiallyGrouping){
+          var source = configuration.modelelement.id(xml,configuration.relation.source(xml,relation))
+          var target = configuration.modelelement.id(xml,configuration.relation.target(xml,relation))
+          var sourcenodes = $(xml).find("node[elementref='"+source+"']");
+          for(var i = 0; i<sourcenodes.size();i++){
+            var relatedtargets = $(sourcenodes[i]).children("node[elementref='"+target+"']");
+            if(relatedtargets.size()>0){
+              return true;
+            }
+          }
+          return false;
+        }else{
+          return false;
+        }
+
+      }
+    },
+
   },
-  allviews:function(data){return $(data).children().children('views');},
-  viewid:function(view){
-    var viewid = $(view).attr("identifier");
-    return viewid;
-  },
-  allnodes:function(viewid,data){return $(data).children('model').children("views").children("view").eq(viewid).find("node");},
-  nodeid:function(node){
-    var nodeid = $(node).attr("identifier");
-    return nodeid;
-  },
-  elementid:function(data){
-    var id = $(data.element).attr("identifier");
-    return id;
-  },
-  nodeelement:function(node,data){
-    //Retrieve the elements that is represented by the node
-    var eref = $(node).attr("elementref");
-    var element_ref = undefined;
-    if(eref){
-      element_ref = $(data).children().children("elements").children('element[identifier="'+eref+'"]')[0];
-    }
-    return element_ref;
-  },
+
   nodeupdates:function(node,data){
-    //Retrieve all elements that require an update, after a change
+    //Retrieve all element ids that require an update, after a change
     var updates = [];
-    var nodeid = this.nodeid(node);
-    var nodes = $(node).find('node');
+    var nodes = $(node).children('node');
     for(var i=0;i<nodes.size();i++){
       var id = nodes.eq(i).attr("identifier");
       updates.push(id);
     }
+    return updates;
+  },
+  edgeupdates:function(node,data){
+    var updates = [];
+    var nodeid = configuration.node.id(node);
     var edges = $(data).find('[source="'+nodeid+'"]');
     for(var i=0;i<edges.size();i++){
       var id = edges.eq(i).attr("identifier");
@@ -276,195 +467,56 @@ this.configuration = {
     }
     return updates;
   },
-  nodeposition:function(node){
-    var result = {};
-    if(node.self){
-      result.x = $(node.self).attr('x');
-      result.y = $(node.self).attr('y');
-      result.width = $(node.self).attr('w');
-      result.height = $(node.self).attr('h');
-    }else{
-      result.x = $(node).attr('x');
-      result.y = $(node).attr('y');
-      result.width = $(node).attr('w');
-      result.height = $(node).attr('h');
-    }
 
-    return result;
-  },
-  alledges:function(viewid,data){ return $(data).children('model').children("views").children("view").eq(viewid).find('connection');},
-  allgroups:function(view,data){
-    //not completed
-    var nodes = this.allnodes(view,data);
-    for(var i = 0;i<nodes.length;i++){
-      var node = nodes[i];
-      var sub_nodes = $(node).children("node");
-      for(var j = 0;j<sub_nodes.length;j++){
-        console.log(j);
-      }
-    }
-  },
-  edgeid:function(edge,data){
-    var edgeid = $(edge).attr("identifier");
-    return edgeid;
-  },
-  edgeelement:function(edge,data){
-    var relref = $(edge).attr("relationshipref");
 
-    if(relref){
-      var relationship_ref = $(data).children().children("relationships").children('relationship[identifier="'+relref+'"]');
-      elementref = relationship_ref[0];
-    }
-    return elementref;
-  },
-  edge_datacollector:function(edge,data){
-    var result = {};
+  nodeadder:function(xml,view,node){
+    var element = configuration.node.modelelement(xml,node);
 
-    var id = configuration.edgeid(edge,data);
-
-    result.element = configuration.edgeelement(edge,data);
-
-    relationship_ref  = result.element;
-    //references to elements
-    var srcref_nd = $(edge).attr("source");
-    if(srcref_nd){
-      var srcref_el = $(relationship_ref).attr("source");
-      if(srcref_el){
-        var sourceref_element = $(data).children().children("elements").children('element[identifier="'+srcref_el+'"]');
-        result.source = sourceref_element[0];
-      }
-      var sourceref_node = $(data).children().find('node[identifier="'+srcref_nd+'"]');
-      result.source_node = sourceref_node[0];
-
-    }
-    var tarref_nd = $(edge).attr("target");
-    if(tarref_nd){
-      var tarref_el = $(relationship_ref).attr("target");
-      if(tarref_el){
-        var targetref_element = $(data).children().children("elements").children('element[identifier="'+tarref_el+'"]');
-        result.target = targetref_element[0];
-      }
-      var targetref_node = $(data).children().find('node[identifier="'+tarref_nd+'"]');
-      result.target_node = targetref_node[0];
-    }
-    //references to nodes
-
-    result.id = id;
-    return result;
-  },
-  nodeadder:function(xml,view,element){
-    $(xml).children("model").children("elements").append(element.element);
-    $(view.self).append(element.self);
+    //$(xml).children("model").children("elements").append(element);
+    $(view).append(node);
   },
   updateNodePosition: function(node,x,y){
     $(node.self).attr("x",x);
     $(node.self).attr("y",y);
   },
-  deleteNode:function(xml,view,element){
-    $(element.self).remove();
-    //TODO:check if element is referenced anywhere, if not delte element as well
-    //element.element
-  },
-  deleteEdge:function(xml,view,element){
-    $(element.self).remove();
-    //TODO: check if relation is referenced anywhere, either by an edge or a group,
-    // if not delete relation as well.
-  },
   addBendPoint:function(edge,x,y){
-    $(edge.self).append("<bendpoint x='"+x+"' y='"+y+"' ></bendpoint>");
+    $(edge).append("<bendpoint x='"+x+"' y='"+y+"' ></bendpoint>");
   },updateEdgePosition: function(edge,index,x,y){
-    $(edge.self).children("bendpoint").eq(index).attr("x",x)
-    $(edge.self).children("bendpoint").eq(index).attr("y",y);
+    $(edge).children("bendpoint").eq(index).attr("x",x)
+    $(edge).children("bendpoint").eq(index).attr("y",y);
   },
   deleteEdgeBendpoint: function(edge,index){
-    $(edge.self).children("bendpoint").eq(index).remove();
+    $(edge).children("bendpoint").eq(index).remove();
   },
   edgeadder:function(xml,view,element){
     //$(xml).children("model").children("relationships").append(element.element);
-    $(view.self).append(element.self);
-  },
-  addNodeToGroup:function(xml,data1,data2){
-    var actionrequired = !this.nodeBelongsToGroup(data1,data2);
-    if(actionrequired){
-        $(data2.self).append(data1.self);
-        //check for available groups
-        var nodetype1 = this.nodetype(data1);
-        var nodetype2 = this.nodetype(data2);
-        //setup first to find as a relation
-        var found  = false;
-        var relation = undefined;
-        var group = undefined;
-        var groupid = undefined;
-        for(var i in this.edges){
-          if(!found){
-            groupid = i;
-            group = this.edges[i];
-            if(group.allowHierarchiallyGrouping){
-              for(var j = 0;j<group.relates.length&&!found;j++){
-                relation = group.relates[j];
-                if(relation.begin == nodetype1 && relation.end == nodetype2){
-                  found = true;
-                }
-              }
-            }
-          }
-
-
-        }
-        if(found&&group){
-            //we need to create a model-relation for this.
-            this.createRelationship(xml,groupid,data2,data1);
-
-        }
-
-    }
-
-  },
-  removeFromGroup:function(data){
-
-    //If current parent is a node, move node one level higher;
-    var tagnameofparent = $(data.self.parentNode).prop("tagName");
-    if(data.self.parentNode.parentNode && tagnameofparent == "node"){
-      $(data.self.parentNode.parentNode).append(data.self);
-    }
-    // At the moment, an existing model-relation will not be destroyed, on destroying the group relation.
-  },
-  nodeBelongsToGroup:function(data1,data2){
-    var actionrequired = $.contains( data2.self, data1.self );
-    return actionrequired;
-  },
-  checkRelationExistence:function(xml,data1,data2,relationsshiptype){
-    var result = $(xml).children("model").children("relationships").children("relationship[xsi\\:type='"+relationsshiptype+"'][source='"+this.elementid(data1)+"'][target='"+this.elementid(data2)+"']")
-    if(result.length>0){
-      return result[0]
-    }
-    return undefined;
+    $(view).append(element.self);
   },
   nodes:{
     undefined:{
       look:
       [{
         type:"polygon",
-        points:function(data){
-          return "0,0 0,"+$(data.self).attr("h")+" "+$(data.self).attr("w")+","+$(data.self).attr("h")+" "+$(data.self).attr("w")+",0";
+        points:function(xml,data){
+          return "0,0 0,"+$(data).attr("h")+" "+$(data).attr("w")+","+$(data).attr("h")+" "+$(data).attr("w")+",0";
         },
-        fill:function(data){var fc = $( data.self ).children("style").children("fillColor");
+        fill:function(xml,data){var fc = $( data.self ).children("style").children("fillColor");
               return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
-        stroke:function(data){var fc = $( data.self ).children("style").children("lineColor");
+        stroke:function(xml,data){var fc = $( data.self ).children("style").children("lineColor");
               return "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")";}
       },{
           type:"text",
-          innerHtml:function(data){
+          innerHtml:function(xml,data){
             var text = $(data.self).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
             return documentmodengine.functions.textDistributionToTSpan(text,$(data.self).attr("w"),$(data.self).attr("h"))},
-          x:function(data){
+          x:function(xml,data){
             if($(data.self).children("node").size()>0){
               return 6;
             }else{
               return $(data.self).attr('w')/2
             }
           },
-          y:function(data){
+          y:function(xml,data){
             if($(data.self).children("node").size()>0){
               return 8;
             }else
@@ -473,7 +525,7 @@ this.configuration = {
               }
             },
           "alignment-baseline":"central",
-          "text-anchor":function(data){
+          "text-anchor":function(xml,data){
             if($(data.self).children("node").size()>0){
               return "start";
             }else{
@@ -482,17 +534,17 @@ this.configuration = {
           }
         },{
             type:"text",
-            innerHtml:function(data){
+            innerHtml:function(xml,data){
               var text = $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
               return documentmodengine.functions.textDistributionToTSpan(text,$(data.self).attr("w"),$(data.self).attr("h"))},
-            x:function(data){
+            x:function(xml,data){
               if($(data.self).children("node").size()>0){
                 return 6;
               }else{
                 return $(data.self).attr('w')/2
               }
             },
-            y:function(data){
+            y:function(xml,data){
               if($(data.self).children("node").size()>0){
                 return 8;
               }else
@@ -501,7 +553,7 @@ this.configuration = {
                 }
               },
             "alignment-baseline":"central",
-            "text-anchor":function(data){
+            "text-anchor":function(xml,data){
               if($(data.self).children("node").size()>0){
                 return "start";
               }else{
@@ -509,12 +561,12 @@ this.configuration = {
               }
             }
           }],feel:{
-            points:function(data){
+            points:function(xml,data){
               var result = [];
-              var x = parseInt(configuration.nodeposition(data).x);
-              var y = parseInt(configuration.nodeposition(data).y);
-              var w = parseInt(configuration.nodeposition(data).width);
-              var h = parseInt(configuration.nodeposition(data).height);
+              var x = parseInt(configuration.node.position(data).x);
+              var y = parseInt(configuration.node.position(data).y);
+              var w = parseInt(configuration.node.position(data).width);
+              var h = parseInt(configuration.node.position(data).height);
               var point1 = {};
               var point2 = {};
               var point3 = {};
@@ -539,29 +591,29 @@ this.configuration = {
             look:
             [{
               type:"path",
-              d:function(data){
+              d:function(xml,data){
                 //return "M"+$(data.self).attr("x")+","+$(data.self).attr("y")+" l"+$(data.self).attr("w")+",0 l0,"+$(data.self).attr("h")+" l"+(-$(data.self).attr("w"))+",0 z";
                 return "M0,0 l"+$(data.self).attr("w")/2+",0 l0,20 l-"+$(data.self).attr("w")/2+",0 z";
               },
-              fill:function(data){var fc = $( data.self ).children("style").children("fillColor");
+              fill:function(xml,data){var fc = $( data.self ).children("style").children("fillColor");
                     return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
-              stroke:function(data){var fc = $( data.self ).children("style").children("lineColor");
+              stroke:function(xml,data){var fc = $( data.self ).children("style").children("lineColor");
                     return "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")";},
               "stroke-dasharray":"5,5"
             },{
               type:"path",
-              d:function(data){
+              d:function(xml,data){
                 //return "M"+$(data.self).attr("x")+","+$(data.self).attr("y")+" l"+$(data.self).attr("w")+",0 l0,"+$(data.self).attr("h")+" l"+(-$(data.self).attr("w"))+",0 z";
                 return "M0,20 l"+$(data.self).attr("w")+",0 l0,"+$(data.self).attr("h")+" l"+(-$(data.self).attr("w"))+",0 z";
               },
-              fill:function(data){var fc = $( data.self ).children("style").children("fillColor");
+              fill:function(xml,data){var fc = $( data.self ).children("style").children("fillColor");
                     return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
-              stroke:function(data){var fc = $( data.self ).children("style").children("lineColor");
+              stroke:function(xml,data){var fc = $( data.self ).children("style").children("lineColor");
                     return "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")";},
               "stroke-dasharray":"5,5"
             },{
                 type:"text",
-                innerHtml:function(data){
+                innerHtml:function(xml,data){
                   var text = $(data).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
                   var ref_x;
                   var width;
@@ -579,13 +631,13 @@ this.configuration = {
                     }
                     width = $(data.self).attr("w")/2
                     return documentmodengine.functions.textDistributionToTSpan(text,width,height,ref_x,ref_y)},
-                x:function(data){
+                x:function(xml,data){
                   if($(data).children("node").size()>0){
                     return 6;}else{
                   return $(data.self).attr("w")/2;
                   }
                 },
-                y:function(data){
+                y:function(xml,data){
                   if($(data).children("node").size()>0){
                     return 8;
                   }else{
@@ -593,7 +645,7 @@ this.configuration = {
                   }
                 },
                 "alignment-baseline":"central",
-                "text-anchor":function(data){
+                "text-anchor":function(xml,data){
                   if($(data.self).children("node").size()>0){
                     return "start";
                   }else
@@ -601,12 +653,12 @@ this.configuration = {
                 }
               }],
               feel:{
-                points:function(data){
+                points:function(xml,data){
                   var result = [];
-                  var x = parseInt(configuration.nodeposition(data).x);
-                  var y = parseInt(configuration.nodeposition(data).y);
-                  var w = parseInt(configuration.nodeposition(data).width);
-                  var h = parseInt(configuration.nodeposition(data).height);
+                  var x = parseInt(configuration.node.position(data).x);
+                  var y = parseInt(configuration.node.position(data).y);
+                  var w = parseInt(configuration.node.position(data).width);
+                  var h = parseInt(configuration.node.position(data).height);
                   var point1 = {};
                   var point2 = {};
                   var point3 = {};
@@ -628,7 +680,7 @@ this.configuration = {
               }},
       Principle:{
         new:function(xml){
-          return configuration.createNewNode("Principle","My Principle");
+          return configuration.node.new(xml,"Principle","My Principle",204,204,255,92,92,92);
         },
         attributes:{
           name:{
@@ -656,17 +708,17 @@ this.configuration = {
         look:
         [{
           type:"path",
-          d:function(data){
+          d:function(xml,data){
 
             return "M 5,0 l "+($(data.self).attr("w")-5)+",0 l 5,5 l 0,"+($(data.self).attr("h")-5)+" l-5,5 l"+(-$(data.self).attr("w")+5)+",0 l-5,-5 l0,"+(-$(data.self).attr("h")+5)+" z";
           },
-          fill:function(data){var fc = $( data.self ).children("style").children("fillColor");
+          fill:function(xml,data){var fc = $( data.self ).children("style").children("fillColor");
                 return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
-          stroke:function(data){var fc = $( data.self ).children("style").children("lineColor");
+          stroke:function(xml,data){var fc = $( data.self ).children("style").children("lineColor");
                 return "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")";}
         },{
           type:"rect",
-          x:function(data){return $(data.self).attr("w")-10},
+          x:function(xml,data){return $(data.self).attr("w")-10},
           y:3.5,
           w:10,
           h:10,
@@ -677,23 +729,23 @@ this.configuration = {
         {
           type:"text",
           "text":"!",
-          x:function(data){return $(data.self).attr("w")-7},
+          x:function(xml,data){return $(data.self).attr("w")-7},
           y:12,
           style:"font-size:10px"
         },
         {
         type:"text",
-        innerHtml:function(data){
+        innerHtml:function(xml,data){
           var text = $(data).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
           return documentmodengine.functions.textDistributionToTSpan(text,$(data.self).attr("w"),$(data.self).attr("h"))},
-        x:function(data){
+        x:function(xml,data){
           if($(data.self).children("node").size()>0){
             return 6;
           }else{
             return $(data.self).attr('w')/2
           }
         },
-        y:function(data){
+        y:function(xml,data){
           if($(data.self).children("node").size()>0){
             return 8;
           }else
@@ -702,7 +754,7 @@ this.configuration = {
             }
           },
         "alignment-baseline":"central",
-        "text-anchor":function(data){
+        "text-anchor":function(xml,data){
           if($(data.self).children("node").size()>0){
             return "start";
           }else{
@@ -711,17 +763,17 @@ this.configuration = {
         }
       },{
           type:"text",
-          innerHtml:function(data){
+          innerHtml:function(xml,data){
             var text = $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
             return documentmodengine.functions.textDistributionToTSpan(text,$(data.self).attr("w"),$(data.self).attr("h"))},
-          x:function(data){
+          x:function(xml,data){
             if($(data.self).children("node").size()>0){
               return 6;
             }else{
               return $(data.self).attr('w')/2
             }
           },
-          y:function(data){
+          y:function(xml,data){
             if($(data.self).children("node").size()>0){
               return 8;
             }else
@@ -730,7 +782,7 @@ this.configuration = {
               }
             },
           "alignment-baseline":"central",
-          "text-anchor":function(data){
+          "text-anchor":function(xml,data){
             if($(data.self).children("node").size()>0){
               return "start";
             }else{
@@ -740,7 +792,7 @@ this.configuration = {
         }]},
         Requirement:{
           new:function(xml){
-            return configuration.createNewNode("Requirement","My Requirement");
+            return configuration.node.new(xml,"Requirement","My Requirement",204,204,255,92,92,92);
           },
           attributes:{
             name:{
@@ -767,17 +819,17 @@ this.configuration = {
           look:
           [{
             type:"path",
-            d:function(data){
+            d:function(xml,data){
 
               return "M 5,0 l "+($(data.self).attr("w")-5)+",0 l 5,5 l 0,"+($(data.self).attr("h")-5)+" l-5,5 l"+(-$(data.self).attr("w")+5)+",0 l-5,-5 l0,"+(-$(data.self).attr("h")+5)+" z";
             },
-            fill:function(data){var fc = $( data.self ).children("style").children("fillColor");
+            fill:function(xml,data){var fc = $( data.self ).children("style").children("fillColor");
                   return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
-            stroke:function(data){var fc = $( data.self ).children("style").children("lineColor");
+            stroke:function(xml,data){var fc = $( data.self ).children("style").children("lineColor");
                   return "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")";}
           },{
             type:"path",
-            d:function(data){return "M "+(parseFloat($(data.self).attr("w"))-10)+",5 l10,0 l-3,5 l-10,0 l3,-5"},
+            d:function(xml,data){return "M "+(parseFloat($(data.self).attr("w"))-10)+",5 l10,0 l-3,5 l-10,0 l3,-5"},
             fill:"none",
             stroke:"black",
             "stroke-width":"0.5"
@@ -785,17 +837,17 @@ this.configuration = {
 
       ,{
           type:"text",
-          innerHtml:function(data){
+          innerHtml:function(xml,data){
             var text = $(data).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
             return documentmodengine.functions.textDistributionToTSpan(text,$(data.self).attr("w"),$(data.self).attr("h"))},
-          x:function(data){
+          x:function(xml,data){
             if($(data.self).children("node").size()>0){
               return 6;
             }else{
               return $(data.self).attr('w')/2
             }
           },
-          y:function(data){
+          y:function(xml,data){
             if($(data.self).children("node").size()>0){
               return 8;
             }else
@@ -804,7 +856,7 @@ this.configuration = {
               }
             },
           "alignment-baseline":"central",
-          "text-anchor":function(data){
+          "text-anchor":function(xml,data){
             if($(data.self).children("node").size()>0){
               return "start";
             }else{
@@ -813,17 +865,17 @@ this.configuration = {
           }
         },{
             type:"text",
-            innerHtml:function(data){
+            innerHtml:function(xml,data){
               var text = $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
               return documentmodengine.functions.textDistributionToTSpan(text,$(data.self).attr("w"),$(data.self).attr("h"))},
-            x:function(data){
+            x:function(xml,data){
               if($(data.self).children("node").size()>0){
                 return 6;
               }else{
                 return $(data.self).attr('w')/2
               }
             },
-            y:function(data){
+            y:function(xml,data){
               if($(data.self).children("node").size()>0){
                 return 8;
               }else
@@ -832,7 +884,7 @@ this.configuration = {
                 }
               },
             "alignment-baseline":"central",
-            "text-anchor":function(data){
+            "text-anchor":function(xml,data){
               if($(data.self).children("node").size()>0){
                 return "start";
               }else{
@@ -841,7 +893,7 @@ this.configuration = {
             }
           }]},Goal:{
             new:function(xml){
-              return configuration.createNewNode("Goal","My Goal");
+              return configuration.node.new(xml,"Goal","My Goal",204,204,255,92,92,92);
             },
             attributes:{
               name:{
@@ -868,48 +920,48 @@ this.configuration = {
             look:
             [{
               type:"path",
-              d:function(data){
+              d:function(xml,data){
 
                 return "M 5,0 l "+($(data.self).attr("w")-5)+",0 l 5,5 l 0,"+($(data.self).attr("h")-5)+" l-5,5 l"+(-$(data.self).attr("w")+5)+",0 l-5,-5 l0,"+(-$(data.self).attr("h")+5)+" z";
               },
-              fill:function(data){var fc = $( data.self ).children("style").children("fillColor");
+              fill:function(xml,data){var fc = $( data.self ).children("style").children("fillColor");
                     return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
-              stroke:function(data){var fc = $( data.self ).children("style").children("lineColor");
+              stroke:function(xml,data){var fc = $( data.self ).children("style").children("lineColor");
                     return "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")";}
             },{
               type:"circle",
               r:2,
-              cx:function(data){return $(data.self).attr("w")-10},
-              cy:function(data){return 10}
+              cx:function(xml,data){return $(data.self).attr("w")-10},
+              cy:function(xml,data){return 10}
             },{
               type:"circle",
               r:4,
-              cx:function(data){return $(data.self).attr("w")-10},
-              cy:function(data){return 10},
+              cx:function(xml,data){return $(data.self).attr("w")-10},
+              cy:function(xml,data){return 10},
               fill:"none",
               stroke:"black"
             },{
               type:"circle",
               r:6,
-              cx:function(data){return $(data.self).attr("w")-10},
-              cy:function(data){return 10},
+              cx:function(xml,data){return $(data.self).attr("w")-10},
+              cy:function(xml,data){return 10},
               fill:"none",
               stroke:"black"
             }
 
         ,{
             type:"text",
-            innerHtml:function(data){
+            innerHtml:function(xml,data){
               var text = $(data).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
               return documentmodengine.functions.textDistributionToTSpan(text,$(data.self).attr("w"),$(data.self).attr("h"))},
-            x:function(data){
+            x:function(xml,data){
               if($(data.self).children("node").size()>0){
                 return 6;
               }else{
                 return $(data.self).attr('w')/2
               }
             },
-            y:function(data){
+            y:function(xml,data){
               if($(data.self).children("node").size()>0){
                 return 8;
               }else
@@ -918,7 +970,7 @@ this.configuration = {
                 }
               },
             "alignment-baseline":"central",
-            "text-anchor":function(data){
+            "text-anchor":function(xml,data){
               if($(data.self).children("node").size()>0){
                 return "start";
               }else{
@@ -927,17 +979,17 @@ this.configuration = {
             }
           },{
               type:"text",
-              innerHtml:function(data){
+              innerHtml:function(xml,data){
                 var text = $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
                 return documentmodengine.functions.textDistributionToTSpan(text,$(data.self).attr("w"),$(data.self).attr("h"))},
-              x:function(data){
+              x:function(xml,data){
                 if($(data.self).children("node").size()>0){
                   return 6;
                 }else{
                   return $(data.self).attr('w')/2
                 }
               },
-              y:function(data){
+              y:function(xml,data){
                 if($(data.self).children("node").size()>0){
                   return 8;
                 }else
@@ -946,7 +998,7 @@ this.configuration = {
                   }
                 },
               "alignment-baseline":"central",
-              "text-anchor":function(data){
+              "text-anchor":function(xml,data){
                 if($(data.self).children("node").size()>0){
                   return "start";
                 }else{
@@ -954,12 +1006,12 @@ this.configuration = {
                 }
               }
             }],feel:{
-              points:function(data){
+              points:function(xml,data){
                 var result = [];
-                var x = parseInt(configuration.nodeposition(data).x);
-                var y = parseInt(configuration.nodeposition(data).y);
-                var w = parseInt(configuration.nodeposition(data).width);
-                var h = parseInt(configuration.nodeposition(data).height);
+                var x = parseInt(configuration.node.position(data).x);
+                var y = parseInt(configuration.node.position(data).y);
+                var w = parseInt(configuration.node.position(data).width);
+                var h = parseInt(configuration.node.position(data).height);
                 var point1 = {};
                 var point2 = {};
                 var point3 = {};
@@ -981,7 +1033,7 @@ this.configuration = {
             }},
     BusinessObject:{
       new:function(xml){
-        return configuration.createNewNode("BusinessObject","My Business Object");
+        return configuration.node.new(xml,"BusinessObject","My Business Object",255,255,181,92,92,92);
       },
       attributes:{
         name:{
@@ -1008,45 +1060,45 @@ this.configuration = {
       look:
       [{
         type:"polygon",
-        points:function(data){
-          return "0,0 0,"+$(data.self).attr("h")+" "+$(data.self).attr("w")+","+$(data.self).attr("h")+" "+$(data.self).attr("w")+",0";
+        points:function(xml,data){
+          return "0,0 0,"+$(data).attr("h")+" "+$(data).attr("w")+","+$(data).attr("h")+" "+$(data).attr("w")+",0";
         },
-        fill:function(data){var fc = $( data.self ).children("style").children("fillColor");
+        fill:function(xml,data){var fc = $( data.self ).children("style").children("fillColor");
               return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
-        stroke:function(data){var fc = $( data.self ).children("style").children("lineColor");
+        stroke:function(xml,data){var fc = $( data.self ).children("style").children("lineColor");
               return "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")";}
       },{
         type:"polygon",
-        points:function(data){
-          return "0,0 0,"+$(data.self).attr("h")/3+" "+$(data.self).attr("w")+","+$(data.self).attr("h")/3+" "+$(data.self).attr("w")+",0";
+        points:function(xml,data){
+          return "0,0 0,"+$(data).attr("h")/3+" "+$(data).attr("w")+","+$(data).attr("h")/3+" "+$(data).attr("w")+",0";
         },
-        fill:function(data){var fc = $( data.self ).children("style").children("fillColor");
+        fill:function(xml,data){var fc = $( data.self ).children("style").children("fillColor");
               return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
-        stroke:function(data){var fc = $( data.self ).children("style").children("lineColor");
+        stroke:function(xml,data){var fc = $( data.self ).children("style").children("lineColor");
               return "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")";}
       },{
           type:"text",
-          innerHtml:function(data){
+          innerHtml:function(xml,data){
             return documentmodengine.functions.textDistributionToTSpan($(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text(),$(data.self).attr("w"),
             $(data.self).attr("h")/3.5);
           },
           "alignment-baseline":"central",
           "text-anchor":"middle",
-          x:function(data){
+          x:function(xml,data){
             return $(data.self).attr("w")/2
           },
-          y:function(data){
+          y:function(xml,data){
             return configuration.globalCharheight/2+5;
           }
 
         }
     ],feel:{
-      points:function(data){
+      points:function(xml,data){
         var result = [];
-        var x = parseInt(configuration.nodeposition(data).x);
-        var y = parseInt(configuration.nodeposition(data).y);
-        var w = parseInt(configuration.nodeposition(data).width);
-        var h = parseInt(configuration.nodeposition(data).height);
+        var x = parseInt(configuration.node.position(data).x);
+        var y = parseInt(configuration.node.position(data).y);
+        var w = parseInt(configuration.node.position(data).width);
+        var h = parseInt(configuration.node.position(data).height);
         var point1 = {};
         var point2 = {};
         var point3 = {};
@@ -1067,7 +1119,7 @@ this.configuration = {
       }
     }},BusinessActor:{
       new:function(xml){
-        return configuration.createNewNode("BusinessActor","My Business Actor");
+        return configuration.node.new(xml,"BusinessActor","My Business Actor",255,255,181,92,92,92);
       },
       attributes:{
         name:{
@@ -1149,60 +1201,60 @@ this.configuration = {
       look:
       [{
         type:"rect",
-        points:function(data){
-          return "0,0 0,"+$(data.self).attr("h")+" "+$(data.self).attr("w")+","+$(data.self).attr("h")+" "+$(data.self).attr("w")+",0";
+        points:function(xml,data){
+          return "0,0 0,"+$(data).attr("h")+" "+$(data).attr("w")+","+$(data).attr("h")+" "+$(data).attr("w")+",0";
         },
         x:0,
         y:0,
-        w:function(data){return $(data.self).attr("w")},
-        h:function(data){return $(data.self).attr("h")},
+        w:function(xml,data){return $(data.self).attr("w")},
+        h:function(xml,data){return $(data.self).attr("h")},
         rx:5,
         ry:5,
-        stroke:function(data){var fc = $( data.self ).children("style").children("lineColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
-        fill:function(data){var fc = $( data.self ).children("style").children("fillColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"}
+        stroke:function(xml,data){var fc = $( data.self ).children("style").children("lineColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
+        fill:function(xml,data){var fc = $( data.self ).children("style").children("fillColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"}
       },{
         type:"circle",
         r:4,
         stroke:"black",
         "stroke-width":3,
-        fill:function(data){var fc = $( data.self ).children("style").children("fillColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
-        cx:function(data){return $(data.self).attr("w")-10},
-        cy:function(data){return 7},
+        fill:function(xml,data){var fc = $( data.self ).children("style").children("fillColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
+        cx:function(xml,data){return $(data.self).attr("w")-10},
+        cy:function(xml,data){return 7},
       },{
         type:"line",
-        x1:function(data){return $(data.self).attr("w")-10},
-        y1:function(data){return 11},
-        x2:function(data){return $(data.self).attr("w")-10},
-        y2:function(data){return 20},
+        x1:function(xml,data){return $(data.self).attr("w")-10},
+        y1:function(xml,data){return 11},
+        x2:function(xml,data){return $(data.self).attr("w")-10},
+        y2:function(xml,data){return 20},
         stroke:"black",
         "stroke-width":3
       },{
         type:"line",
-        x1:function(data){return $(data.self).attr("w")-10},
-        y1:function(data){return 20},
-        x2:function(data){return $(data.self).attr("w")-14},
-        y2:function(data){return 25},
+        x1:function(xml,data){return $(data.self).attr("w")-10},
+        y1:function(xml,data){return 20},
+        x2:function(xml,data){return $(data.self).attr("w")-14},
+        y2:function(xml,data){return 25},
         stroke:"black",
         "stroke-width":3
       },{
         type:"line",
-        x1:function(data){return $(data.self).attr("w")-10},
-        y1:function(data){return 20},
-        x2:function(data){return $(data.self).attr("w")-6},
-        y2:function(data){return 25},
+        x1:function(xml,data){return $(data.self).attr("w")-10},
+        y1:function(xml,data){return 20},
+        x2:function(xml,data){return $(data.self).attr("w")-6},
+        y2:function(xml,data){return 25},
         stroke:"black",
         "stroke-width":3
       },{
         type:"line",
-        x1:function(data){return $(data.self).attr("w")-14},
-        y1:function(data){return 14},
-        x2:function(data){return $(data.self).attr("w")-6},
-        y2:function(data){return 14},
+        x1:function(xml,data){return $(data.self).attr("w")-14},
+        y1:function(xml,data){return 14},
+        x2:function(xml,data){return $(data.self).attr("w")-6},
+        y2:function(xml,data){return 14},
         stroke:"black",
         "stroke-width":3
       },{
           type:"text",
-          innerHtml:function(data){
+          innerHtml:function(xml,data){
             var text = $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
             var x = 0;
             if($(data.self).children("node").size()>0){
@@ -1219,14 +1271,14 @@ this.configuration = {
               }
             var linebyline = $(data.self).children("node").size()>0
             return documentmodengine.functions.textDistributionToTSpan(text,$(data.self).attr("w"),$(data.self).attr("h"),linebyline,x,y)},
-          x:function(data){
+          x:function(xml,data){
             if($(data.self).children("node").size()>0){
               return 6;
             }else{
               return $(data.self).attr('w')/2
             }
           },
-          y:function(data){
+          y:function(xml,data){
             if($(data.self).children("node").size()>0){
               return 8;
             }else
@@ -1235,7 +1287,7 @@ this.configuration = {
               }
             },
           "alignment-baseline":"central",
-          "text-anchor":function(data){
+          "text-anchor":function(xml,data){
             if($(data.self).children("node").size()>0){
               return "start";
             }else{
@@ -1244,34 +1296,13 @@ this.configuration = {
           }
         }],
         feel:{
-          points:function(data){
-            var result = [];
-            var x = parseInt(configuration.nodeposition(data).x);
-            var y = parseInt(configuration.nodeposition(data).y);
-            var w = parseInt(configuration.nodeposition(data).width);
-            var h = parseInt(configuration.nodeposition(data).height);
-            var point1 = {};
-            var point2 = {};
-            var point3 = {};
-            var point4 = {};
-            point1.x = (x +(w/2));
-            point1.y = y;
-            point2.x = x;
-            point2.y = (y+(h/2));
-            point3.x = (x +(w/2));
-            point3.y = (y+h);
-            point4.x = (x+w);
-            point4.y = (y+(h/2));
-            result.push(point1);
-            result.push(point2);
-            result.push(point3);
-            result.push(point4);
-            return result;
+          points:function(xml,data){
+            return configuration.nodes[undefined].feel.points(xml,data);
           }
         }
     },BusinessInterface:{
       new:function(xml){
-        return configuration.createNewNode("BusinessInterface","My Business Interface");
+        return configuration.node.new(xml,"BusinessInterface","My Business Interface",255,255,181,92,92,92);
       },
       attributes:{
         name:{
@@ -1298,44 +1329,58 @@ this.configuration = {
       look:
       [{
         type:"rect",
-        points:function(data){
-          return "0,0 0,"+$(data.self).attr("h")+" "+$(data.self).attr("w")+","+$(data.self).attr("h")+" "+$(data.self).attr("w")+",0";
+        points:function(xml,data){
+          return "0,0 0,"+$(data).attr("h")+" "+$(data).attr("w")+","+$(data).attr("h")+" "+$(data).attr("w")+",0";
         },
         x:0,
         y:0,
-        w:function(data){return $(data.self).attr("w")},
-        h:function(data){return $(data.self).attr("h")},
-        stroke:function(data){var fc = $( data.self ).children("style").children("lineColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
-        fill:function(data){var fc = $( data.self ).children("style").children("fillColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"}
+        w:function(xml,data){return $(data.self).attr("w")},
+        h:function(xml,data){return $(data.self).attr("h")},
+        stroke:function(xml,data){var fc = $( data.self ).children("style").children("lineColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
+        fill:function(xml,data){var fc = $( data.self ).children("style").children("fillColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"}
       },{
         type:"circle",
         r:4,
         stroke:"black",
         "stroke-width":3,
-        fill:function(data){var fc = $( data.self ).children("style").children("fillColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
-        cx:function(data){return $(data.self).attr("w")-10},
-        cy:function(data){return 7},
+        fill:function(xml,data){var fc = $( data.self ).children("style").children("fillColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
+        cx:function(xml,data){return $(data.self).attr("w")-10},
+        cy:function(xml,data){return 7},
       },{
         type:"line",
-        x1:function(data){return $(data.self).attr("w")-14},
-        y1:function(data){return 7},
-        x2:function(data){return $(data.self).attr("w")-22},
-        y2:function(data){return 7},
+        x1:function(xml,data){return $(data.self).attr("w")-14},
+        y1:function(xml,data){return 7},
+        x2:function(xml,data){return $(data.self).attr("w")-22},
+        y2:function(xml,data){return 7},
         stroke:"black",
         "stroke-width":3
       },{
           type:"text",
-          innerHtml:function(data){
+          innerHtml:function(xml,data){
             var text = $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
-            return documentmodengine.functions.textDistributionToTSpan(text,$(data.self).attr("w"),$(data.self).attr("h"))},
-          x:function(data){
+            var x = 0;
+            if($(data.self).children("node").size()>0){
+              x = 6;
+            }else{
+              x = $(data.self).attr('w')/2
+            }
+            var y = 0;
+            if($(data.self).children("node").size()>0){
+              y = 8;
+            }else
+              {
+                y = $(data.self).attr('h')/2
+              }
+            var linebyline = $(data.self).children("node").size()>0
+            return documentmodengine.functions.textDistributionToTSpan(text,$(data.self).attr("w"),$(data.self).attr("h"),linebyline,x,y)},
+          x:function(xml,data){
             if($(data.self).children("node").size()>0){
               return 6;
             }else{
               return $(data.self).attr('w')/2
             }
           },
-          y:function(data){
+          y:function(xml,data){
             if($(data.self).children("node").size()>0){
               return 8;
             }else
@@ -1344,7 +1389,7 @@ this.configuration = {
               }
             },
           "alignment-baseline":"central",
-          "text-anchor":function(data){
+          "text-anchor":function(xml,data){
             if($(data.self).children("node").size()>0){
               return "start";
             }else{
@@ -1353,34 +1398,13 @@ this.configuration = {
           }
         }],
         feel:{
-          points:function(data){
-            var result = [];
-            var x = parseInt(configuration.nodeposition(data).x);
-            var y = parseInt(configuration.nodeposition(data).y);
-            var w = parseInt(configuration.nodeposition(data).width);
-            var h = parseInt(configuration.nodeposition(data).height);
-            var point1 = {};
-            var point2 = {};
-            var point3 = {};
-            var point4 = {};
-            point1.x = (x +(w/2));
-            point1.y = y;
-            point2.x = x;
-            point2.y = (y+(h/2));
-            point3.x = (x +(w/2));
-            point3.y = (y+h);
-            point4.x = (x+w);
-            point4.y = (y+(h/2));
-            result.push(point1);
-            result.push(point2);
-            result.push(point3);
-            result.push(point4);
-            return result;
+          points:function(xml,data){
+            return configuration.nodes[undefined].feel.points(xml,data);
           }
         }
     },InfrastructureInterface:{
       new:function(xml){
-        return configuration.createNewNode("InfrastructureInterface","My Infrastructure Interface");
+        return configuration.node.new(xml,"InfrastructureInterface","My Infrastructure Interface",201,231,183,92,92,92);
       },
       attributes:{
         name:{
@@ -1407,44 +1431,58 @@ this.configuration = {
       look:
       [{
         type:"rect",
-        points:function(data){
-          return "0,0 0,"+$(data.self).attr("h")+" "+$(data.self).attr("w")+","+$(data.self).attr("h")+" "+$(data.self).attr("w")+",0";
+        points:function(xml,data){
+          return "0,0 0,"+$(data).attr("h")+" "+$(data).attr("w")+","+$(data).attr("h")+" "+$(data).attr("w")+",0";
         },
         x:0,
         y:0,
-        w:function(data){return $(data.self).attr("w")},
-        h:function(data){return $(data.self).attr("h")},
-        stroke:function(data){var fc = $( data.self ).children("style").children("lineColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
-        fill:function(data){var fc = $( data.self ).children("style").children("fillColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"}
+        w:function(xml,data){return $(data.self).attr("w")},
+        h:function(xml,data){return $(data.self).attr("h")},
+        stroke:function(xml,data){var fc = $( data.self ).children("style").children("lineColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
+        fill:function(xml,data){var fc = $( data.self ).children("style").children("fillColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"}
       },{
         type:"circle",
         r:4,
         stroke:"black",
         "stroke-width":3,
-        fill:function(data){var fc = $( data.self ).children("style").children("fillColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
-        cx:function(data){return $(data.self).attr("w")-10},
-        cy:function(data){return 7},
+        fill:function(xml,data){var fc = $( data.self ).children("style").children("fillColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
+        cx:function(xml,data){return $(data.self).attr("w")-10},
+        cy:function(xml,data){return 7},
       },{
         type:"line",
-        x1:function(data){return $(data.self).attr("w")-14},
-        y1:function(data){return 7},
-        x2:function(data){return $(data.self).attr("w")-22},
-        y2:function(data){return 7},
+        x1:function(xml,data){return $(data.self).attr("w")-14},
+        y1:function(xml,data){return 7},
+        x2:function(xml,data){return $(data.self).attr("w")-22},
+        y2:function(xml,data){return 7},
         stroke:"black",
         "stroke-width":3
       },{
           type:"text",
-          innerHtml:function(data){
+          innerHtml:function(xml,data){
             var text = $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
-            return documentmodengine.functions.textDistributionToTSpan(text,$(data.self).attr("w"),$(data.self).attr("h"))},
-          x:function(data){
+            var x = 0;
+            if($(data.self).children("node").size()>0){
+              x = 6;
+            }else{
+              x = $(data.self).attr('w')/2
+            }
+            var y = 0;
+            if($(data.self).children("node").size()>0){
+              y = 8;
+            }else
+              {
+                y = $(data.self).attr('h')/2
+              }
+            var linebyline = $(data.self).children("node").size()>0
+            return documentmodengine.functions.textDistributionToTSpan(text,$(data.self).attr("w"),$(data.self).attr("h"),linebyline,x,y)},
+          x:function(xml,data){
             if($(data.self).children("node").size()>0){
               return 6;
             }else{
               return $(data.self).attr('w')/2
             }
           },
-          y:function(data){
+          y:function(xml,data){
             if($(data.self).children("node").size()>0){
               return 8;
             }else
@@ -1453,7 +1491,7 @@ this.configuration = {
               }
             },
           "alignment-baseline":"central",
-          "text-anchor":function(data){
+          "text-anchor":function(xml,data){
             if($(data.self).children("node").size()>0){
               return "start";
             }else{
@@ -1462,34 +1500,13 @@ this.configuration = {
           }
         }],
         feel:{
-          points:function(data){
-            var result = [];
-            var x = parseInt(configuration.nodeposition(data).x);
-            var y = parseInt(configuration.nodeposition(data).y);
-            var w = parseInt(configuration.nodeposition(data).width);
-            var h = parseInt(configuration.nodeposition(data).height);
-            var point1 = {};
-            var point2 = {};
-            var point3 = {};
-            var point4 = {};
-            point1.x = (x +(w/2));
-            point1.y = y;
-            point2.x = x;
-            point2.y = (y+(h/2));
-            point3.x = (x +(w/2));
-            point3.y = (y+h);
-            point4.x = (x+w);
-            point4.y = (y+(h/2));
-            result.push(point1);
-            result.push(point2);
-            result.push(point3);
-            result.push(point4);
-            return result;
+          points:function(xml,data){
+            return configuration.nodes[undefined].feel.points(xml,data);
           }
         }
     },ApplicationInterface:{
       new:function(xml){
-        return configuration.createNewNode("ApplicationInterface","My Application Interface");
+        return configuration.node.new(xml,"ApplicationInterface","My Application Interface",181,255,255,92,92,92);
       },
       attributes:{
         name:{
@@ -1516,44 +1533,58 @@ this.configuration = {
       look:
       [{
         type:"rect",
-        points:function(data){
-          return "0,0 0,"+$(data.self).attr("h")+" "+$(data.self).attr("w")+","+$(data.self).attr("h")+" "+$(data.self).attr("w")+",0";
+        points:function(xml,data){
+          return "0,0 0,"+$(data).attr("h")+" "+$(data).attr("w")+","+$(data).attr("h")+" "+$(data).attr("w")+",0";
         },
         x:0,
         y:0,
-        w:function(data){return $(data.self).attr("w")},
-        h:function(data){return $(data.self).attr("h")},
-        stroke:function(data){var fc = $( data.self ).children("style").children("lineColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
-        fill:function(data){var fc = $( data.self ).children("style").children("fillColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"}
+        w:function(xml,data){return $(data.self).attr("w")},
+        h:function(xml,data){return $(data.self).attr("h")},
+        stroke:function(xml,data){var fc = $( data.self ).children("style").children("lineColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
+        fill:function(xml,data){var fc = $( data.self ).children("style").children("fillColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"}
       },{
         type:"circle",
         r:4,
         stroke:"black",
         "stroke-width":3,
-        fill:function(data){var fc = $( data.self ).children("style").children("fillColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
-        cx:function(data){return $(data.self).attr("w")-10},
-        cy:function(data){return 7},
+        fill:function(xml,data){var fc = $( data.self ).children("style").children("fillColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
+        cx:function(xml,data){return $(data.self).attr("w")-10},
+        cy:function(xml,data){return 7},
       },{
         type:"line",
-        x1:function(data){return $(data.self).attr("w")-14},
-        y1:function(data){return 7},
-        x2:function(data){return $(data.self).attr("w")-22},
-        y2:function(data){return 7},
+        x1:function(xml,data){return $(data.self).attr("w")-14},
+        y1:function(xml,data){return 7},
+        x2:function(xml,data){return $(data.self).attr("w")-22},
+        y2:function(xml,data){return 7},
         stroke:"black",
         "stroke-width":3
       },{
           type:"text",
-          innerHtml:function(data){
+          innerHtml:function(xml,data){
             var text = $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
-            return documentmodengine.functions.textDistributionToTSpan(text,$(data.self).attr("w"),$(data.self).attr("h"))},
-          x:function(data){
+            var x = 0;
+            if($(data.self).children("node").size()>0){
+              x = 6;
+            }else{
+              x = $(data.self).attr('w')/2
+            }
+            var y = 0;
+            if($(data.self).children("node").size()>0){
+              y = 8;
+            }else
+              {
+                y = $(data.self).attr('h')/2
+              }
+            var linebyline = $(data.self).children("node").size()>0
+            return documentmodengine.functions.textDistributionToTSpan(text,$(data.self).attr("w"),$(data.self).attr("h"),linebyline,x,y)},
+          x:function(xml,data){
             if($(data.self).children("node").size()>0){
               return 6;
             }else{
               return $(data.self).attr('w')/2
             }
           },
-          y:function(data){
+          y:function(xml,data){
             if($(data.self).children("node").size()>0){
               return 8;
             }else
@@ -1562,7 +1593,7 @@ this.configuration = {
               }
             },
           "alignment-baseline":"central",
-          "text-anchor":function(data){
+          "text-anchor":function(xml,data){
             if($(data.self).children("node").size()>0){
               return "start";
             }else{
@@ -1571,35 +1602,14 @@ this.configuration = {
           }
         }],
         feel:{
-          points:function(data){
-            var result = [];
-            var x = parseInt(configuration.nodeposition(data).x);
-            var y = parseInt(configuration.nodeposition(data).y);
-            var w = parseInt(configuration.nodeposition(data).width);
-            var h = parseInt(configuration.nodeposition(data).height);
-            var point1 = {};
-            var point2 = {};
-            var point3 = {};
-            var point4 = {};
-            point1.x = (x +(w/2));
-            point1.y = y;
-            point2.x = x;
-            point2.y = (y+(h/2));
-            point3.x = (x +(w/2));
-            point3.y = (y+h);
-            point4.x = (x+w);
-            point4.y = (y+(h/2));
-            result.push(point1);
-            result.push(point2);
-            result.push(point3);
-            result.push(point4);
-            return result;
+          points:function(xml,data){
+            return configuration.nodes[undefined].feel.points(xml,data);
           }
         }
     },
     BusinessRole:{
       new:function(xml){
-        return configuration.createNewNode("BusinessRole","My Business Role");
+        return configuration.node.new(xml,"BusinessRole","My Business Role",255,255,181,92,92,92);
       },
       attributes:{
         name:{
@@ -1626,12 +1636,12 @@ this.configuration = {
       look:
       [{
         type:"polygon",
-        points:function(data){
-          return "0,0 0,"+$(data.self).attr("h")+" "+$(data.self).attr("w")+","+$(data.self).attr("h")+" "+$(data.self).attr("w")+",0";
+        points:function(xml,data){
+          return "0,0 0,"+$(data).attr("h")+" "+$(data).attr("w")+","+$(data).attr("h")+" "+$(data).attr("w")+",0";
         },
-        fill:function(data){var fc = $( data.self ).children("style").children("fillColor");
+        fill:function(xml,data){var fc = $( data.self ).children("style").children("fillColor");
               return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
-        stroke:function(data){var fc = $( data.self ).children("style").children("lineColor");
+        stroke:function(xml,data){var fc = $( data.self ).children("style").children("lineColor");
               return "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")";}
       },
       {
@@ -1639,49 +1649,63 @@ this.configuration = {
         stroke:"black",
         "stroke-width":1,
         fill:"none",
-        cx:function(data){return $(data.self).attr("w")-15},
-        cy:function(data){return 7},
-        rx:function(data){return 2.5},
-        ry:function(data){return 5}
+        cx:function(xml,data){return $(data.self).attr("w")-15},
+        cy:function(xml,data){return 7},
+        rx:function(xml,data){return 2.5},
+        ry:function(xml,data){return 5}
       },{
         type:"rect",
         stroke:"black",
         "stroke-width":1,
-        fill:function(data){var fc = $( data.self ).children("style").children("fillColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
-        x:function(data){return $(data.self).attr("w")-15},
-        y:function(data){return 2},
-        w:function(data){return 10},
-        h:function(data){return 10}
+        fill:function(xml,data){var fc = $( data.self ).children("style").children("fillColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
+        x:function(xml,data){return $(data.self).attr("w")-15},
+        y:function(xml,data){return 2},
+        w:function(xml,data){return 10},
+        h:function(xml,data){return 10}
       },{
         type:"rect",
         stroke:"none",
-        fill:function(data){var fc = $( data.self ).children("style").children("fillColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
-        x:function(data){return $(data.self).attr("w")-15.5},
-        y:function(data){return 2},
-        w:function(data){return 12},
-        h:function(data){return 10}
+        fill:function(xml,data){var fc = $( data.self ).children("style").children("fillColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
+        x:function(xml,data){return $(data.self).attr("w")-15.5},
+        y:function(xml,data){return 2},
+        w:function(xml,data){return 12},
+        h:function(xml,data){return 10}
       },{
         type:"ellipse",
         stroke:"black",
         "stroke-width":1,
-        fill:function(data){var fc = $( data.self ).children("style").children("fillColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
-        cx:function(data){return $(data.self).attr("w")-5},
-        cy:function(data){return 7},
-        rx:function(data){return 2.5},
-        ry:function(data){return 5}
+        fill:function(xml,data){var fc = $( data.self ).children("style").children("fillColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
+        cx:function(xml,data){return $(data.self).attr("w")-5},
+        cy:function(xml,data){return 7},
+        rx:function(xml,data){return 2.5},
+        ry:function(xml,data){return 5}
       },{
           type:"text",
-          innerHtml:function(data){
+          innerHtml:function(xml,data){
             var text = $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
-            return documentmodengine.functions.textDistributionToTSpan(text,$(data.self).attr("w"),$(data.self).attr("h"))},
-          x:function(data){
+            var x = 0;
+            if($(data.self).children("node").size()>0){
+              x = 6;
+            }else{
+              x = $(data.self).attr('w')/2
+            }
+            var y = 0;
+            if($(data.self).children("node").size()>0){
+              y = 8;
+            }else
+              {
+                y = $(data.self).attr('h')/2
+              }
+            var linebyline = $(data.self).children("node").size()>0
+            return documentmodengine.functions.textDistributionToTSpan(text,$(data.self).attr("w"),$(data.self).attr("h"),linebyline,x,y)},
+          x:function(xml,data){
             if($(data.self).children("node").size()>0){
               return 6;
             }else{
               return $(data.self).attr('w')/2
             }
           },
-          y:function(data){
+          y:function(xml,data){
             if($(data.self).children("node").size()>0){
               return 8;
             }else
@@ -1690,7 +1714,7 @@ this.configuration = {
               }
             },
           "alignment-baseline":"central",
-          "text-anchor":function(data){
+          "text-anchor":function(xml,data){
             if($(data.self).children("node").size()>0){
               return "start";
             }else{
@@ -1699,34 +1723,13 @@ this.configuration = {
           }
         }],
         feel:{
-          points:function(data){
-            var result = [];
-            var x = parseInt(configuration.nodeposition(data).x);
-            var y = parseInt(configuration.nodeposition(data).y);
-            var w = parseInt(configuration.nodeposition(data).width);
-            var h = parseInt(configuration.nodeposition(data).height);
-            var point1 = {};
-            var point2 = {};
-            var point3 = {};
-            var point4 = {};
-            point1.x = (x +(w/2));
-            point1.y = y;
-            point2.x = x;
-            point2.y = (y+(h/2));
-            point3.x = (x +(w/2));
-            point3.y = (y+h);
-            point4.x = (x+w);
-            point4.y = (y+(h/2));
-            result.push(point1);
-            result.push(point2);
-            result.push(point3);
-            result.push(point4);
-            return result;
+          points:function(xml,data){
+            return configuration.nodes[undefined].feel.points(xml,data);
           }
         }
     },BusinessInteraction:{
       new:function(xml){
-        return configuration.createNewNode("BusinessInteraction","My Business Interaction");
+        return configuration.node.new(xml,"BusinessInteraction","My Business Interaction",255,255,181,92,92,92);
       },
       attributes:{
         name:{
@@ -1753,65 +1756,79 @@ this.configuration = {
       look:
       [{
         type:"rect",
-        points:function(data){
-          return "0,0 0,"+$(data.self).attr("h")+" "+$(data.self).attr("w")+","+$(data.self).attr("h")+" "+$(data.self).attr("w")+",0";
+        points:function(xml,data){
+          return "0,0 0,"+$(data).attr("h")+" "+$(data).attr("w")+","+$(data).attr("h")+" "+$(data).attr("w")+",0";
         },
         x:0,
         y:0,
-        w:function(data){return $(data.self).attr("w")},
-        h:function(data){return $(data.self).attr("h")},
+        w:function(xml,data){return $(data.self).attr("w")},
+        h:function(xml,data){return $(data.self).attr("h")},
         rx:5,
         ry:5,
-        stroke:function(data){var fc = $( data.self ).children("style").children("lineColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
-        fill:function(data){var fc = $( data.self ).children("style").children("fillColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"}
+        stroke:function(xml,data){var fc = $( data.self ).children("style").children("lineColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
+        fill:function(xml,data){var fc = $( data.self ).children("style").children("fillColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"}
       },
       {
         type:"circle",
         stroke:"black",
         "stroke-width":3,
         fill:"none",
-        cx:function(data){return $(data.self).attr("w")-7},
-        cy:function(data){return 7},
-        r:function(data){return 5},
+        cx:function(xml,data){return $(data.self).attr("w")-7},
+        cy:function(xml,data){return 7},
+        r:function(xml,data){return 5},
       },{
         type:"rect",
         stroke:"black",
         "stroke-width":1,
-        fill:function(data){var fc = $( data.self ).children("style").children("fillColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
-        x:function(data){return $(data.self).attr("w")-11.5},
-        y:function(data){return 2},
-        w:function(data){return 3},
-        h:function(data){return 10}
+        fill:function(xml,data){var fc = $( data.self ).children("style").children("fillColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
+        x:function(xml,data){return $(data.self).attr("w")-11.5},
+        y:function(xml,data){return 2},
+        w:function(xml,data){return 3},
+        h:function(xml,data){return 10}
       },{
         type:"circle",
         stroke:"black",
         "stroke-width":3,
         fill:"none",
-        cx:function(data){return $(data.self).attr("w")-13},
-        cy:function(data){return 7},
-        r:function(data){return 5},
+        cx:function(xml,data){return $(data.self).attr("w")-13},
+        cy:function(xml,data){return 7},
+        r:function(xml,data){return 5},
       },{
         type:"rect",
         stroke:"none",
         "stroke-width":1,
-        fill:function(data){var fc = $( data.self ).children("style").children("fillColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
-        x:function(data){return $(data.self).attr("w")-11.5},
-        y:function(data){return 1},
-        w:function(data){return 3},
-        h:function(data){return 12}
+        fill:function(xml,data){var fc = $( data.self ).children("style").children("fillColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
+        x:function(xml,data){return $(data.self).attr("w")-11.5},
+        y:function(xml,data){return 1},
+        w:function(xml,data){return 3},
+        h:function(xml,data){return 12}
       },{
           type:"text",
-          innerHtml:function(data){
+          innerHtml:function(xml,data){
             var text = $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
-            return documentmodengine.functions.textDistributionToTSpan(text,$(data.self).attr("w"),$(data.self).attr("h"))},
-          x:function(data){
+            var x = 0;
+            if($(data.self).children("node").size()>0){
+              x = 6;
+            }else{
+              x = $(data.self).attr('w')/2
+            }
+            var y = 0;
+            if($(data.self).children("node").size()>0){
+              y = 8;
+            }else
+              {
+                y = $(data.self).attr('h')/2
+              }
+            var linebyline = $(data.self).children("node").size()>0
+            return documentmodengine.functions.textDistributionToTSpan(text,$(data.self).attr("w"),$(data.self).attr("h"),linebyline,x,y)},
+          x:function(xml,data){
             if($(data.self).children("node").size()>0){
               return 6;
             }else{
               return $(data.self).attr('w')/2
             }
           },
-          y:function(data){
+          y:function(xml,data){
             if($(data.self).children("node").size()>0){
               return 8;
             }else
@@ -1820,7 +1837,7 @@ this.configuration = {
               }
             },
           "alignment-baseline":"central",
-          "text-anchor":function(data){
+          "text-anchor":function(xml,data){
             if($(data.self).children("node").size()>0){
               return "start";
             }else{
@@ -1829,34 +1846,13 @@ this.configuration = {
           }
         }],
         feel:{
-          points:function(data){
-            var result = [];
-            var x = parseInt(configuration.nodeposition(data).x);
-            var y = parseInt(configuration.nodeposition(data).y);
-            var w = parseInt(configuration.nodeposition(data).width);
-            var h = parseInt(configuration.nodeposition(data).height);
-            var point1 = {};
-            var point2 = {};
-            var point3 = {};
-            var point4 = {};
-            point1.x = (x +(w/2));
-            point1.y = y;
-            point2.x = x;
-            point2.y = (y+(h/2));
-            point3.x = (x +(w/2));
-            point3.y = (y+h);
-            point4.x = (x+w);
-            point4.y = (y+(h/2));
-            result.push(point1);
-            result.push(point2);
-            result.push(point3);
-            result.push(point4);
-            return result;
+          points:function(xml,data){
+            return configuration.nodes[undefined].feel.points(xml,data);
           }
         }
     },BusinessCollaboration:{
       new:function(xml){
-        return configuration.createNewNode("BusinessCollaboration","My Business Collaboration");
+        return configuration.node.new(xml,"BusinessCollaboration","My Business Collaboration",255,255,181,92,92,92);
       },
       attributes:{
         name:{
@@ -1883,12 +1879,12 @@ this.configuration = {
       look:
       [{
         type:"polygon",
-        points:function(data){
-          return "0,0 0,"+$(data.self).attr("h")+" "+$(data.self).attr("w")+","+$(data.self).attr("h")+" "+$(data.self).attr("w")+",0";
+        points:function(xml,data){
+          return "0,0 0,"+$(data).attr("h")+" "+$(data).attr("w")+","+$(data).attr("h")+" "+$(data).attr("w")+",0";
         },
-        fill:function(data){var fc = $( data.self ).children("style").children("fillColor");
+        fill:function(xml,data){var fc = $( data.self ).children("style").children("fillColor");
               return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
-        stroke:function(data){var fc = $( data.self ).children("style").children("lineColor");
+        stroke:function(xml,data){var fc = $( data.self ).children("style").children("lineColor");
               return "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")";}
       },
       {
@@ -1896,30 +1892,44 @@ this.configuration = {
         stroke:"black",
         "stroke-width":3,
         fill:"none",
-        cx:function(data){return $(data.self).attr("w")-7},
-        cy:function(data){return 7},
-        r:function(data){return 5},
+        cx:function(xml,data){return $(data.self).attr("w")-7},
+        cy:function(xml,data){return 7},
+        r:function(xml,data){return 5},
       },{
         type:"circle",
         stroke:"black",
         "stroke-width":3,
         fill:"none",
-        cx:function(data){return $(data.self).attr("w")-13},
-        cy:function(data){return 7},
-        r:function(data){return 5},
+        cx:function(xml,data){return $(data.self).attr("w")-13},
+        cy:function(xml,data){return 7},
+        r:function(xml,data){return 5},
       },{
           type:"text",
-          innerHtml:function(data){
+          innerHtml:function(xml,data){
             var text = $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
-            return documentmodengine.functions.textDistributionToTSpan(text,$(data.self).attr("w"),$(data.self).attr("h"))},
-          x:function(data){
+            var x = 0;
+            if($(data.self).children("node").size()>0){
+              x = 6;
+            }else{
+              x = $(data.self).attr('w')/2
+            }
+            var y = 0;
+            if($(data.self).children("node").size()>0){
+              y = 8;
+            }else
+              {
+                y = $(data.self).attr('h')/2
+              }
+            var linebyline = $(data.self).children("node").size()>0
+            return documentmodengine.functions.textDistributionToTSpan(text,$(data.self).attr("w"),$(data.self).attr("h"),linebyline,x,y)},
+          x:function(xml,data){
             if($(data.self).children("node").size()>0){
               return 6;
             }else{
               return $(data.self).attr('w')/2
             }
           },
-          y:function(data){
+          y:function(xml,data){
             if($(data.self).children("node").size()>0){
               return 8;
             }else
@@ -1928,7 +1938,7 @@ this.configuration = {
               }
             },
           "alignment-baseline":"central",
-          "text-anchor":function(data){
+          "text-anchor":function(xml,data){
             if($(data.self).children("node").size()>0){
               return "start";
             }else{
@@ -1937,34 +1947,13 @@ this.configuration = {
           }
         }],
         feel:{
-          points:function(data){
-            var result = [];
-            var x = parseInt(configuration.nodeposition(data).x);
-            var y = parseInt(configuration.nodeposition(data).y);
-            var w = parseInt(configuration.nodeposition(data).width);
-            var h = parseInt(configuration.nodeposition(data).height);
-            var point1 = {};
-            var point2 = {};
-            var point3 = {};
-            var point4 = {};
-            point1.x = (x +(w/2));
-            point1.y = y;
-            point2.x = x;
-            point2.y = (y+(h/2));
-            point3.x = (x +(w/2));
-            point3.y = (y+h);
-            point4.x = (x+w);
-            point4.y = (y+(h/2));
-            result.push(point1);
-            result.push(point2);
-            result.push(point3);
-            result.push(point4);
-            return result;
+          points:function(xml,data){
+            return configuration.nodes[undefined].feel.points(xml,data);
           }
         }
     },ApplicationCollaboration:{
       new:function(xml){
-        return configuration.createNewNode("ApplicationCollaboration","My Application Collaboration");
+        return configuration.node.new(xml,"ApplicationCollaboration","My Application Collaboration",181,255,255,92,92,92);
       },
       attributes:{
         name:{
@@ -1991,12 +1980,12 @@ this.configuration = {
       look:
       [{
         type:"polygon",
-        points:function(data){
-          return "0,0 0,"+$(data.self).attr("h")+" "+$(data.self).attr("w")+","+$(data.self).attr("h")+" "+$(data.self).attr("w")+",0";
+        points:function(xml,data){
+          return "0,0 0,"+$(data).attr("h")+" "+$(data).attr("w")+","+$(data).attr("h")+" "+$(data).attr("w")+",0";
         },
-        fill:function(data){var fc = $( data.self ).children("style").children("fillColor");
+        fill:function(xml,data){var fc = $( data.self ).children("style").children("fillColor");
               return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
-        stroke:function(data){var fc = $( data.self ).children("style").children("lineColor");
+        stroke:function(xml,data){var fc = $( data.self ).children("style").children("lineColor");
               return "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")";}
       },
       {
@@ -2004,30 +1993,44 @@ this.configuration = {
         stroke:"black",
         "stroke-width":3,
         fill:"none",
-        cx:function(data){return $(data.self).attr("w")-7},
-        cy:function(data){return 7},
-        r:function(data){return 5},
+        cx:function(xml,data){return $(data.self).attr("w")-7},
+        cy:function(xml,data){return 7},
+        r:function(xml,data){return 5},
       },{
         type:"circle",
         stroke:"black",
         "stroke-width":3,
         fill:"none",
-        cx:function(data){return $(data.self).attr("w")-13},
-        cy:function(data){return 7},
-        r:function(data){return 5},
+        cx:function(xml,data){return $(data.self).attr("w")-13},
+        cy:function(xml,data){return 7},
+        r:function(xml,data){return 5},
       },{
           type:"text",
-          innerHtml:function(data){
+          innerHtml:function(xml,data){
             var text = $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
-            return documentmodengine.functions.textDistributionToTSpan(text,$(data.self).attr("w"),$(data.self).attr("h"))},
-          x:function(data){
+            var x = 0;
+            if($(data.self).children("node").size()>0){
+              x = 6;
+            }else{
+              x = $(data.self).attr('w')/2
+            }
+            var y = 0;
+            if($(data.self).children("node").size()>0){
+              y = 8;
+            }else
+              {
+                y = $(data.self).attr('h')/2
+              }
+            var linebyline = $(data.self).children("node").size()>0
+            return documentmodengine.functions.textDistributionToTSpan(text,$(data.self).attr("w"),$(data.self).attr("h"),linebyline,x,y)},
+          x:function(xml,data){
             if($(data.self).children("node").size()>0){
               return 6;
             }else{
               return $(data.self).attr('w')/2
             }
           },
-          y:function(data){
+          y:function(xml,data){
             if($(data.self).children("node").size()>0){
               return 8;
             }else
@@ -2036,7 +2039,7 @@ this.configuration = {
               }
             },
           "alignment-baseline":"central",
-          "text-anchor":function(data){
+          "text-anchor":function(xml,data){
             if($(data.self).children("node").size()>0){
               return "start";
             }else{
@@ -2045,34 +2048,13 @@ this.configuration = {
           }
         }],
         feel:{
-          points:function(data){
-            var result = [];
-            var x = parseInt(configuration.nodeposition(data).x);
-            var y = parseInt(configuration.nodeposition(data).y);
-            var w = parseInt(configuration.nodeposition(data).width);
-            var h = parseInt(configuration.nodeposition(data).height);
-            var point1 = {};
-            var point2 = {};
-            var point3 = {};
-            var point4 = {};
-            point1.x = (x +(w/2));
-            point1.y = y;
-            point2.x = x;
-            point2.y = (y+(h/2));
-            point3.x = (x +(w/2));
-            point3.y = (y+h);
-            point4.x = (x+w);
-            point4.y = (y+(h/2));
-            result.push(point1);
-            result.push(point2);
-            result.push(point3);
-            result.push(point4);
-            return result;
+          points:function(xml,data){
+            return configuration.nodes[undefined].feel.points(xml,data);
           }
         }
     },ApplicationInteraction:{
       new:function(xml){
-        return configuration.createNewNode("ApplicationInteraction","My Application Interaction");
+        return configuration.node.new(xml,"ApplicationInteraction","My Application Interaction",181,255,255,92,92,92);
       },
       attributes:{
         name:{
@@ -2099,12 +2081,12 @@ this.configuration = {
       look:
       [{
         type:"polygon",
-        points:function(data){
-          return "0,0 0,"+$(data.self).attr("h")+" "+$(data.self).attr("w")+","+$(data.self).attr("h")+" "+$(data.self).attr("w")+",0";
+        points:function(xml,data){
+          return "0,0 0,"+$(data).attr("h")+" "+$(data).attr("w")+","+$(data).attr("h")+" "+$(data).attr("w")+",0";
         },
-        fill:function(data){var fc = $( data.self ).children("style").children("fillColor");
+        fill:function(xml,data){var fc = $( data.self ).children("style").children("fillColor");
               return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
-        stroke:function(data){var fc = $( data.self ).children("style").children("lineColor");
+        stroke:function(xml,data){var fc = $( data.self ).children("style").children("lineColor");
               return "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")";}
 
       },
@@ -2113,48 +2095,62 @@ this.configuration = {
         stroke:"black",
         "stroke-width":3,
         fill:"none",
-        cx:function(data){return $(data.self).attr("w")-7},
-        cy:function(data){return 7},
-        r:function(data){return 5},
+        cx:function(xml,data){return $(data.self).attr("w")-7},
+        cy:function(xml,data){return 7},
+        r:function(xml,data){return 5},
       },{
         type:"rect",
         stroke:"black",
         "stroke-width":1,
-        fill:function(data){var fc = $( data.self ).children("style").children("fillColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
-        x:function(data){return $(data.self).attr("w")-11.5},
-        y:function(data){return 2},
-        w:function(data){return 3},
-        h:function(data){return 10}
+        fill:function(xml,data){var fc = $( data.self ).children("style").children("fillColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
+        x:function(xml,data){return $(data.self).attr("w")-11.5},
+        y:function(xml,data){return 2},
+        w:function(xml,data){return 3},
+        h:function(xml,data){return 10}
       },{
         type:"circle",
         stroke:"black",
         "stroke-width":3,
         fill:"none",
-        cx:function(data){return $(data.self).attr("w")-13},
-        cy:function(data){return 7},
-        r:function(data){return 5},
+        cx:function(xml,data){return $(data.self).attr("w")-13},
+        cy:function(xml,data){return 7},
+        r:function(xml,data){return 5},
       },{
         type:"rect",
         stroke:"none",
         "stroke-width":3,
-        fill:function(data){var fc = $( data.self ).children("style").children("fillColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
-        x:function(data){return $(data.self).attr("w")-11.5},
-        y:function(data){return 1},
-        w:function(data){return 3},
-        h:function(data){return 12}
+        fill:function(xml,data){var fc = $( data.self ).children("style").children("fillColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
+        x:function(xml,data){return $(data.self).attr("w")-11.5},
+        y:function(xml,data){return 1},
+        w:function(xml,data){return 3},
+        h:function(xml,data){return 12}
       },{
           type:"text",
-          innerHtml:function(data){
+          innerHtml:function(xml,data){
             var text = $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
-            return documentmodengine.functions.textDistributionToTSpan(text,$(data.self).attr("w"),$(data.self).attr("h"))},
-          x:function(data){
+            var x = 0;
+            if($(data.self).children("node").size()>0){
+              x = 6;
+            }else{
+              x = $(data.self).attr('w')/2
+            }
+            var y = 0;
+            if($(data.self).children("node").size()>0){
+              y = 8;
+            }else
+              {
+                y = $(data.self).attr('h')/2
+              }
+            var linebyline = $(data.self).children("node").size()>0
+            return documentmodengine.functions.textDistributionToTSpan(text,$(data.self).attr("w"),$(data.self).attr("h"),linebyline,x,y)},
+          x:function(xml,data){
             if($(data.self).children("node").size()>0){
               return 6;
             }else{
               return $(data.self).attr('w')/2
             }
           },
-          y:function(data){
+          y:function(xml,data){
             if($(data.self).children("node").size()>0){
               return 8;
             }else
@@ -2163,7 +2159,7 @@ this.configuration = {
               }
             },
           "alignment-baseline":"central",
-          "text-anchor":function(data){
+          "text-anchor":function(xml,data){
             if($(data.self).children("node").size()>0){
               return "start";
             }else{
@@ -2172,34 +2168,13 @@ this.configuration = {
           }
         }],
         feel:{
-          points:function(data){
-            var result = [];
-            var x = parseInt(configuration.nodeposition(data).x);
-            var y = parseInt(configuration.nodeposition(data).y);
-            var w = parseInt(configuration.nodeposition(data).width);
-            var h = parseInt(configuration.nodeposition(data).height);
-            var point1 = {};
-            var point2 = {};
-            var point3 = {};
-            var point4 = {};
-            point1.x = (x +(w/2));
-            point1.y = y;
-            point2.x = x;
-            point2.y = (y+(h/2));
-            point3.x = (x +(w/2));
-            point3.y = (y+h);
-            point4.x = (x+w);
-            point4.y = (y+(h/2));
-            result.push(point1);
-            result.push(point2);
-            result.push(point3);
-            result.push(point4);
-            return result;
+          points:function(xml,data){
+            return configuration.nodes[undefined].feel.points(xml,data);
           }
         }
     },BusinessService:{
       new:function(xml){
-        return configuration.createNewNode("BusinessService","My Business Service");
+        return configuration.node.new(xml,"BusinessService","My Business Service",255,255,181,92,92,92);
       },
       attributes:{
         name:{
@@ -2226,36 +2201,50 @@ this.configuration = {
       look:
       [{
         type:"rect",
-        points:function(data){
-          return "0,0 0,"+$(data.self).attr("h")+" "+$(data.self).attr("w")+","+$(data.self).attr("h")+" "+$(data.self).attr("w")+",0";
+        points:function(xml,data){
+          return "0,0 0,"+$(data).attr("h")+" "+$(data).attr("w")+","+$(data).attr("h")+" "+$(data).attr("w")+",0";
         },
         x:0,
         y:0,
-        w:function(data){return $(data.self).attr("w")},
-        h:function(data){return $(data.self).attr("h")},
+        w:function(xml,data){return $(data.self).attr("w")},
+        h:function(xml,data){return $(data.self).attr("h")},
         rx:5,
         ry:5,
-        stroke:function(data){var fc = $( data.self ).children("style").children("lineColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
-        fill:function(data){var fc = $( data.self ).children("style").children("fillColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"}
+        stroke:function(xml,data){var fc = $( data.self ).children("style").children("lineColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
+        fill:function(xml,data){var fc = $( data.self ).children("style").children("fillColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"}
       },
       {
         type:"path",
-        stroke:function(data){var fc = $( data.self ).children("style").children("lineColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
+        stroke:function(xml,data){var fc = $( data.self ).children("style").children("lineColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
         fill:"none",
-        d:function(data){return "M "+($(data.self).attr("w")-17)+","+(13)+" c -5,0 -5,-10 0,-10 l 10 0 c +5,0 +5,+10 0,+10 z"}
+        d:function(xml,data){return "M "+($(data.self).attr("w")-17)+","+(13)+" c -5,0 -5,-10 0,-10 l 10 0 c +5,0 +5,+10 0,+10 z"}
       },{
           type:"text",
-          innerHtml:function(data){
+          innerHtml:function(xml,data){
             var text = $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
-            return documentmodengine.functions.textDistributionToTSpan(text,$(data.self).attr("w"),$(data.self).attr("h"))},
-          x:function(data){
+            var x = 0;
+            if($(data.self).children("node").size()>0){
+              x = 6;
+            }else{
+              x = $(data.self).attr('w')/2
+            }
+            var y = 0;
+            if($(data.self).children("node").size()>0){
+              y = 8;
+            }else
+              {
+                y = $(data.self).attr('h')/2
+              }
+            var linebyline = $(data.self).children("node").size()>0
+            return documentmodengine.functions.textDistributionToTSpan(text,$(data.self).attr("w"),$(data.self).attr("h"),linebyline,x,y)},
+          x:function(xml,data){
             if($(data.self).children("node").size()>0){
               return 6;
             }else{
               return $(data.self).attr('w')/2
             }
           },
-          y:function(data){
+          y:function(xml,data){
             if($(data.self).children("node").size()>0){
               return 8;
             }else
@@ -2264,7 +2253,7 @@ this.configuration = {
               }
             },
           "alignment-baseline":"central",
-          "text-anchor":function(data){
+          "text-anchor":function(xml,data){
             if($(data.self).children("node").size()>0){
               return "start";
             }else{
@@ -2273,34 +2262,13 @@ this.configuration = {
           }
         }],
         feel:{
-          points:function(data){
-            var result = [];
-            var x = parseInt(configuration.nodeposition(data).x);
-            var y = parseInt(configuration.nodeposition(data).y);
-            var w = parseInt(configuration.nodeposition(data).width);
-            var h = parseInt(configuration.nodeposition(data).height);
-            var point1 = {};
-            var point2 = {};
-            var point3 = {};
-            var point4 = {};
-            point1.x = (x +(w/2));
-            point1.y = y;
-            point2.x = x;
-            point2.y = (y+(h/2));
-            point3.x = (x +(w/2));
-            point3.y = (y+h);
-            point4.x = (x+w);
-            point4.y = (y+(h/2));
-            result.push(point1);
-            result.push(point2);
-            result.push(point3);
-            result.push(point4);
-            return result;
+          points:function(xml,data){
+            return configuration.nodes[undefined].feel.points(xml,data);
           }
         }
     },InfrastructureService:{
       new:function(xml){
-        return configuration.createNewNode("InfrastructureService","My Infrastructure Service");
+        return configuration.node.new(xml,"InfrastructureService","My Infrastructure Service",201,231,183,92,92,92);
       },
       attributes:{
         name:{
@@ -2327,36 +2295,50 @@ this.configuration = {
       look:
       [{
         type:"rect",
-        points:function(data){
-          return "0,0 0,"+$(data.self).attr("h")+" "+$(data.self).attr("w")+","+$(data.self).attr("h")+" "+$(data.self).attr("w")+",0";
+        points:function(xml,data){
+          return "0,0 0,"+$(data).attr("h")+" "+$(data).attr("w")+","+$(data).attr("h")+" "+$(data).attr("w")+",0";
         },
         x:0,
         y:0,
-        w:function(data){return $(data.self).attr("w")},
-        h:function(data){return $(data.self).attr("h")},
+        w:function(xml,data){return $(data.self).attr("w")},
+        h:function(xml,data){return $(data.self).attr("h")},
         rx:5,
         ry:5,
-        stroke:function(data){var fc = $( data.self ).children("style").children("lineColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
-        fill:function(data){var fc = $( data.self ).children("style").children("fillColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"}
+        stroke:function(xml,data){var fc = $( data.self ).children("style").children("lineColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
+        fill:function(xml,data){var fc = $( data.self ).children("style").children("fillColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"}
       },
       {
         type:"path",
-        stroke:function(data){var fc = $( data.self ).children("style").children("lineColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
+        stroke:function(xml,data){var fc = $( data.self ).children("style").children("lineColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
         fill:"none",
-        d:function(data){return "M "+($(data.self).attr("w")-17)+","+(13)+" c -5,0 -5,-10 0,-10 l 10 0 c +5,0 +5,+10 0,+10 z"}
+        d:function(xml,data){return "M "+($(data.self).attr("w")-17)+","+(13)+" c -5,0 -5,-10 0,-10 l 10 0 c +5,0 +5,+10 0,+10 z"}
       },{
           type:"text",
-          innerHtml:function(data){
+          innerHtml:function(xml,data){
             var text = $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
-            return documentmodengine.functions.textDistributionToTSpan(text,$(data.self).attr("w"),$(data.self).attr("h"))},
-          x:function(data){
+            var x = 0;
+            if($(data.self).children("node").size()>0){
+              x = 6;
+            }else{
+              x = $(data.self).attr('w')/2
+            }
+            var y = 0;
+            if($(data.self).children("node").size()>0){
+              y = 8;
+            }else
+              {
+                y = $(data.self).attr('h')/2
+              }
+            var linebyline = $(data.self).children("node").size()>0
+            return documentmodengine.functions.textDistributionToTSpan(text,$(data.self).attr("w"),$(data.self).attr("h"),linebyline,x,y)},
+          x:function(xml,data){
             if($(data.self).children("node").size()>0){
               return 6;
             }else{
               return $(data.self).attr('w')/2
             }
           },
-          y:function(data){
+          y:function(xml,data){
             if($(data.self).children("node").size()>0){
               return 8;
             }else
@@ -2365,7 +2347,7 @@ this.configuration = {
               }
             },
           "alignment-baseline":"central",
-          "text-anchor":function(data){
+          "text-anchor":function(xml,data){
             if($(data.self).children("node").size()>0){
               return "start";
             }else{
@@ -2374,34 +2356,13 @@ this.configuration = {
           }
         }],
         feel:{
-          points:function(data){
-            var result = [];
-            var x = parseInt(configuration.nodeposition(data).x);
-            var y = parseInt(configuration.nodeposition(data).y);
-            var w = parseInt(configuration.nodeposition(data).width);
-            var h = parseInt(configuration.nodeposition(data).height);
-            var point1 = {};
-            var point2 = {};
-            var point3 = {};
-            var point4 = {};
-            point1.x = (x +(w/2));
-            point1.y = y;
-            point2.x = x;
-            point2.y = (y+(h/2));
-            point3.x = (x +(w/2));
-            point3.y = (y+h);
-            point4.x = (x+w);
-            point4.y = (y+(h/2));
-            result.push(point1);
-            result.push(point2);
-            result.push(point3);
-            result.push(point4);
-            return result;
+          points:function(xml,data){
+            return configuration.nodes[undefined].feel.points(xml,data);
           }
         }
     },ApplicationService:{
       new:function(xml){
-        return configuration.createNewNode("ApplicationService","My Application Service");
+        return configuration.node.new(xml,"ApplicationService","My Application Service",181,255,255,92,92,92);
       },
       attributes:{
         name:{
@@ -2428,36 +2389,50 @@ this.configuration = {
       look:
       [{
         type:"rect",
-        points:function(data){
-          return "0,0 0,"+$(data.self).attr("h")+" "+$(data.self).attr("w")+","+$(data.self).attr("h")+" "+$(data.self).attr("w")+",0";
+        points:function(xml,data){
+          return "0,0 0,"+$(data).attr("h")+" "+$(data).attr("w")+","+$(data).attr("h")+" "+$(data).attr("w")+",0";
         },
         x:0,
         y:0,
-        w:function(data){return $(data.self).attr("w")},
-        h:function(data){return $(data.self).attr("h")},
+        w:function(xml,data){return $(data.self).attr("w")},
+        h:function(xml,data){return $(data.self).attr("h")},
         rx:5,
         ry:5,
-        stroke:function(data){var fc = $( data.self ).children("style").children("lineColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
-        fill:function(data){var fc = $( data.self ).children("style").children("fillColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"}
+        stroke:function(xml,data){var fc = $( data.self ).children("style").children("lineColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
+        fill:function(xml,data){var fc = $( data.self ).children("style").children("fillColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"}
       },
       {
         type:"path",
-        stroke:function(data){var fc = $( data.self ).children("style").children("lineColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
+        stroke:function(xml,data){var fc = $( data.self ).children("style").children("lineColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
         fill:"none",
-        d:function(data){return "M "+($(data.self).attr("w")-17)+","+(13)+" c -5,0 -5,-10 0,-10 l 10 0 c +5,0 +5,+10 0,+10 z"}
+        d:function(xml,data){return "M "+($(data.self).attr("w")-17)+","+(13)+" c -5,0 -5,-10 0,-10 l 10 0 c +5,0 +5,+10 0,+10 z"}
       },{
           type:"text",
-          innerHtml:function(data){
+          innerHtml:function(xml,data){
             var text = $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
-            return documentmodengine.functions.textDistributionToTSpan(text,$(data.self).attr("w"),$(data.self).attr("h"))},
-          x:function(data){
+            var x = 0;
+            if($(data.self).children("node").size()>0){
+              x = 6;
+            }else{
+              x = $(data.self).attr('w')/2
+            }
+            var y = 0;
+            if($(data.self).children("node").size()>0){
+              y = 8;
+            }else
+              {
+                y = $(data.self).attr('h')/2
+              }
+            var linebyline = $(data.self).children("node").size()>0
+            return documentmodengine.functions.textDistributionToTSpan(text,$(data.self).attr("w"),$(data.self).attr("h"),linebyline,x,y)},
+          x:function(xml,data){
             if($(data.self).children("node").size()>0){
               return 6;
             }else{
               return $(data.self).attr('w')/2
             }
           },
-          y:function(data){
+          y:function(xml,data){
             if($(data.self).children("node").size()>0){
               return 8;
             }else
@@ -2466,7 +2441,7 @@ this.configuration = {
               }
             },
           "alignment-baseline":"central",
-          "text-anchor":function(data){
+          "text-anchor":function(xml,data){
             if($(data.self).children("node").size()>0){
               return "start";
             }else{
@@ -2475,35 +2450,14 @@ this.configuration = {
           }
         }],
         feel:{
-          points:function(data){
-            var result = [];
-            var x = parseInt(configuration.nodeposition(data).x);
-            var y = parseInt(configuration.nodeposition(data).y);
-            var w = parseInt(configuration.nodeposition(data).width);
-            var h = parseInt(configuration.nodeposition(data).height);
-            var point1 = {};
-            var point2 = {};
-            var point3 = {};
-            var point4 = {};
-            point1.x = (x +(w/2));
-            point1.y = y;
-            point2.x = x;
-            point2.y = (y+(h/2));
-            point3.x = (x +(w/2));
-            point3.y = (y+h);
-            point4.x = (x+w);
-            point4.y = (y+(h/2));
-            result.push(point1);
-            result.push(point2);
-            result.push(point3);
-            result.push(point4);
-            return result;
+          points:function(xml,data){
+            return configuration.nodes[undefined].feel.points(xml,data);
           }
         }
     },
     Value:{
       new:function(xml){
-        return configuration.createNewNode("Value","My Value");
+        return configuration.node.new(xml,"Value","My Value",255,255,181,92,92,92);
       },
       attributes:{
         name:{
@@ -2530,27 +2484,41 @@ this.configuration = {
 
       look:[{
         type:"ellipse",
-        cx:function(data){return $(data.self).attr("w")/2},
-        cy:function(data){return $(data.self).attr("h")/2},
-        ry:function(data){return $(data.self).attr("h")/2},
-        rx:function(data){return $(data.self).attr("w")/2},
-        fill:function(data){var fc = $( data.self ).children("style").children("fillColor");
+        cx:function(xml,data){return $(data.self).attr("w")/2},
+        cy:function(xml,data){return $(data.self).attr("h")/2},
+        ry:function(xml,data){return $(data.self).attr("h")/2},
+        rx:function(xml,data){return $(data.self).attr("w")/2},
+        fill:function(xml,data){var fc = $( data.self ).children("style").children("fillColor");
               return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
-        stroke:function(data){var fc = $( data.self ).children("style").children("lineColor");
+        stroke:function(xml,data){var fc = $( data.self ).children("style").children("lineColor");
               return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"}
       },{
           type:"text",
-          innerHtml:function(data){
+          innerHtml:function(xml,data){
             var text = $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
-            return documentmodengine.functions.textDistributionToTSpan(text,$(data.self).attr("w"),$(data.self).attr("h"))},
-          x:function(data){
+            var x = 0;
+            if($(data.self).children("node").size()>0){
+              x = 6;
+            }else{
+              x = $(data.self).attr('w')/2
+            }
+            var y = 0;
+            if($(data.self).children("node").size()>0){
+              y = 8;
+            }else
+              {
+                y = $(data.self).attr('h')/2
+              }
+            var linebyline = $(data.self).children("node").size()>0
+            return documentmodengine.functions.textDistributionToTSpan(text,$(data.self).attr("w"),$(data.self).attr("h"),linebyline,x,y)},
+          x:function(xml,data){
             if($(data.self).children("node").size()>0){
               return 6;
             }else{
               return $(data.self).attr('w')/2
             }
           },
-          y:function(data){
+          y:function(xml,data){
             if($(data.self).children("node").size()>0){
               return 8;
             }else
@@ -2559,7 +2527,7 @@ this.configuration = {
               }
             },
           "alignment-baseline":"central",
-          "text-anchor":function(data){
+          "text-anchor":function(xml,data){
             if($(data.self).children("node").size()>0){
               return "start";
             }else{
@@ -2568,12 +2536,12 @@ this.configuration = {
           }
         }],
         feel:{
-          points:function(data){
+          points:function(xml,data){
             var result = [];
-            var x = parseInt(configuration.nodeposition(data).x);
-            var y = parseInt(configuration.nodeposition(data).y);
-            var w = parseInt(configuration.nodeposition(data).width);
-            var h = parseInt(configuration.nodeposition(data).height);
+            var x = parseInt(configuration.node.position(data).x);
+            var y = parseInt(configuration.node.position(data).y);
+            var w = parseInt(configuration.node.position(data).width);
+            var h = parseInt(configuration.node.position(data).height);
             var point1 = {};
             var point2 = {};
             var point3 = {};
@@ -2595,7 +2563,7 @@ this.configuration = {
         }
     },Contract:{
       new:function(xml){
-        return configuration.createNewNode("Contract","My Contract");
+        return configuration.node.new(xml,"Contract","My Contract",255,255,181,92,92,92);
       },
       attributes:{
         name:{
@@ -2622,63 +2590,43 @@ this.configuration = {
       look:
       [{
         type:"polygon",
-        points:function(data){
-          return "0,0 0,"+$(data.self).attr("h")+" "+$(data.self).attr("w")+","+$(data.self).attr("h")+" "+$(data.self).attr("w")+",0";
+        points:function(xml,data){
+          return "0,0 0,"+$(data).attr("h")+" "+$(data).attr("w")+","+$(data).attr("h")+" "+$(data).attr("w")+",0";
         },
-        fill:function(data){var fc = $( data.self ).children("style").children("fillColor");
+        fill:function(xml,data){var fc = $( data.self ).children("style").children("fillColor");
               return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
-        stroke:function(data){var fc = $( data.self ).children("style").children("lineColor");
+        stroke:function(xml,data){var fc = $( data.self ).children("style").children("lineColor");
               return "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")";}
       },{
         type:"polygon",
-        points:function(data){
-          return "0,0 0,"+$(data.self).attr("h")/3+" "+$(data.self).attr("w")+","+$(data.self).attr("h")/3+" "+$(data.self).attr("w")+",0";
+        points:function(xml,data){
+          return "0,0 0,"+$(data).attr("h")/3+" "+$(data).attr("w")+","+$(data).attr("h")/3+" "+$(data).attr("w")+",0";
         },
-        fill:function(data){var fc = $( data.self ).children("style").children("fillColor");
+        fill:function(xml,data){var fc = $( data.self ).children("style").children("fillColor");
               return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
-        stroke:function(data){var fc = $( data.self ).children("style").children("lineColor");
+        stroke:function(xml,data){var fc = $( data.self ).children("style").children("lineColor");
               return "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")";}
       },{
           type:"text",
-          text:function(data){return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text()},
+          text:function(xml,data){return $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text()},
           "alignment-baseline":"central",
           "text-anchor":"middle",
-          x:function(data){
+          x:function(xml,data){
             return $(data.self).attr("w")/2
           },
-          y:function(data){
+          y:function(xml,data){
             return configuration.globalCharheight/2+5;
           }
 
         }
     ],feel:{
-      points:function(data){
-        var result = [];
-        var x = parseInt(configuration.nodeposition(data).x);
-        var y = parseInt(configuration.nodeposition(data).y);
-        var w = parseInt(configuration.nodeposition(data).width);
-        var h = parseInt(configuration.nodeposition(data).height);
-        var point1 = {};
-        var point2 = {};
-        var point3 = {};
-        var point4 = {};
-        point1.x = (x +(w/2));
-        point1.y = y;
-        point2.x = x;
-        point2.y = (y+(h/2));
-        point3.x = (x +(w/2));
-        point3.y = (y+h);
-        point4.x = (x+w);
-        point4.y = (y+(h/2));
-        result.push(point1);
-        result.push(point2);
-        result.push(point3);
-        result.push(point4);
-        return result;
+      points:function(xml,data){
+        return configuration.nodes[undefined].feel.points(xml,data);
       }
-    }},DataObject:{
+    }},
+    DataObject:{
       new:function(xml){
-        return configuration.createNewNode("DataObject","My Data Object");
+        return configuration.node.new(xml,"DataObject","My Data Object",181,255,255,92,92,92);
       },
       attributes:{
         name:{
@@ -2705,67 +2653,58 @@ this.configuration = {
       look:
       [{
         type:"polygon",
-        points:function(data){
-          return "0,0 0,"+$(data.self).attr("h")+" "+$(data.self).attr("w")+","+$(data.self).attr("h")+" "+$(data.self).attr("w")+",0";
+        points:function(xml,data){
+          return "0,0 0,"+$(data).attr("h")+" "+$(data).attr("w")+","+$(data).attr("h")+" "+$(data).attr("w")+",0";
         },
-        fill:function(data){var fc = $( data.self ).children("style").children("fillColor");
+        fill:function(xml,data){var fc = $( data.self ).children("style").children("fillColor");
               return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
-        stroke:function(data){var fc = $( data.self ).children("style").children("lineColor");
+        stroke:function(xml,data){var fc = $( data.self ).children("style").children("lineColor");
               return "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")";}
       },{
         type:"polygon",
-        points:function(data){
-          return "0,0 0,"+$(data.self).attr("h")/3+" "+$(data.self).attr("w")+","+$(data.self).attr("h")/3+" "+$(data.self).attr("w")+",0";
+        points:function(xml,data){
+          return "0,0 0,"+$(data).attr("h")/3+" "+$(data).attr("w")+","+$(data).attr("h")/3+" "+$(data).attr("w")+",0";
         },
-        fill:function(data){var fc = $( data.self ).children("style").children("fillColor");
+        fill:function(xml,data){var fc = $( data.self ).children("style").children("fillColor");
               return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
-        stroke:function(data){var fc = $( data.self ).children("style").children("lineColor");
+        stroke:function(xml,data){var fc = $( data.self ).children("style").children("lineColor");
               return "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")";}
       },{
           type:"text",
-          innerHtml:function(data){
-            return documentmodengine.functions.textDistributionToTSpan($(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text(),
-            $(data.self).attr("w"),
-            $(data.self).attr("h")/3.5)
-          },
+          innerHtml:function(xml,data){
+            var text = $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
+            var x = 0;
+            if($(data.self).children("node").size()>0){
+              x = 6;
+            }else{
+              x = $(data.self).attr('w')/2
+            }
+            var y = 0;
+            if($(data.self).children("node").size()>0){
+              y = 8;
+            }else
+              {
+                y = $(data.self).attr('h')/2
+              }
+            var linebyline = $(data.self).children("node").size()>0
+            return documentmodengine.functions.textDistributionToTSpan(text,$(data.self).attr("w"),$(data.self).attr("h"),linebyline,x,y)},
           "alignment-baseline":"central",
           "text-anchor":"middle",
-          x:function(data){
+          x:function(xml,data){
             return $(data.self).attr("w")/2
           },
-          y:function(data){
+          y:function(xml,data){
             return configuration.globalCharheight/2+5;
           }
 
         }
     ],feel:{
-      points:function(data){
-        var result = [];
-        var x = parseInt(configuration.nodeposition(data).x);
-        var y = parseInt(configuration.nodeposition(data).y);
-        var w = parseInt(configuration.nodeposition(data).width);
-        var h = parseInt(configuration.nodeposition(data).height);
-        var point1 = {};
-        var point2 = {};
-        var point3 = {};
-        var point4 = {};
-        point1.x = (x +(w/2));
-        point1.y = y;
-        point2.x = x;
-        point2.y = (y+(h/2));
-        point3.x = (x +(w/2));
-        point3.y = (y+h);
-        point4.x = (x+w);
-        point4.y = (y+(h/2));
-        result.push(point1);
-        result.push(point2);
-        result.push(point3);
-        result.push(point4);
-        return result;
+      points:function(xml,data){
+        return configuration.nodes[undefined].feel.points(xml,data);
       }
     }},Artifact:{
       new:function(xml){
-        return configuration.createNewNode("Artifact","My Artifact");
+        return configuration.node.new(xml,"Artifact","My Artifact",201,231,183,92,92,92);
       },
       attributes:{
         name:{
@@ -2792,16 +2731,16 @@ this.configuration = {
       look:
       [{
         type:"polygon",
-        points:function(data){
-          return "0,0 0,"+$(data.self).attr("h")+" "+$(data.self).attr("w")+","+$(data.self).attr("h")+" "+$(data.self).attr("w")+",0";
+        points:function(xml,data){
+          return "0,0 0,"+$(data).attr("h")+" "+$(data).attr("w")+","+$(data).attr("h")+" "+$(data).attr("w")+",0";
         },
-        fill:function(data){var fc = $( data.self ).children("style").children("fillColor");
+        fill:function(xml,data){var fc = $( data.self ).children("style").children("fillColor");
               return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
-        stroke:function(data){var fc = $( data.self ).children("style").children("lineColor");
+        stroke:function(xml,data){var fc = $( data.self ).children("style").children("lineColor");
               return "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")";}
       },{
         type:"path",
-        d:function(data){
+        d:function(xml,data){
 
           return "M"+($(data.self).attr("w")-15)+" "+5+" l5 0 l5 5 l-5 0 l0 -5 m5 5 l0 10 l-10 0 l0 -15";
         },
@@ -2812,17 +2751,31 @@ this.configuration = {
 
       },{
             type:"text",
-            innerHtml:function(data){
+            innerHtml:function(xml,data){
               var text = $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
-              return documentmodengine.functions.textDistributionToTSpan(text,$(data.self).attr("w"),$(data.self).attr("h"))},
-            x:function(data){
+              var x = 0;
+              if($(data.self).children("node").size()>0){
+                x = 6;
+              }else{
+                x = $(data.self).attr('w')/2
+              }
+              var y = 0;
+              if($(data.self).children("node").size()>0){
+                y = 8;
+              }else
+                {
+                  y = $(data.self).attr('h')/2
+                }
+              var linebyline = $(data.self).children("node").size()>0
+              return documentmodengine.functions.textDistributionToTSpan(text,$(data.self).attr("w"),$(data.self).attr("h"),linebyline,x,y)},
+            x:function(xml,data){
               if($(data.self).children("node").size()>0){
                 return 6;
               }else{
                 return $(data.self).attr('w')/2
               }
             },
-            y:function(data){
+            y:function(xml,data){
               if($(data.self).children("node").size()>0){
                 return 8;
               }else
@@ -2831,7 +2784,7 @@ this.configuration = {
                 }
               },
             "alignment-baseline":"central",
-            "text-anchor":function(data){
+            "text-anchor":function(xml,data){
               if($(data.self).children("node").size()>0){
                 return "start";
               }else{
@@ -2840,33 +2793,12 @@ this.configuration = {
             }
           }
     ],feel:{
-      points:function(data){
-        var result = [];
-        var x = parseInt(configuration.nodeposition(data).x);
-        var y = parseInt(configuration.nodeposition(data).y);
-        var w = parseInt(configuration.nodeposition(data).width);
-        var h = parseInt(configuration.nodeposition(data).height);
-        var point1 = {};
-        var point2 = {};
-        var point3 = {};
-        var point4 = {};
-        point1.x = (x +(w/2));
-        point1.y = y;
-        point2.x = x;
-        point2.y = (y+(h/2));
-        point3.x = (x +(w/2));
-        point3.y = (y+h);
-        point4.x = (x+w);
-        point4.y = (y+(h/2));
-        result.push(point1);
-        result.push(point2);
-        result.push(point3);
-        result.push(point4);
-        return result;
+      points:function(xml,data){
+        return configuration.nodes[undefined].feel.points(xml,data);
       }
     }},ApplicationFunction:{
       new:function(xml){
-        return configuration.createNewNode("ApplicationFunction","My Application Function");
+        return configuration.node.new(xml,"ApplicationFunction","My Application Function",181,255,255,92,92,92);
       },
       attributes:{
         name:{
@@ -2893,16 +2825,16 @@ this.configuration = {
       look:
       [{
         type:"polygon",
-        points:function(data){
-          return "0,0 0,"+$(data.self).attr("h")+" "+$(data.self).attr("w")+","+$(data.self).attr("h")+" "+$(data.self).attr("w")+",0";
+        points:function(xml,data){
+          return "0,0 0,"+$(data).attr("h")+" "+$(data).attr("w")+","+$(data).attr("h")+" "+$(data).attr("w")+",0";
         },
-        fill:function(data){var fc = $( data.self ).children("style").children("fillColor");
+        fill:function(xml,data){var fc = $( data.self ).children("style").children("fillColor");
               return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
-        stroke:function(data){var fc = $( data.self ).children("style").children("lineColor");
+        stroke:function(xml,data){var fc = $( data.self ).children("style").children("lineColor");
               return "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")";}
       },{
         type:"path",
-        d:function(data){
+        d:function(xml,data){
 
           return "M"+($(data.self).attr("w")-15)+" "+5+" l5 -2 l5 2 l0 7 l-5 -2 l-5 2 z";
         },
@@ -2913,17 +2845,31 @@ this.configuration = {
 
       },{
           type:"text",
-          innerHtml:function(data){
+          innerHtml:function(xml,data){
             var text = $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
-            return documentmodengine.functions.textDistributionToTSpan(text,$(data.self).attr("w"),$(data.self).attr("h"))},
-          x:function(data){
+            var x = 0;
+            if($(data.self).children("node").size()>0){
+              x = 6;
+            }else{
+              x = $(data.self).attr('w')/2
+            }
+            var y = 0;
+            if($(data.self).children("node").size()>0){
+              y = 8;
+            }else
+              {
+                y = $(data.self).attr('h')/2
+              }
+            var linebyline = $(data.self).children("node").size()>0
+            return documentmodengine.functions.textDistributionToTSpan(text,$(data.self).attr("w"),$(data.self).attr("h"),linebyline,x,y)},
+          x:function(xml,data){
             if($(data.self).children("node").size()>0){
               return 6;
             }else{
               return $(data.self).attr('w')/2
             }
           },
-          y:function(data){
+          y:function(xml,data){
             if($(data.self).children("node").size()>0){
               return 8;
             }else
@@ -2932,7 +2878,7 @@ this.configuration = {
               }
             },
           "alignment-baseline":"central",
-          "text-anchor":function(data){
+          "text-anchor":function(xml,data){
             if($(data.self).children("node").size()>0){
               return "start";
             }else{
@@ -2941,33 +2887,12 @@ this.configuration = {
           }
         }
     ],feel:{
-      points:function(data){
-        var result = [];
-        var x = parseInt(configuration.nodeposition(data).x);
-        var y = parseInt(configuration.nodeposition(data).y);
-        var w = parseInt(configuration.nodeposition(data).width);
-        var h = parseInt(configuration.nodeposition(data).height);
-        var point1 = {};
-        var point2 = {};
-        var point3 = {};
-        var point4 = {};
-        point1.x = (x +(w/2));
-        point1.y = y;
-        point2.x = x;
-        point2.y = (y+(h/2));
-        point3.x = (x +(w/2));
-        point3.y = (y+h);
-        point4.x = (x+w);
-        point4.y = (y+(h/2));
-        result.push(point1);
-        result.push(point2);
-        result.push(point3);
-        result.push(point4);
-        return result;
+      points:function(xml,data){
+        return configuration.nodes[undefined].feel.points(xml,data);
       }
     }},InfrastructureFunction:{
       new:function(xml){
-        return configuration.createNewNode("InfrastructureFunction","My Infrastructure Function");
+        return configuration.node.new(xml,"InfrastructureFunction","My Infrastructure Function",201,231,183,92,92,92);
       },
       attributes:{
         name:{
@@ -2994,16 +2919,16 @@ this.configuration = {
       look:
       [{
         type:"polygon",
-        points:function(data){
-          return "0,0 0,"+$(data.self).attr("h")+" "+$(data.self).attr("w")+","+$(data.self).attr("h")+" "+$(data.self).attr("w")+",0";
+        points:function(xml,data){
+          return "0,0 0,"+$(data).attr("h")+" "+$(data).attr("w")+","+$(data).attr("h")+" "+$(data).attr("w")+",0";
         },
-        fill:function(data){var fc = $( data.self ).children("style").children("fillColor");
+        fill:function(xml,data){var fc = $( data.self ).children("style").children("fillColor");
               return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
-        stroke:function(data){var fc = $( data.self ).children("style").children("lineColor");
+        stroke:function(xml,data){var fc = $( data.self ).children("style").children("lineColor");
               return "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")";}
       },{
         type:"path",
-        d:function(data){
+        d:function(xml,data){
 
           return "M"+($(data.self).attr("w")-15)+" "+5+" l5 -2 l5 2 l0 7 l-5 -2 l-5 2 z";
         },
@@ -3014,17 +2939,31 @@ this.configuration = {
 
       },{
           type:"text",
-          innerHtml:function(data){
+          innerHtml:function(xml,data){
             var text = $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
-            return documentmodengine.functions.textDistributionToTSpan(text,$(data.self).attr("w"),$(data.self).attr("h"))},
-          x:function(data){
+            var x = 0;
+            if($(data.self).children("node").size()>0){
+              x = 6;
+            }else{
+              x = $(data.self).attr('w')/2
+            }
+            var y = 0;
+            if($(data.self).children("node").size()>0){
+              y = 8;
+            }else
+              {
+                y = $(data.self).attr('h')/2
+              }
+            var linebyline = $(data.self).children("node").size()>0
+            return documentmodengine.functions.textDistributionToTSpan(text,$(data.self).attr("w"),$(data.self).attr("h"),linebyline,x,y)},
+          x:function(xml,data){
             if($(data.self).children("node").size()>0){
               return 6;
             }else{
               return $(data.self).attr('w')/2
             }
           },
-          y:function(data){
+          y:function(xml,data){
             if($(data.self).children("node").size()>0){
               return 8;
             }else
@@ -3033,7 +2972,7 @@ this.configuration = {
               }
             },
           "alignment-baseline":"central",
-          "text-anchor":function(data){
+          "text-anchor":function(xml,data){
             if($(data.self).children("node").size()>0){
               return "start";
             }else{
@@ -3042,33 +2981,13 @@ this.configuration = {
           }
         }
     ],feel:{
-      points:function(data){
-        var result = [];
-        var x = parseInt(configuration.nodeposition(data).x);
-        var y = parseInt(configuration.nodeposition(data).y);
-        var w = parseInt(configuration.nodeposition(data).width);
-        var h = parseInt(configuration.nodeposition(data).height);
-        var point1 = {};
-        var point2 = {};
-        var point3 = {};
-        var point4 = {};
-        point1.x = (x +(w/2));
-        point1.y = y;
-        point2.x = x;
-        point2.y = (y+(h/2));
-        point3.x = (x +(w/2));
-        point3.y = (y+h);
-        point4.x = (x+w);
-        point4.y = (y+(h/2));
-        result.push(point1);
-        result.push(point2);
-        result.push(point3);
-        result.push(point4);
-        return result;
+      points:function(xml,data){
+        return configuration.nodes[undefined].feel.points(xml,data);
       }
-    }},ApplicationComponent:{
+    }},
+    ApplicationComponent:{
       new:function(xml){
-        return configuration.createNewNode("ApplicationComponent","My Application Component");
+        return configuration.node.new(xml,"ApplicationComponent","My Application Component",181,255,255,92,92,92);
       },
       attributes:{
         name:{
@@ -3095,50 +3014,64 @@ this.configuration = {
       look:
       [{
         type:"polygon",
-        points:function(data){
-          return "0,0 0,"+$(data.self).attr("h")+" "+$(data.self).attr("w")+","+$(data.self).attr("h")+" "+$(data.self).attr("w")+",0";
+        points:function(xml,data){
+          return "0,0 0,"+$(data).attr("h")+" "+$(data).attr("w")+","+$(data).attr("h")+" "+$(data).attr("w")+",0";
         },
-        fill:function(data){var fc = $( data.self ).children("style").children("fillColor");
+        fill:function(xml,data){var fc = $( data.self ).children("style").children("fillColor");
               return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
-        stroke:function(data){var fc = $( data.self ).children("style").children("lineColor");
+        stroke:function(xml,data){var fc = $( data.self ).children("style").children("lineColor");
               return "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")";}
       },{
         type:"rect",
-        x:function(data){return $(data.self).attr("w")-21+3},
+        x:function(xml,data){return $(data.self).attr("w")-21+3},
         y:0+3,
         w:15,
         h:15,
-        stroke:function(data){var fc = $( data.self ).children("style").children("lineColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
-        fill:function(data){var fc = $( data.self ).children("style").children("fillColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"}
+        stroke:function(xml,data){var fc = $( data.self ).children("style").children("lineColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
+        fill:function(xml,data){var fc = $( data.self ).children("style").children("fillColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"}
       },{
         type:"rect",
-        x:function(data){return $(data.self).attr("w")-21},
+        x:function(xml,data){return $(data.self).attr("w")-21},
         y:3+3,
         w:7,
         h:3,
-        stroke:function(data){var fc = $( data.self ).children("style").children("lineColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
-        fill:function(data){var fc = $( data.self ).children("style").children("fillColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"}
+        stroke:function(xml,data){var fc = $( data.self ).children("style").children("lineColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
+        fill:function(xml,data){var fc = $( data.self ).children("style").children("fillColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"}
       },{
         type:"rect",
-        x:function(data){return $(data.self).attr("w")-21},
+        x:function(xml,data){return $(data.self).attr("w")-21},
         y:9+3,
         w:7,
         h:3,
-        stroke:function(data){var fc = $( data.self ).children("style").children("lineColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
-        fill:function(data){var fc = $( data.self ).children("style").children("fillColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"}
+        stroke:function(xml,data){var fc = $( data.self ).children("style").children("lineColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
+        fill:function(xml,data){var fc = $( data.self ).children("style").children("fillColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"}
       },{
           type:"text",
-          innerHtml:function(data){
+          innerHtml:function(xml,data){
             var text = $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
-            return documentmodengine.functions.textDistributionToTSpan(text,$(data.self).attr("w"),$(data.self).attr("h"))},
-          x:function(data){
+            var x = 0;
+            if($(data.self).children("node").size()>0){
+              x = 6;
+            }else{
+              x = $(data.self).attr('w')/2
+            }
+            var y = 0;
+            if($(data.self).children("node").size()>0){
+              y = 8;
+            }else
+              {
+                y = $(data.self).attr('h')/2
+              }
+            var linebyline = $(data.self).children("node").size()>0
+            return documentmodengine.functions.textDistributionToTSpan(text,$(data.self).attr("w"),$(data.self).attr("h"),linebyline,x,y)},
+          x:function(xml,data){
             if($(data.self).children("node").size()>0){
               return 6;
             }else{
               return $(data.self).attr('w')/2
             }
           },
-          y:function(data){
+          y:function(xml,data){
             if($(data.self).children("node").size()>0){
               return 8;
             }else
@@ -3147,7 +3080,7 @@ this.configuration = {
               }
             },
           "alignment-baseline":"central",
-          "text-anchor":function(data){
+          "text-anchor":function(xml,data){
             if($(data.self).children("node").size()>0){
               return "start";
             }else{
@@ -3156,33 +3089,12 @@ this.configuration = {
           }
         }
     ],feel:{
-      points:function(data){
-        var result = [];
-        var x = parseInt(configuration.nodeposition(data).x);
-        var y = parseInt(configuration.nodeposition(data).y);
-        var w = parseInt(configuration.nodeposition(data).width);
-        var h = parseInt(configuration.nodeposition(data).height);
-        var point1 = {};
-        var point2 = {};
-        var point3 = {};
-        var point4 = {};
-        point1.x = (x +(w/2));
-        point1.y = y;
-        point2.x = x;
-        point2.y = (y+(h/2));
-        point3.x = (x +(w/2));
-        point3.y = (y+h);
-        point4.x = (x+w);
-        point4.y = (y+(h/2));
-        result.push(point1);
-        result.push(point2);
-        result.push(point3);
-        result.push(point4);
-        return result;
+      points:function(xml,data){
+        return configuration.nodes[undefined].feel.points(xml,data);
       }
     }},Node:{
       new:function(xml){
-        return configuration.createNewNode("Node","My Node");
+        return configuration.node.new(xml,"Node","My Node",201,231,183,92,92,92);
       },
       attributes:{
         name:{
@@ -3209,54 +3121,53 @@ this.configuration = {
       look:
       [{
         type:"polygon",
-        points:function(data){
-          return "0,0 0,"+$(data.self).attr("h")+" "+$(data.self).attr("w")+","+$(data.self).attr("h")+" "+$(data.self).attr("w")+",0";
+        points:function(xml,data){
+          return "0,0 0,"+$(data).attr("h")+" "+$(data).attr("w")+","+$(data).attr("h")+" "+$(data).attr("w")+",0";
         },
-        fill:function(data){var fc = $( data.self ).children("style").children("fillColor");
+        fill:function(xml,data){var fc = $( data.self ).children("style").children("fillColor");
               return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
-        stroke:function(data){var fc = $( data.self ).children("style").children("lineColor");
+        stroke:function(xml,data){var fc = $( data.self ).children("style").children("lineColor");
               return "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")";}
       },{
         type:"rect",
-        x:function(data){return $(data.self).attr("w")-21-3},
+        x:function(xml,data){return $(data.self).attr("w")-21-3},
         y:0+3+5,
         w:15,
         h:10,
-        stroke:function(data){var fc = $( data.self ).children("style").children("lineColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
-        fill:function(data){var fc = $( data.self ).children("style").children("fillColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"}
+        stroke:function(xml,data){var fc = $( data.self ).children("style").children("lineColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
+        fill:function(xml,data){var fc = $( data.self ).children("style").children("fillColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"}
       },{
         type:"path",
-        d:function(data){return "M"+($(data.self).attr("w")-21-3)+",8 l5,-3 l15,0 l-5,3 m5,-3 l0,10 l-5,3"},
-        stroke:function(data){var fc = $( data.self ).children("style").children("lineColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
-        fill:function(data){var fc = $( data.self ).children("style").children("fillColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"}
+        d:function(xml,data){return "M"+($(data.self).attr("w")-21-3)+",8 l5,-3 l15,0 l-5,3 m5,-3 l0,10 l-5,3"},
+        stroke:function(xml,data){var fc = $( data.self ).children("style").children("lineColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
+        fill:function(xml,data){var fc = $( data.self ).children("style").children("fillColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"}
       },{
           type:"text",
-          innerHtml:function(data){
+          innerHtml:function(xml,data){
             var text = $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
-            var ref_x;
-            var width;
-            var ref_y;
-            var height;
-            if($(data).children("node").size()>0){
-              ref_x = 6;
-              ref_y = 12;
-              height = 20;
+            var x = 0;
+            if($(data.self).children("node").size()>0){
+              x = 6;
+            }else{
+              x = $(data.self).attr('w')/2
+            }
+            var y = 0;
+            if($(data.self).children("node").size()>0){
+              y = 8;
             }else
               {
-                ref_x = $(data.self).attr('w')/2
-                ref_y = $(data.self).attr('h')/2
-                height = $(data.self).attr("h")
+                y = $(data.self).attr('h')/2
               }
-              width = $(data.self).attr("w")
-              return documentmodengine.functions.textDistributionToTSpan(text,width,height,ref_x,ref_y)},
-          x:function(data){
+            var linebyline = $(data.self).children("node").size()>0
+            return documentmodengine.functions.textDistributionToTSpan(text,$(data.self).attr("w"),$(data.self).attr("h"),linebyline,x,y)},
+          x:function(xml,data){
             if($(data.self).children("node").size()>0){
               return 6;
             }else{
               return $(data.self).attr('w')/2
             }
           },
-          y:function(data){
+          y:function(xml,data){
             if($(data.self).children("node").size()>0){
               return 12;
             }else
@@ -3265,7 +3176,7 @@ this.configuration = {
               }
             },
           "alignment-baseline":"central",
-          "text-anchor":function(data){
+          "text-anchor":function(xml,data){
             if($(data.self).children("node").size()>0){
               return "start";
             }else{
@@ -3274,33 +3185,12 @@ this.configuration = {
           }
         }
     ],feel:{
-      points:function(data){
-        var result = [];
-        var x = parseInt(configuration.nodeposition(data).x);
-        var y = parseInt(configuration.nodeposition(data).y);
-        var w = parseInt(configuration.nodeposition(data).width);
-        var h = parseInt(configuration.nodeposition(data).height);
-        var point1 = {};
-        var point2 = {};
-        var point3 = {};
-        var point4 = {};
-        point1.x = (x +(w/2));
-        point1.y = y;
-        point2.x = x;
-        point2.y = (y+(h/2));
-        point3.x = (x +(w/2));
-        point3.y = (y+h);
-        point4.x = (x+w);
-        point4.y = (y+(h/2));
-        result.push(point1);
-        result.push(point2);
-        result.push(point3);
-        result.push(point4);
-        return result;
+      points:function(xml,data){
+        return configuration.nodes[undefined].feel.points(xml,data);
       }
     }},Device:{
       new:function(xml){
-        return configuration.createNewNode("Device","My Device");
+        return configuration.node.new(xml,"Device","My Device",201,231,183,92,92,92);
       },
       attributes:{
         name:{
@@ -3327,39 +3217,53 @@ this.configuration = {
       look:
       [{
         type:"polygon",
-        points:function(data){
-          return "0,0 0,"+$(data.self).attr("h")+" "+$(data.self).attr("w")+","+$(data.self).attr("h")+" "+$(data.self).attr("w")+",0";
+        points:function(xml,data){
+          return "0,0 0,"+$(data).attr("h")+" "+$(data).attr("w")+","+$(data).attr("h")+" "+$(data).attr("w")+",0";
         },
-        fill:function(data){var fc = $( data.self ).children("style").children("fillColor");
+        fill:function(xml,data){var fc = $( data.self ).children("style").children("fillColor");
               return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
-        stroke:function(data){var fc = $( data.self ).children("style").children("lineColor");
+        stroke:function(xml,data){var fc = $( data.self ).children("style").children("lineColor");
               return "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")";}
       },{
         type:"rect",
-        x:function(data){return $(data.self).attr("w")-15},
+        x:function(xml,data){return $(data.self).attr("w")-15},
         y:0+3,
         w:10,
         h:5,
-        stroke:function(data){var fc = $( data.self ).children("style").children("lineColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
-        fill:function(data){var fc = $( data.self ).children("style").children("fillColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"}
+        stroke:function(xml,data){var fc = $( data.self ).children("style").children("lineColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
+        fill:function(xml,data){var fc = $( data.self ).children("style").children("fillColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"}
       },{
         type:"path",
-        d:function(data){return "M"+($(data.self).attr("w")-15+2)+",8 l-2,2 l10,0 l-2,-2"},
-        stroke:function(data){var fc = $( data.self ).children("style").children("lineColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
-        fill:function(data){var fc = $( data.self ).children("style").children("fillColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"}
+        d:function(xml,data){return "M"+($(data.self).attr("w")-15+2)+",8 l-2,2 l10,0 l-2,-2"},
+        stroke:function(xml,data){var fc = $( data.self ).children("style").children("lineColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
+        fill:function(xml,data){var fc = $( data.self ).children("style").children("fillColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"}
       },{
           type:"text",
-          innerHtml:function(data){
+          innerHtml:function(xml,data){
             var text = $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
-            return documentmodengine.functions.textDistributionToTSpan(text,$(data.self).attr("w"),$(data.self).attr("h"))},
-          x:function(data){
+            var x = 0;
+            if($(data.self).children("node").size()>0){
+              x = 6;
+            }else{
+              x = $(data.self).attr('w')/2
+            }
+            var y = 0;
+            if($(data.self).children("node").size()>0){
+              y = 8;
+            }else
+              {
+                y = $(data.self).attr('h')/2
+              }
+            var linebyline = $(data.self).children("node").size()>0
+            return documentmodengine.functions.textDistributionToTSpan(text,$(data.self).attr("w"),$(data.self).attr("h"),linebyline,x,y)},
+          x:function(xml,data){
             if($(data.self).children("node").size()>0){
               return 6;
             }else{
               return $(data.self).attr('w')/2
             }
           },
-          y:function(data){
+          y:function(xml,data){
             if($(data.self).children("node").size()>0){
               return 8;
             }else
@@ -3368,7 +3272,7 @@ this.configuration = {
               }
             },
           "alignment-baseline":"central",
-          "text-anchor":function(data){
+          "text-anchor":function(xml,data){
             if($(data.self).children("node").size()>0){
               return "start";
             }else{
@@ -3377,33 +3281,12 @@ this.configuration = {
           }
         }
     ],feel:{
-      points:function(data){
-        var result = [];
-        var x = parseInt(configuration.nodeposition(data).x);
-        var y = parseInt(configuration.nodeposition(data).y);
-        var w = parseInt(configuration.nodeposition(data).width);
-        var h = parseInt(configuration.nodeposition(data).height);
-        var point1 = {};
-        var point2 = {};
-        var point3 = {};
-        var point4 = {};
-        point1.x = (x +(w/2));
-        point1.y = y;
-        point2.x = x;
-        point2.y = (y+(h/2));
-        point3.x = (x +(w/2));
-        point3.y = (y+h);
-        point4.x = (x+w);
-        point4.y = (y+(h/2));
-        result.push(point1);
-        result.push(point2);
-        result.push(point3);
-        result.push(point4);
-        return result;
+      points:function(xml,data){
+        return configuration.nodes[undefined].feel.points(xml,data);
       }
     }},SystemSoftware:{
       new:function(xml){
-        return configuration.createNewNode("SystemSoftware","My System Software");
+        return configuration.node.new(xml,"SystemSoftware","My System Software",201,231,183,92,92,92);
       },
       attributes:{
         name:{
@@ -3430,44 +3313,58 @@ this.configuration = {
       look:
       [{
         type:"polygon",
-        points:function(data){
-          return "0,0 0,"+$(data.self).attr("h")+" "+$(data.self).attr("w")+","+$(data.self).attr("h")+" "+$(data.self).attr("w")+",0";
+        points:function(xml,data){
+          return "0,0 0,"+$(data).attr("h")+" "+$(data).attr("w")+","+$(data).attr("h")+" "+$(data).attr("w")+",0";
         },
-        fill:function(data){var fc = $( data.self ).children("style").children("fillColor");
+        fill:function(xml,data){var fc = $( data.self ).children("style").children("fillColor");
               return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
-        stroke:function(data){var fc = $( data.self ).children("style").children("lineColor");
+        stroke:function(xml,data){var fc = $( data.self ).children("style").children("lineColor");
               return "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")";}
       },{
         type:"circle",
         r:4,
-        cx:function(data){return $(data.self).attr("w")-9},
-        cy:function(data){return 9},
-        fill:function(data){var fc = $( data.self ).children("style").children("fillColor");
+        cx:function(xml,data){return $(data.self).attr("w")-9},
+        cy:function(xml,data){return 9},
+        fill:function(xml,data){var fc = $( data.self ).children("style").children("fillColor");
               return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
-        stroke:function(data){var fc = $( data.self ).children("style").children("lineColor");
+        stroke:function(xml,data){var fc = $( data.self ).children("style").children("lineColor");
               return "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")";}
       },{
         type:"circle",
         r:4,
-        cx:function(data){return $(data.self).attr("w")-10},
-        cy:function(data){return 10},
-        fill:function(data){var fc = $( data.self ).children("style").children("fillColor");
+        cx:function(xml,data){return $(data.self).attr("w")-10},
+        cy:function(xml,data){return 10},
+        fill:function(xml,data){var fc = $( data.self ).children("style").children("fillColor");
               return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
-        stroke:function(data){var fc = $( data.self ).children("style").children("lineColor");
+        stroke:function(xml,data){var fc = $( data.self ).children("style").children("lineColor");
               return "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")";}
       },{
           type:"text",
-          innerHtml:function(data){
+          innerHtml:function(xml,data){
             var text = $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
-            return documentmodengine.functions.textDistributionToTSpan(text,$(data.self).attr("w"),$(data.self).attr("h"))},
-          x:function(data){
+            var x = 0;
+            if($(data.self).children("node").size()>0){
+              x = 6;
+            }else{
+              x = $(data.self).attr('w')/2
+            }
+            var y = 0;
+            if($(data.self).children("node").size()>0){
+              y = 8;
+            }else
+              {
+                y = $(data.self).attr('h')/2
+              }
+            var linebyline = $(data.self).children("node").size()>0
+            return documentmodengine.functions.textDistributionToTSpan(text,$(data.self).attr("w"),$(data.self).attr("h"),linebyline,x,y)},
+          x:function(xml,data){
             if($(data.self).children("node").size()>0){
               return 6;
             }else{
               return $(data.self).attr('w')/2
             }
           },
-          y:function(data){
+          y:function(xml,data){
             if($(data.self).children("node").size()>0){
               return 8;
             }else
@@ -3476,7 +3373,7 @@ this.configuration = {
               }
             },
           "alignment-baseline":"central",
-          "text-anchor":function(data){
+          "text-anchor":function(xml,data){
             if($(data.self).children("node").size()>0){
               return "start";
             }else{
@@ -3485,33 +3382,12 @@ this.configuration = {
           }
         }
     ],feel:{
-      points:function(data){
-        var result = [];
-        var x = parseInt(configuration.nodeposition(data).x);
-        var y = parseInt(configuration.nodeposition(data).y);
-        var w = parseInt(configuration.nodeposition(data).width);
-        var h = parseInt(configuration.nodeposition(data).height);
-        var point1 = {};
-        var point2 = {};
-        var point3 = {};
-        var point4 = {};
-        point1.x = (x +(w/2));
-        point1.y = y;
-        point2.x = x;
-        point2.y = (y+(h/2));
-        point3.x = (x +(w/2));
-        point3.y = (y+h);
-        point4.x = (x+w);
-        point4.y = (y+(h/2));
-        result.push(point1);
-        result.push(point2);
-        result.push(point3);
-        result.push(point4);
-        return result;
+      points:function(xml,data){
+        return configuration.nodes[undefined].feel.points(xml,data);
       }
     }},Network:{
       new:function(xml){
-        return configuration.createNewNode("Network","My Network");
+        return configuration.node.new(xml,"Network","My Network",201,231,183,92,92,92);
       },
       attributes:{
         name:{
@@ -3538,67 +3414,81 @@ this.configuration = {
       look:
       [{
         type:"polygon",
-        points:function(data){
-          return "0,0 0,"+$(data.self).attr("h")+" "+$(data.self).attr("w")+","+$(data.self).attr("h")+" "+$(data.self).attr("w")+",0";
+        points:function(xml,data){
+          return "0,0 0,"+$(data).attr("h")+" "+$(data).attr("w")+","+$(data).attr("h")+" "+$(data).attr("w")+",0";
         },
-        fill:function(data){var fc = $( data.self ).children("style").children("fillColor");
+        fill:function(xml,data){var fc = $( data.self ).children("style").children("fillColor");
               return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
-        stroke:function(data){var fc = $( data.self ).children("style").children("lineColor");
+        stroke:function(xml,data){var fc = $( data.self ).children("style").children("lineColor");
               return "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")";}
       },{
         type:"polygon",
-        points:function(data){
-          return ($(data.self).attr("w")-10)+",5 "+($(data.self).attr("w")-12)+",10 "+($(data.self).attr("w")-6)+",10 "+($(data.self).attr("w")-4)+",5 ";
+        points:function(xml,data){
+          return ($(data).attr("w")-10)+",5 "+($(data).attr("w")-12)+",10 "+($(data).attr("w")-6)+",10 "+($(data).attr("w")-4)+",5 ";
         },
-        fill:function(data){var fc = $( data.self ).children("style").children("fillColor");
+        fill:function(xml,data){var fc = $( data.self ).children("style").children("fillColor");
               return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
-        stroke:function(data){var fc = $( data.self ).children("style").children("lineColor");
+        stroke:function(xml,data){var fc = $( data.self ).children("style").children("lineColor");
               return "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")";}
       },{
         type:"circle",
         r:1,
-        cx:function(data){return $(data.self).attr("w")-10},
-        cy:function(data){return 5},
+        cx:function(xml,data){return $(data.self).attr("w")-10},
+        cy:function(xml,data){return 5},
         fill:"black",
-        stroke:function(data){var fc = $( data.self ).children("style").children("lineColor");
+        stroke:function(xml,data){var fc = $( data.self ).children("style").children("lineColor");
               return "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")";}
       },{
         type:"circle",
         r:1,
-        cx:function(data){return $(data.self).attr("w")-12},
-        cy:function(data){return 10},
+        cx:function(xml,data){return $(data.self).attr("w")-12},
+        cy:function(xml,data){return 10},
         fill:"black",
-        stroke:function(data){var fc = $( data.self ).children("style").children("lineColor");
+        stroke:function(xml,data){var fc = $( data.self ).children("style").children("lineColor");
               return "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")";}
       },{
         type:"circle",
         r:1,
-        cx:function(data){return $(data.self).attr("w")-4},
-        cy:function(data){return 5},
+        cx:function(xml,data){return $(data.self).attr("w")-4},
+        cy:function(xml,data){return 5},
         fill:"black",
-        stroke:function(data){var fc = $( data.self ).children("style").children("lineColor");
+        stroke:function(xml,data){var fc = $( data.self ).children("style").children("lineColor");
               return "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")";}
       },{
         type:"circle",
         r:1,
-        cx:function(data){return $(data.self).attr("w")-6},
-        cy:function(data){return 10},
+        cx:function(xml,data){return $(data.self).attr("w")-6},
+        cy:function(xml,data){return 10},
         fill:"black",
-        stroke:function(data){var fc = $( data.self ).children("style").children("lineColor");
+        stroke:function(xml,data){var fc = $( data.self ).children("style").children("lineColor");
               return "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")";}
       },{
           type:"text",
-          innerHtml:function(data){
+          innerHtml:function(xml,data){
             var text = $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
-            return documentmodengine.functions.textDistributionToTSpan(text,$(data.self).attr("w"),$(data.self).attr("h"))},
-          x:function(data){
+            var x = 0;
+            if($(data.self).children("node").size()>0){
+              x = 6;
+            }else{
+              x = $(data.self).attr('w')/2
+            }
+            var y = 0;
+            if($(data.self).children("node").size()>0){
+              y = 8;
+            }else
+              {
+                y = $(data.self).attr('h')/2
+              }
+            var linebyline = $(data.self).children("node").size()>0
+            return documentmodengine.functions.textDistributionToTSpan(text,$(data.self).attr("w"),$(data.self).attr("h"),linebyline,x,y)},
+          x:function(xml,data){
             if($(data.self).children("node").size()>0){
               return 6;
             }else{
               return $(data.self).attr('w')/2
             }
           },
-          y:function(data){
+          y:function(xml,data){
             if($(data.self).children("node").size()>0){
               return 8;
             }else
@@ -3607,7 +3497,7 @@ this.configuration = {
               }
             },
           "alignment-baseline":"central",
-          "text-anchor":function(data){
+          "text-anchor":function(xml,data){
             if($(data.self).children("node").size()>0){
               return "start";
             }else{
@@ -3616,33 +3506,12 @@ this.configuration = {
           }
         }
     ],feel:{
-      points:function(data){
-        var result = [];
-        var x = parseInt(configuration.nodeposition(data).x);
-        var y = parseInt(configuration.nodeposition(data).y);
-        var w = parseInt(configuration.nodeposition(data).width);
-        var h = parseInt(configuration.nodeposition(data).height);
-        var point1 = {};
-        var point2 = {};
-        var point3 = {};
-        var point4 = {};
-        point1.x = (x +(w/2));
-        point1.y = y;
-        point2.x = x;
-        point2.y = (y+(h/2));
-        point3.x = (x +(w/2));
-        point3.y = (y+h);
-        point4.x = (x+w);
-        point4.y = (y+(h/2));
-        result.push(point1);
-        result.push(point2);
-        result.push(point3);
-        result.push(point4);
-        return result;
+      points:function(xml,data){
+        return configuration.nodes[undefined].feel.points(xml,data);
       }
     }},BusinessFunction:{
       new:function(xml){
-        return configuration.createNewNode("BusinessFunction","My Business Function");
+        return configuration.node.new(xml,"BusinessFunction","My Business Function",255,255,181,92,92,92);
       },
       attributes:{
         name:{
@@ -3669,20 +3538,20 @@ this.configuration = {
       look:
       [{
         type:"rect",
-        points:function(data){
-          return "0,0 0,"+$(data.self).attr("h")+" "+$(data.self).attr("w")+","+$(data.self).attr("h")+" "+$(data.self).attr("w")+",0";
+        points:function(xml,data){
+          return "0,0 0,"+$(data).attr("h")+" "+$(data).attr("w")+","+$(data).attr("h")+" "+$(data).attr("w")+",0";
         },
         x:0,
         y:0,
-        w:function(data){return $(data.self).attr("w")},
-        h:function(data){return $(data.self).attr("h")},
+        w:function(xml,data){return $(data.self).attr("w")},
+        h:function(xml,data){return $(data.self).attr("h")},
         rx:5,
         ry:5,
-        stroke:function(data){var fc = $( data.self ).children("style").children("lineColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
-        fill:function(data){var fc = $( data.self ).children("style").children("fillColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"}
+        stroke:function(xml,data){var fc = $( data.self ).children("style").children("lineColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
+        fill:function(xml,data){var fc = $( data.self ).children("style").children("fillColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"}
       },{
         type:"path",
-        d:function(data){
+        d:function(xml,data){
 
           return "M"+($(data.self).attr("w")-15)+" "+5+" l5 -2 l5 2 l0 7 l-5 -2 l-5 2 z";
         },
@@ -3693,17 +3562,31 @@ this.configuration = {
 
       },{
           type:"text",
-          innerHtml:function(data){
+          innerHtml:function(xml,data){
             var text = $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
-            return documentmodengine.functions.textDistributionToTSpan(text,$(data.self).attr("w"),$(data.self).attr("h"))},
-          x:function(data){
+            var x = 0;
+            if($(data.self).children("node").size()>0){
+              x = 6;
+            }else{
+              x = $(data.self).attr('w')/2
+            }
+            var y = 0;
+            if($(data.self).children("node").size()>0){
+              y = 8;
+            }else
+              {
+                y = $(data.self).attr('h')/2
+              }
+            var linebyline = $(data.self).children("node").size()>0
+            return documentmodengine.functions.textDistributionToTSpan(text,$(data.self).attr("w"),$(data.self).attr("h"),linebyline,x,y)},
+          x:function(xml,data){
             if($(data.self).children("node").size()>0){
               return 6;
             }else{
               return $(data.self).attr('w')/2
             }
           },
-          y:function(data){
+          y:function(xml,data){
             if($(data.self).children("node").size()>0){
               return 8;
             }else
@@ -3712,7 +3595,7 @@ this.configuration = {
               }
             },
           "alignment-baseline":"central",
-          "text-anchor":function(data){
+          "text-anchor":function(xml,data){
             if($(data.self).children("node").size()>0){
               return "start";
             }else{
@@ -3721,33 +3604,12 @@ this.configuration = {
           }
         }
     ],feel:{
-      points:function(data){
-        var result = [];
-        var x = parseInt(configuration.nodeposition(data).x);
-        var y = parseInt(configuration.nodeposition(data).y);
-        var w = parseInt(configuration.nodeposition(data).width);
-        var h = parseInt(configuration.nodeposition(data).height);
-        var point1 = {};
-        var point2 = {};
-        var point3 = {};
-        var point4 = {};
-        point1.x = (x +(w/2));
-        point1.y = y;
-        point2.x = x;
-        point2.y = (y+(h/2));
-        point3.x = (x +(w/2));
-        point3.y = (y+h);
-        point4.x = (x+w);
-        point4.y = (y+(h/2));
-        result.push(point1);
-        result.push(point2);
-        result.push(point3);
-        result.push(point4);
-        return result;
-      }
+      points:function(xml,data){
+  return configuration.nodes[undefined].feel.points(xml,data);
+}
     }},BusinessProcess:{
       new:function(xml){
-        return configuration.createNewNode("BusinessProcess","My Business Process");
+        return configuration.node.new(xml,"BusinessProcess","My Business Process",255,255,181,92,92,92);
       },
       attributes:{
         name:{
@@ -3774,20 +3636,20 @@ this.configuration = {
       look:
       [{
         type:"rect",
-        points:function(data){
-          return "0,0 0,"+$(data.self).attr("h")+" "+$(data.self).attr("w")+","+$(data.self).attr("h")+" "+$(data.self).attr("w")+",0";
+        points:function(xml,data){
+          return "0,0 0,"+$(data).attr("h")+" "+$(data).attr("w")+","+$(data).attr("h")+" "+$(data).attr("w")+",0";
         },
         x:0,
         y:0,
-        w:function(data){return $(data.self).attr("w")},
-        h:function(data){return $(data.self).attr("h")},
+        w:function(xml,data){return $(data.self).attr("w")},
+        h:function(xml,data){return $(data.self).attr("h")},
         rx:5,
         ry:5,
-        stroke:function(data){var fc = $( data.self ).children("style").children("lineColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
-        fill:function(data){var fc = $( data.self ).children("style").children("fillColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"}
+        stroke:function(xml,data){var fc = $( data.self ).children("style").children("lineColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
+        fill:function(xml,data){var fc = $( data.self ).children("style").children("fillColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"}
       },{
         type:"path",
-        d:function(data){
+        d:function(xml,data){
 
           return "M"+($(data.self).attr("w")-20)+" "+5+" l10 0 l0 -2 l5 6 l-5 6 l0 -2 l-10 0 z";
         },
@@ -3798,17 +3660,31 @@ this.configuration = {
 
       },{
           type:"text",
-          innerHtml:function(data){
+          innerHtml:function(xml,data){
             var text = $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
-            return documentmodengine.functions.textDistributionToTSpan(text,$(data.self).attr("w"),$(data.self).attr("h"))},
-          x:function(data){
+            var x = 0;
+            if($(data.self).children("node").size()>0){
+              x = 6;
+            }else{
+              x = $(data.self).attr('w')/2
+            }
+            var y = 0;
+            if($(data.self).children("node").size()>0){
+              y = 8;
+            }else
+              {
+                y = $(data.self).attr('h')/2
+              }
+            var linebyline = $(data.self).children("node").size()>0
+            return documentmodengine.functions.textDistributionToTSpan(text,$(data.self).attr("w"),$(data.self).attr("h"),linebyline,x,y)},
+          x:function(xml,data){
             if($(data.self).children("node").size()>0){
               return 6;
             }else{
               return $(data.self).attr('w')/2
             }
           },
-          y:function(data){
+          y:function(xml,data){
             if($(data.self).children("node").size()>0){
               return 8;
             }else
@@ -3817,7 +3693,7 @@ this.configuration = {
               }
             },
           "alignment-baseline":"central",
-          "text-anchor":function(data){
+          "text-anchor":function(xml,data){
             if($(data.self).children("node").size()>0){
               return "start";
             }else{
@@ -3826,33 +3702,12 @@ this.configuration = {
           }
         }
     ],feel:{
-      points:function(data){
-        var result = [];
-        var x = parseInt(configuration.nodeposition(data).x);
-        var y = parseInt(configuration.nodeposition(data).y);
-        var w = parseInt(configuration.nodeposition(data).width);
-        var h = parseInt(configuration.nodeposition(data).height);
-        var point1 = {};
-        var point2 = {};
-        var point3 = {};
-        var point4 = {};
-        point1.x = (x +(w/2));
-        point1.y = y;
-        point2.x = x;
-        point2.y = (y+(h/2));
-        point3.x = (x +(w/2));
-        point3.y = (y+h);
-        point4.x = (x+w);
-        point4.y = (y+(h/2));
-        result.push(point1);
-        result.push(point2);
-        result.push(point3);
-        result.push(point4);
-        return result;
-      }
+      points:function(xml,data){
+  return configuration.nodes[undefined].feel.points(xml,data);
+}
     }},BusinessEvent:{
       new:function(xml){
-        return configuration.createNewNode("BusinessEvent","My Business Event");
+        return configuration.node.new(xml,"BusinessEvent","My Business Event",255,255,181,92,92,92);
       },
       attributes:{
         name:{
@@ -3879,36 +3734,50 @@ this.configuration = {
       look:
       [{
         type:"rect",
-        points:function(data){
-          return "0,0 0,"+$(data.self).attr("h")+" "+$(data.self).attr("w")+","+$(data.self).attr("h")+" "+$(data.self).attr("w")+",0";
+        points:function(xml,data){
+          return "0,0 0,"+$(data).attr("h")+" "+$(data).attr("w")+","+$(data).attr("h")+" "+$(data).attr("w")+",0";
         },
         x:0,
         y:0,
-        w:function(data){return $(data.self).attr("w")},
-        h:function(data){return $(data.self).attr("h")},
+        w:function(xml,data){return $(data.self).attr("w")},
+        h:function(xml,data){return $(data.self).attr("h")},
         rx:5,
         ry:5,
-        stroke:function(data){var fc = $( data.self ).children("style").children("lineColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
-        fill:function(data){var fc = $( data.self ).children("style").children("fillColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"}
+        stroke:function(xml,data){var fc = $( data.self ).children("style").children("lineColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
+        fill:function(xml,data){var fc = $( data.self ).children("style").children("fillColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"}
       },
       {
         type:"path",
-        stroke:function(data){var fc = $( data.self ).children("style").children("lineColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
+        stroke:function(xml,data){var fc = $( data.self ).children("style").children("lineColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
         fill:"none",
-        d:function(data){return "M "+($(data.self).attr("w")-25)+","+(13)+" c +5,0 +5,-10 0,-10 l 15 0 c +5,0 +5,+10 0,+10 z"}
+        d:function(xml,data){return "M "+($(data.self).attr("w")-25)+","+(13)+" c +5,0 +5,-10 0,-10 l 15 0 c +5,0 +5,+10 0,+10 z"}
       },{
           type:"text",
-          innerHtml:function(data){
+          innerHtml:function(xml,data){
             var text = $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
-            return documentmodengine.functions.textDistributionToTSpan(text,$(data.self).attr("w"),$(data.self).attr("h"))},
-          x:function(data){
+            var x = 0;
+            if($(data.self).children("node").size()>0){
+              x = 6;
+            }else{
+              x = $(data.self).attr('w')/2
+            }
+            var y = 0;
+            if($(data.self).children("node").size()>0){
+              y = 8;
+            }else
+              {
+                y = $(data.self).attr('h')/2
+              }
+            var linebyline = $(data.self).children("node").size()>0
+            return documentmodengine.functions.textDistributionToTSpan(text,$(data.self).attr("w"),$(data.self).attr("h"),linebyline,x,y)},
+          x:function(xml,data){
             if($(data.self).children("node").size()>0){
               return 6;
             }else{
               return $(data.self).attr('w')/2
             }
           },
-          y:function(data){
+          y:function(xml,data){
             if($(data.self).children("node").size()>0){
               return 8;
             }else
@@ -3917,7 +3786,7 @@ this.configuration = {
               }
             },
           "alignment-baseline":"central",
-          "text-anchor":function(data){
+          "text-anchor":function(xml,data){
             if($(data.self).children("node").size()>0){
               return "start";
             }else{
@@ -3926,34 +3795,13 @@ this.configuration = {
           }
         }],
         feel:{
-          points:function(data){
-            var result = [];
-            var x = parseInt(configuration.nodeposition(data).x);
-            var y = parseInt(configuration.nodeposition(data).y);
-            var w = parseInt(configuration.nodeposition(data).width);
-            var h = parseInt(configuration.nodeposition(data).height);
-            var point1 = {};
-            var point2 = {};
-            var point3 = {};
-            var point4 = {};
-            point1.x = (x +(w/2));
-            point1.y = y;
-            point2.x = x;
-            point2.y = (y+(h/2));
-            point3.x = (x +(w/2));
-            point3.y = (y+h);
-            point4.x = (x+w);
-            point4.y = (y+(h/2));
-            result.push(point1);
-            result.push(point2);
-            result.push(point3);
-            result.push(point4);
-            return result;
-          }
+          points:function(xml,data){
+  return configuration.nodes[undefined].feel.points(xml,data);
+}
         }
     },Representation:{
       new:function(xml){
-        return configuration.createNewNode("Representation","My Representation");
+        return configuration.node.new(xml,"Representation","My Representation",255,255,181,92,92,92);
       },
       attributes:{
         name:{
@@ -3980,22 +3828,36 @@ this.configuration = {
       look:
       [{
         type:"path",
-        stroke:function(data){var fc = $( data.self ).children("style").children("lineColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
-        fill:function(data){var fc = $( data.self ).children("style").children("fillColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
-        d:function(data){return "M 0,0 l "+$(data.self).attr("w")+",0 l 0,"+$(data.self).attr("h")+" c -15,-5 "+(-$(data.self).attr("w")/2)+",-5 "+(-$(data.self).attr("w")/2)+",10 c -10,10 "+(-$(data.self).attr("w")/2)+",0 "+(-$(data.self).attr("w")/2)+",-10 z"}
+        stroke:function(xml,data){var fc = $( data.self ).children("style").children("lineColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
+        fill:function(xml,data){var fc = $( data.self ).children("style").children("fillColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
+        d:function(xml,data){return "M 0,0 l "+$(data.self).attr("w")+",0 l 0,"+$(data.self).attr("h")+" c -15,-5 "+(-$(data.self).attr("w")/2)+",-5 "+(-$(data.self).attr("w")/2)+",10 c -10,10 "+(-$(data.self).attr("w")/2)+",0 "+(-$(data.self).attr("w")/2)+",-10 z"}
       },{
           type:"text",
-          innerHtml:function(data){
+          innerHtml:function(xml,data){
             var text = $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text();
-            return documentmodengine.functions.textDistributionToTSpan(text,$(data.self).attr("w"),$(data.self).attr("h"))},
-          x:function(data){
+            var x = 0;
+            if($(data.self).children("node").size()>0){
+              x = 6;
+            }else{
+              x = $(data.self).attr('w')/2
+            }
+            var y = 0;
+            if($(data.self).children("node").size()>0){
+              y = 8;
+            }else
+              {
+                y = $(data.self).attr('h')/2
+              }
+            var linebyline = $(data.self).children("node").size()>0
+            return documentmodengine.functions.textDistributionToTSpan(text,$(data.self).attr("w"),$(data.self).attr("h"),linebyline,x,y)},
+          x:function(xml,data){
             if($(data.self).children("node").size()>0){
               return 6;
             }else{
               return $(data.self).attr('w')/2
             }
           },
-          y:function(data){
+          y:function(xml,data){
             if($(data.self).children("node").size()>0){
               return 8;
             }else
@@ -4004,7 +3866,7 @@ this.configuration = {
               }
             },
           "alignment-baseline":"central",
-          "text-anchor":function(data){
+          "text-anchor":function(xml,data){
             if($(data.self).children("node").size()>0){
               return "start";
             }else{
@@ -4013,12 +3875,12 @@ this.configuration = {
           }
         }],
         feel:{
-          points:function(data){
+          points:function(xml,data){
             var result = [];
-            var x = parseInt(configuration.nodeposition(data).x);
-            var y = parseInt(configuration.nodeposition(data).y);
-            var w = parseInt(configuration.nodeposition(data).width);
-            var h = parseInt(configuration.nodeposition(data).height);
+            var x = parseInt(configuration.node.position(data).x);
+            var y = parseInt(configuration.node.position(data).y);
+            var w = parseInt(configuration.node.position(data).width);
+            var h = parseInt(configuration.node.position(data).height);
             var point1 = {};
             var point2 = {};
             var point3 = {};
@@ -4043,7 +3905,7 @@ this.configuration = {
   edges:{
     AggregationRelationship:{
       new:function(xml){
-        return configuration.createNewEdge(xml,"AggregationRelationship","MyAggregationRelationship")
+        return configuration.edge.new(xml,"AggregationRelationship","MyAggregationRelationship")
       },
       relates:[
         {end:"Contract", begin:"Product"},
@@ -4056,47 +3918,30 @@ this.configuration = {
       look:[
         {
             type:"text",
-            innerHtml:function(data){
+            innerHtml:function(xml,data){
               var text = $(data.element).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text()
               return text
             },
-            x:function(data){
+            x:function(xml,data){
               //TODO
             },
-            y:function(data){
+            y:function(xml,data){
               //TODO
               },
             "alignment-baseline":"auto"
           }
       ],
-      stroke:function(data){var fc = $( data.self ).children("style").children("lineColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
-      "stroke-width":function(data){return $(data).children("style").attr("lineWidth")},
+      stroke:function(xml,data){return configuration.edges[undefined].stroke(xml,data)},
+      "stroke-width":function(xml,data){return $(data).children("style").attr("lineWidth")},
       "marker-start":"url(#AggregationRelationshipStart)",
-      "style":function(data){return "marker-start:url(#AggregationRelationshipStart);"},
-      points:function(data){
-        var result = {
-          shape1:[],
-          path:[],
-          shape2:[]
-        };
-        var points1f = configuration.nodes[configuration.nodetype(data.source_node)].feel.points;
-        var points2f = configuration.nodes[configuration.nodetype(data.source_node)].feel.points;
-        result.shape1 = points1f(data.source_node);
-        result.shape2 = points2f(data.target_node);
-        var bendpoints = $(data.self).find("bendpoint");
-        for(var i = 0;i< bendpoints.size();i++){
-          var point = {};
-          point.x = bendpoints.eq(i).attr("x");
-          point.y = bendpoints.eq(i).attr("y");
-          result.path.push(point);
-        }
-
-        return result;
+      "style":function(xml,data){return "marker-start:url(#AggregationRelationshipStart);"},
+      points:function(xml,data){
+        return configuration.edges[undefined].points(xml,data);
       }
     },
     CompositionRelationship:{
       new:function(xml){
-        return configuration.createNewEdge(xml,"CompositionRelationship","MyCompositionRelationship")
+        return configuration.edge.new(xml,"CompositionRelationship","MyCompositionRelationship")
 
       },
       relates:[
@@ -4108,34 +3953,17 @@ this.configuration = {
       look:[
 
       ],
-      stroke:function(data){var fc = $( data.self ).children("style").children("lineColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
-      "stroke-width":function(data){return $(data).children("style").attr("lineWidth")},
+      stroke:function(xml,data){return configuration.edges[undefined].stroke(xml,data)},
+      "stroke-width":function(xml,data){return $(data).children("style").attr("lineWidth")},
       "marker-start":"url(#AggregationRelationshipStart)",
-      "style":function(data){return "marker-start:url(#CompositionRelationshipStart);"},
-      points:function(data){
-        var result = {
-          shape1:[],
-          path:[],
-          shape2:[]
-        };
-        var points1f = configuration.nodes[configuration.nodetype(data.source_node)].feel.points;
-        var points2f = configuration.nodes[configuration.nodetype(data.source_node)].feel.points;
-        result.shape1 = points1f(data.source_node);
-        result.shape2 = points2f(data.target_node);
-        var bendpoints = $(data.self).find("bendpoint");
-        for(var i = 0;i< bendpoints.size();i++){
-          var point = {};
-          point.x = bendpoints.eq(i).attr("x");
-          point.y = bendpoints.eq(i).attr("y");
-          result.path.push(point);
-        }
-
-        return result;
+      "style":function(xml,data){return "marker-start:url(#CompositionRelationshipStart);"},
+      points:function(xml,data){
+        return configuration.edges[undefined].points(xml,data);
       }
     },
     RealisationRelationship:{
       new:function(xml){
-        return configuration.createNewEdge(xml,"RealisationRelationship","MyRealisationRelationship")
+        return configuration.edge.new(xml,"RealisationRelationship","MyRealisationRelationship")
 
       },
       relates:[
@@ -4150,36 +3978,18 @@ this.configuration = {
       look:[
 
       ],
-      stroke:function(data){var fc = $( data.self ).children("style").children("lineColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
-      "stroke-width":function(data){return $(data).children("style").attr("lineWidth")},
+      stroke:function(xml,data){return configuration.edges[undefined].stroke(xml,data)},
+      "stroke-width":function(xml,data){return $(data).children("style").attr("lineWidth")},
       "marker-start":"url(#AggregationRelationshipStart)",
-      /*"style":function(data){return "marker-end:url(#RealisationRelationshipEnd);"},*/
       "marker-end":"url(#RealisationRelationshipEnd)",
       "stroke-dasharray":"5,5",
-      points:function(data){
-        var result = {
-          shape1:[],
-          path:[],
-          shape2:[]
-        };
-        var points1f = configuration.nodes[configuration.nodetype(data.source_node)].feel.points;
-        var points2f = configuration.nodes[configuration.nodetype(data.target_node)].feel.points;
-        result.shape1 = points1f(data.source_node);
-        result.shape2 = points2f(data.target_node);
-        var bendpoints = $(data.self).find("bendpoint");
-        for(var i = 0;i< bendpoints.size();i++){
-          var point = {};
-          point.x = bendpoints.eq(i).attr("x");
-          point.y = bendpoints.eq(i).attr("y");
-          result.path.push(point);
-        }
-
-        return result;
+      points:function(xml,data){
+        return configuration.edges[undefined].points(xml,data);
       }
     },
     AssociationRelationship:{
       new:function(xml){
-        return configuration.createNewEdge(xml,"AssociationRelationship","MyAssociationRelationship")
+        return configuration.edge.new(xml,"AssociationRelationship","MyAssociationRelationship")
       },
       relates:[
         {end:"Value", begin:"Product"},
@@ -4198,34 +4008,16 @@ this.configuration = {
       look:[
 
       ],
-      stroke:function(data){var fc = $( data.self ).children("style").children("lineColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
-      "stroke-width":function(data){return $(data).children("style").attr("lineWidth")},
-      "style":function(data){return ""},
-      points:function(data){
-        var result = {
-          shape1:[],
-          path:[],
-          shape2:[]
-        };
-        var points1f = configuration.nodes[configuration.nodetype(data.source_node)].feel.points;
-        var points2f = configuration.nodes[configuration.nodetype(data.source_node)].feel.points;
-        result.shape1 = points1f(data.source_node);
-        result.shape2 = points2f(data.target_node);
-        var bendpoints = $(data.self).find("bendpoint");
-        for(var i = 0;i< bendpoints.size();i++){
-          var point = {};
-          point.x = bendpoints.eq(i).attr("x");
-          point.y = bendpoints.eq(i).attr("y");
-          result.path.push(point);
-        }
-
-        return result;
+      stroke:function(xml,data){return configuration.edges[undefined].stroke(xml,data)},
+      "stroke-width":function(xml,data){return $(data).children("style").attr("lineWidth")},
+      "style":function(xml,data){return ""},
+      points:function(xml,data){
+        return configuration.edges[undefined].points(xml,data);
       }
     },
     AssignmentRelationship:{
       new:function(xml){
-        return configuration.createNewEdge(xml,"AssignmentRelationship","MyAssignmentRelationship")
-
+        return configuration.edge.new(xml,"AssignmentRelationship","MyAssignmentRelationship")
       },
       relates:[
         {end:"Location", begin:"BusinessObject"},
@@ -4240,40 +4032,22 @@ this.configuration = {
         {end:"ApplicationComponent",begin:"ApplicationInteraction"},
         {end:"InfrastructureService",begin:"InfrastructureInterface"},
         {end:"SystemSoftware",begin:"Device"},
-        {end:"Artifcact",begin:"Node"},
+        {end:"Artifact",begin:"Node"},
         {end:"InfrastructureFunction",begin:"Node"}
       ],
       look:[
 
       ],
-      stroke:function(data){var fc = $( data.self ).children("style").children("lineColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
-      "stroke-width":function(data){return $(data).children("style").attr("lineWidth")},
-      "style":function(data){return "marker-start:url(#AssignmentRelationshipStartEnd);marker-end:url(#AssignmentRelationshipStartEnd);"},
-      points:function(data){
-        var result = {
-          shape1:[],
-          path:[],
-          shape2:[]
-        };
-        var points1f = configuration.nodes[configuration.nodetype(data.source_node)].feel.points;
-        var points2f = configuration.nodes[configuration.nodetype(data.source_node)].feel.points;
-        result.shape1 = points1f(data.source_node);
-        result.shape2 = points2f(data.target_node);
-        var bendpoints = $(data.self).find("bendpoint");
-        for(var i = 0;i< bendpoints.size();i++){
-          var point = {};
-          point.x = bendpoints.eq(i).attr("x");
-          point.y = bendpoints.eq(i).attr("y");
-          result.path.push(point);
-        }
-
-        return result;
+      stroke:function(xml,data){return configuration.edges[undefined].stroke(xml,data)},
+      "stroke-width":function(xml,data){return $(data).children("style").attr("lineWidth")},
+      "style":function(xml,data){return "marker-start:url(#AssignmentRelationshipStartEnd);marker-end:url(#AssignmentRelationshipStartEnd);"},
+      points:function(xml,data){
+        return configuration.edges[undefined].points(xml,data);
       }
     },
     UsedByRelationship:{
       new:function(xml){
-        return configuration.createNewEdge(xml,"UsedByRelationship","MyUsedByRelationship")
-
+        return configuration.edge.new(xml,"UsedByRelationship","MyUsedByRelationship")
       },
       relates:[
         {end:"BusinessService", begin:"BusinessActor"},
@@ -4295,147 +4069,156 @@ this.configuration = {
       look:[
 
       ],
-      stroke:function(data){var fc = $( data.self ).children("style").children("lineColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
-      "stroke-width":function(data){return $(data).children("style").attr("lineWidth")},
-      "style":function(data){return "marker-end:url(#UsedByRelationshipEnd);"},
-      points:function(data){
-        var result = {
-          shape1:[],
-          path:[],
-          shape2:[]
-        };
-        var points1f = configuration.nodes[configuration.nodetype(data.source_node)].feel.points;
-        var points2f = configuration.nodes[configuration.nodetype(data.source_node)].feel.points;
-        result.shape1 = points1f(data.source_node);
-        result.shape2 = points2f(data.target_node);
-        var bendpoints = $(data.self).find("bendpoint");
-        for(var i = 0;i< bendpoints.size();i++){
-          var point = {};
-          point.x = bendpoints.eq(i).attr("x");
-          point.y = bendpoints.eq(i).attr("y");
-          result.path.push(point);
-        }
-
-        return result;
+      stroke:function(xml,data){return configuration.edges[undefined].stroke(xml,data)},
+      "stroke-width":function(xml,data){return $(data).children("style").attr("lineWidth")},
+      "style":function(xml,data){return "marker-end:url(#UsedByRelationshipEnd);"},
+      points:function(xml,data){
+        return configuration.edges[undefined].points(xml,data);
       }
     },
     TriggeringRelationship:{
-      look:[
-
-      ],
-      stroke:function(data){var fc = $( data.self ).children("style").children("lineColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
-      "stroke-width":function(data){return $(data).children("style").attr("lineWidth")},
-      "style":function(data){return "marker-end:url(#TriggeringRelationshipEnd);"},
-      points:function(data){
-        var result = {
-          shape1:[],
-          path:[],
-          shape2:[]
-        };
-        var points1f = configuration.nodes[configuration.nodetype(data.source_node)].feel.points;
-        var points2f = configuration.nodes[configuration.nodetype(data.source_node)].feel.points;
-        result.shape1 = points1f(data.source_node);
-        result.shape2 = points2f(data.target_node);
-        var bendpoints = $(data.self).find("bendpoint");
-        for(var i = 0;i< bendpoints.size();i++){
-          var point = {};
-          point.x = bendpoints.eq(i).attr("x");
-          point.y = bendpoints.eq(i).attr("y");
-          result.path.push(point);
-        }
-
-        return result;
-      }
-    },FlowRelationship:{
       new:function(xml){
-        return configuration.createNewEdge(xml,"FlowRelationship","MyFlowRelationship")
+        return configuration.edge.new(xml,"TriggeringRelationship","MyTriggeringRelationship")
       },
       relates:[
-        {end:"BusinessActor", begin:"BusinessActor"}
+        {end:"BusinessProcess", begin:"BusinessEvent"},
+        {end:"BusinessFunction", begin:"BusinessEvent"},
+        {end:"BusinessInteraction", begin:"BusinessEvent"},
+        {end:"BusinessEvent", begin:"BusinessProcess"},
+        {end:"BusinessEvent", begin:"BusinessFunction"},
+        {end:"BusinessEvent", begin:"BusinessInteraction"},
+
+        {end:"BusinessProcess", begin:"BusinessProcess"},
+        {end:"BusinessFunction", begin:"BusinessProcess"},
+        {end:"BusinessInteraction", begin:"BusinessProcess"},
+
+        {end:"BusinessProcess", begin:"BusinessFunction"},
+        {end:"BusinessFunction", begin:"BusinessFunction"},
+        {end:"BusinessInteraction", begin:"BusinessFunction"},
+
+        {end:"BusinessProcess", begin:"BusinessInteraction"},
+        {end:"BusinessFunction", begin:"BusinessInteraction"},
+        {end:"BusinessInteraction", begin:"BusinessInteraction"},
+
+        {end:"ApplicationFunction", begin:"ApplicationFunction"},
+        {end:"ApplicationFunction", begin:"ApplicationInteraction"},
+        {end:"ApplicationInteraction", begin:"ApplicationFunction"},
+        {end:"ApplicationInteraction", begin:"ApplicationInteraction"},
+
+        {end:"InfrastructureFunction", begin:"InfrastructureFunction"},
+
+        {end:"Plateau", begin:"Plateau"},
+        {end:"WorkPackage", begin:"WorkPackage"},
+
       ],
       look:[
 
       ],
-      stroke:function(data){var fc = $( data.self ).children("style").children("lineColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
-      "stroke-width":function(data){return $(data).children("style").attr("lineWidth")},
-      "style":function(data){return "marker-end:url(#TriggeringRelationshipEnd);"},
-      "stroke-dasharray":"5,5",
-      points:function(data){
-        var result = {
-          shape1:[],
-          path:[],
-          shape2:[]
-        };
-        var points1f = configuration.nodes[configuration.nodetype(data.source_node)].feel.points;
-        var points2f = configuration.nodes[configuration.nodetype(data.source_node)].feel.points;
-        result.shape1 = points1f(data.source_node);
-        result.shape2 = points2f(data.target_node);
-        var bendpoints = $(data.self).find("bendpoint");
-        for(var i = 0;i< bendpoints.size();i++){
-          var point = {};
-          point.x = bendpoints.eq(i).attr("x");
-          point.y = bendpoints.eq(i).attr("y");
-          result.path.push(point);
-        }
+      stroke:function(xml,data){return configuration.edges[undefined].stroke(xml,data)},
+      "stroke-width":function(xml,data){return $(data).children("style").attr("lineWidth")},
+      "style":function(xml,data){return "marker-end:url(#TriggeringRelationshipEnd);"},
+      points:function(xml,data){
+        return configuration.edges[undefined].points(xml,data);
+      }
+    },
+    FlowRelationship:{
+      new:function(xml){
+        return configuration.edge.new(xml,"FlowRelationship","MyFlowRelationship")
+      },
+      relates:[
+        /*Business*/
+        {end:"BusinessProcess", begin:"BusinessProcess"},
+        {end:"BusinessFunction", begin:"BusinessProcess"},
+        {end:"BusinessInteraction", begin:"BusinessProcess"},
+        {end:"BusinessProcess", begin:"BusinessFunction"},
+        {end:"BusinessFunction", begin:"BusinessFunction"},
+        {end:"BusinessInteraction", begin:"BusinessFunction"},
+        {end:"BusinessProcess", begin:"BusinessInteraction"},
+        {end:"BusinessFunction", begin:"BusinessInteraction"},
+        {end:"BusinessInteraction", begin:"BusinessInteraction"},
+        /*Application*/
+        {end:"ApplicationFunction", begin:"ApplicationFunction"},
+        {end:"ApplicationFunction", begin:"ApplicationInteraction"},
+        {end:"ApplicationInteraction", begin:"ApplicationFunction"},
+        {end:"ApplicationInteraction", begin:"ApplicationInteraction"},
+        /*Technology*/
+        {end:"InfrastructureFunction", begin:"InfrastructureFunction"},
+        /*Implementation*/
+        {end:"WorkPackage", begin:"WorkPackage"},
 
-        return result;
+      ],
+      look:[
+
+      ],
+      stroke:function(xml,data){return configuration.edges[undefined].stroke(xml,data)},
+      "stroke-width":function(xml,data){return $(data).children("style").attr("lineWidth")},
+      "style":function(xml,data){return "marker-end:url(#TriggeringRelationshipEnd);"},
+      "stroke-dasharray":"5,5",
+      points:function(xml,data){
+        return configuration.edges[undefined].points(xml,data);
       }
     },
     SpecialisationRelationship:{
+      new:function(xml){
+        return configuration.edge.new(xml,"FlowRelationship","MyFlowRelationship")
+      },
+      relates:[
+        /*Business*/
+        {end:"BusinessCollaboration",begin:"BusinessRole"},
+        {end:"Contract",begin:"BusinessObject"},
+        /*Application*/
+        {end:"ApplicationCollaboration",begin:"ApplicationComponent"},
+        {end:"Device",begin:"Node"},
+        /*Motivation*/
+        {end:"Stakeholder",begin:"StructureElement"},
+        {end:"Goal",begin:"MotivationalElement"},
+        {end:"Driver",begin:"MotivationalElement"},
+        {end:"Assessment",begin:"MotivationalElement"},
+        {end:"Principle",begin:"MotivationalElement"},
+        {end:"Requirement",begin:"MotivationalElement"},
+        {end:"Constraint",begin:"Requirement"},
+        /*Implementation*/
+        {end:"WorkPackage",begin:"BehaviourElement"},
+      ],
       look:[
 
       ],
-      stroke:function(data){var fc = $( data.self ).children("style").children("lineColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
-      "stroke-width":function(data){return $(data).children("style").attr("lineWidth")},
+      stroke:function(xml,data){return configuration.edges[undefined].stroke(xml,data)},
+      "stroke-width":function(xml,data){return $(data).children("style").attr("lineWidth")},
       "marker-start":"url(#AggregationRelationshipStart)",
-      "style":function(data){return "marker-end:url(#RealisationRelationshipEnd);"},
-      points:function(data){
-        var result = {
-          shape1:[],
-          path:[],
-          shape2:[]
-        };
-        var points1f = configuration.nodes[configuration.nodetype(data.source_node)].feel.points;
-        var points2f = configuration.nodes[configuration.nodetype(data.source_node)].feel.points;
-        result.shape1 = points1f(data.source_node);
-        result.shape2 = points2f(data.target_node);
-        var bendpoints = $(data.self).find("bendpoint");
-        for(var i = 0;i< bendpoints.size();i++){
-          var point = {};
-          point.x = bendpoints.eq(i).attr("x");
-          point.y = bendpoints.eq(i).attr("y");
-          result.path.push(point);
-        }
-
-        return result;
+      "style":function(xml,data){return "marker-end:url(#RealisationRelationshipEnd);"},
+      points:function(xml,data){
+        return configuration.edges[undefined].points(xml,data);
       }
     },
     AccessRelationship:{
+      new:function(xml){
+        return configuration.edge.new(xml,"AccessRelationship","MyAccessRelationship")
+      },
+      relates:[
+        /*Business*/
+        {end:"BusinessObject",begin:"BusinessEvent"},
+        {end:"BusinessObject",begin:"BusinessProcess"},
+        {end:"BusinessObject",begin:"BusinessFunction"},
+        {end:"BusinessObject",begin:"BusinessInteraction"},
+        {end:"BusinessObject",begin:"BusinessService"},
+        /*Application*/
+        {end:"DataObject",begin:"ApplicationService"},
+        {end:"DataObject",begin:"ApplicationFunction"},
+        {end:"DataObject",begin:"ApplicationInteraction"},
+        /*Technology*/
+        {end:"Artifact",begin:"InfrastructureFunction"},
+        {end:"Artifact",begin:"InfrastructureService"},
+
+      ],
       look:[
 
       ],
-      stroke:function(data){var fc = $( data.self ).children("style").children("lineColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
-      "stroke-width":function(data){return $(data).children("style").attr("lineWidth")},
-      "style":function(data){return "marker-end:url(#AccessRelationshipEnd);"},
-      points:function(data){
-        var result = {
-          shape1:[],
-          path:[],
-          shape2:[]
-        };
-        var points1f = configuration.nodes[configuration.nodetype(data.source_node)].feel.points;
-        var points2f = configuration.nodes[configuration.nodetype(data.source_node)].feel.points;
-        result.shape1 = points1f(data.source_node);
-        result.shape2 = points2f(data.target_node);
-        var bendpoints = $(data.self).find("bendpoint");
-        for(var i = 0;i< bendpoints.size();i++){
-          var point = {};
-          point.x = bendpoints.eq(i).attr("x");
-          point.y = bendpoints.eq(i).attr("y");
-          result.path.push(point);
-        }
-
-        return result;
+      stroke:function(xml,data){return configuration.edges[undefined].stroke(xml,data)},
+      "stroke-width":function(xml,data){return $(data).children("style").attr("lineWidth")},
+      "style":function(xml,data){return "marker-end:url(#AccessRelationshipEnd);"},
+      points:function(xml,data){
+        return configuration.edges[undefined].points(xml,data);
       }
     },
     undefined:{
@@ -4443,19 +4226,23 @@ this.configuration = {
       look:[
 
       ],
-      stroke:function(data){var fc = $( data.self ).children("style").children("lineColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
-      "stroke-width":function(data){return $(data).children("style").attr("lineWidth")},
-      points:function(data){
+      stroke:function(xml,data){var fc = $( data ).children("style").children("lineColor");return  "rgb("+ fc.attr("r")+","+fc.attr("g")+","+fc.attr('b') +")"},
+      "stroke-width":function(xml,data){return $(data).children("style").attr("lineWidth")},
+      points:function(xml,data){
         var result = {
           shape1:[],
           path:[],
           shape2:[]
         };
-        var points1f = configuration.nodes[configuration.nodetype(data.source_node)].feel.points;
-        var points2f = configuration.nodes[configuration.nodetype(data.source_node)].feel.points;
-        result.shape1 = points1f(data.source_node);
-        result.shape2 = points2f(data.target_node);
-        var bendpoints = $(data.self).find("bendpoint");
+        var source_node = configuration.edge.source(documentmodengine.xml,data);
+        var target_node = configuration.edge.target(documentmodengine.xml,data);
+
+
+        var points1f = configuration.nodes[configuration.modelelement.type(configuration.node.modelelement(source_node,documentmodengine.xml))].feel.points;
+        var points2f = configuration.nodes[configuration.modelelement.type(configuration.node.modelelement(target_node,documentmodengine.xml))].feel.points;
+        result.shape1 = points1f(xml,source_node);
+        result.shape2 = points2f(xml,target_node);
+        var bendpoints = $(data).find("bendpoint");
         for(var i = 0;i< bendpoints.size();i++){
           var point = {};
           point.x = bendpoints.eq(i).attr("x");
@@ -4468,6 +4255,7 @@ this.configuration = {
     }
   },
   definitions:[
+    /* Definitoins are used for specifying reusable svg parts, like arrows for edges */
     {
       id:"AggregationRelationshipStart",
       type:"marker",
