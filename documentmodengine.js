@@ -147,21 +147,19 @@ documentmodengine = {
 createNewView:function(){
 	var newview = configuration.view.new(documentmodengine.xml);
 	if(newview){
-
+		var viewid = configuration.view.id(newview);
 		var viewdata = {};
 		viewdata.self = newview;
 		viewdata.nodes = [];
 		viewdata.edges  = [];
 		var views = configuration.model.views(documentmodengine.xml);
 		//create tabs;
-		for(var i = 0; i < views.size();i++){
-			if(views.eq(i)[0]==newview){
-				documentmodengine.viewsdata[i] = viewdata
-				var result = documentmodengine.buildView_internal(d3.select(documentmodengine.svg),i,viewdata,documentmodengine.usersettings.lang);
-				documentmodengine.diagrams.push(result[0][0]);
-			}
+		var viewnode = d3.select(documentmodengine.svg).append("g");
+		viewnode.classed("view",true);
+		viewnode.attr("id",viewid);
+		viewnode.data([newview]);
+		var result = documentmodengine.buildView_internal(viewnode,viewdata,documentmodengine.usersettings.lang);
 
-		}
 		var ce = new CustomEvent("ViewCreated",{
 			detail: {
 				view: newview
@@ -173,6 +171,18 @@ createNewView:function(){
 		throw "ViewCreationFailed";
 	}
 	return newview;
+},
+deleteView:function(viewid){
+	var view = configuration.view.byid(documentmodengine.xml,viewid);
+	if(view){
+			configuration.view.delete(view);
+			d3.select(documentmodengine.svg).select("g.view[id='"+viewid+"']").remove();
+			var ce = new CustomEvent("ViewDropped",{
+				detail: {
+					view: view
+				}});
+			document.dispatchEvent(ce);
+	}
 },
 addnewnode:function(type,viewid){
 	var newnode = configuration.nodes[type].new(documentmodengine.xml);
@@ -1472,7 +1482,13 @@ deleteselection:function(viewid){
 
 			}
 
+	},
+	access:{
+		viewdatabyid:function(viewid){
+			return d3.select(documentmodengine.svg).select("g.view[id='"+viewid+"']").data()[0];
+		}
 	}
+
 
 
 }

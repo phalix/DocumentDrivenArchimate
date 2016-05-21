@@ -177,6 +177,9 @@
         documentmodengine.createNewView();
       },
       dropview:function(e){
+        var int         = menu.$.menuTabs.selectedItem.id.substr(3);
+        var viewid      = $(documentmodengine.svg).find("g.view").eq(int).attr("id");
+        documentmodengine.deleteView(viewid);
 
       },
       nodeselected:function(e){
@@ -559,6 +562,9 @@
           document.addEventListener('ViewCreated', function(e){
             context.pushNewView();
           }, false);
+          document.addEventListener('ViewDropped', function(e){
+            context.pushNewView();
+          }, false);
         }else{
           console.log("documentmodengine not available");
         }
@@ -880,13 +886,14 @@
 
           }else if(a){
             //nothing is selected. the view attributes are displayed;
-            var viewdata = documentmodengine.viewsdata[documentmodengine.usersettings.currentview];
+            var viewdata = documentmodengine.access.viewdatabyid(documentmodengine.usersettings.currentview);
             this.attributes = [];
             mr.links = [];
             if(viewdata)
             {
-              this.label = configuration.view.id(viewdata.self);
-              this.addinfo = $(viewdata.self).children('label[xml\\:lang="'+documentmodengine.usersettings.lang+'"]').text()
+              this.label = configuration.view.id(viewdata);
+
+              this.addinfo = configuration.view.attributes.name.get(viewdata);
 
               if(configuration.view.attributes){
                 for (var key in configuration.view.attributes) {

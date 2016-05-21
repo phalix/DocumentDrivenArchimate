@@ -99,6 +99,7 @@ this.configuration = {
     }
   },
   view:{
+
     new:function(xml){
       var views = $(xml).children("model").children("views");
       var viewid = configuration.idgenerator();
@@ -136,6 +137,9 @@ this.configuration = {
         },
         type:"String"
       },
+    },
+    delete:function(view){
+      $(view).remove();
     }
   },
   node:{
