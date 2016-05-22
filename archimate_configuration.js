@@ -1,7 +1,7 @@
 //TODO: Configure stakeholder, driver, assessment, requirement, constraint, Work Package, Deliverable, Plateau, Gap
 //TODO: care for junctinos in the future
 //TODO: care for edge attribtues
-
+//TODO: double check for direction of edges
 this.configuration = {
 
   author:"Sebastian Bittmann",
@@ -3912,11 +3912,28 @@ this.configuration = {
         return configuration.edge.new(xml,"AggregationRelationship","MyAggregationRelationship")
       },
       relates:[
+
+        {end:"BusinessObject", begin:"BusinessObject"},
+        {end:"DataObject", begin:"DataObject"},
+
         {end:"Contract", begin:"Product"},
         {end:"BusinessService", begin:"Product"},
         {end:"BusinessActor", begin:"BusinessCollaboration"},
+        {end:"BusinessRole", begin:"BusinessCollaboration"},
+
+
+        {end:"BusinessProcess", begin:"BusinessProcess"},
+        {end:"BusinessProcess", begin:"BusinessProcess"},
+        {end:"BusinessFunction", begin:"BusinessRole"},
+
         {end:"BusinessActor", begin:"BusinessActor"},
-        {end:"ApplicationComponent", begin:"ApplicationCollaboration"}
+        {end:"ApplicationComponent", begin:"ApplicationCollaboration"},
+
+        {end:"ApplicationFunction", begin:"ApplicationComponent"},
+        {end:"ApplicationFunction", begin:"ApplicationFunction"},
+
+        {end:"Device", begin:"Node"},
+        {end:"SystemSoftware", begin:"Node"},
       ],
       allowHierarchiallyGrouping: true,
       look:[
@@ -3949,9 +3966,12 @@ this.configuration = {
 
       },
       relates:[
-        {end:"BusinessRole", begin:"BusinessInterface"},
-        {end:"ApplicationComponent", begin:"ApplicationInterface"},
-        {end:"Node", begin:"InfrastructureInterface"}
+        {end:"BusinessInterface", begin:"BusinessRole"},
+        {end:"ApplicationInterface", begin:"ApplicationComponent"},
+        {end:"ApplicationComponent", begin:"ApplicationComponent"},
+        {end:"InfrastructureInterface", begin:"Node"},
+
+
 
       ],
       look:[
@@ -3972,12 +3992,21 @@ this.configuration = {
       },
       relates:[
         {end:"BusinessObject", begin:"DataObject"},
+        {end:"BusinessObject", begin:"Representation"},
         {end:"BusinessService",begin:"ApplicationFunction"},
         {end:"Plateau",begin:"Deliverable"},
         {end:"Deliverable",begin:"WorkPackage"},
         {end:"BusinessService",begin:"BusinessFunction"},
         {end:"BusinessService",begin:"BusinessProcess"},
-        {end:"BusinessService",begin:"BusinessInteraction"}
+        {end:"BusinessService",begin:"BusinessInteraction"},
+        {end:"BusinessService",begin:"ApplicationComponent"},
+
+        {end:"ApplicationService",begin:"ApplicationComponent"},
+
+        {end:"SystemSoftware",begin:"ApplicationComponent"},
+        {end:"Device",begin:"ApplicationComponent"},
+
+
       ],
       look:[
 
@@ -4007,7 +4036,9 @@ this.configuration = {
         {end:"Assesment",begin:"Driver"},
         {end:"Assesment",begin:"Goal"},
         {end:"Gap",begin:"Plateau"},
-        {end:"BusinessInterface",begin:"BusinessActor"}
+        {end:"BusinessInterface",begin:"BusinessActor"},
+        {end:"BusinessActor",begin:"BusinessActor"},
+
       ],
       look:[
 
@@ -4027,10 +4058,16 @@ this.configuration = {
         {end:"Location", begin:"BusinessObject"},
         {end:"Location", begin:"Representations"},
         {end:"BusinessRole",begin:"BusinessActor"},
+        {end:"BusinessRole",begin:"BusinessEvent"},
+        {end:"BusinessEvent",begin:"BusinessRole"},
         {end:"BusinessActor",begin:"Location"},
         {end:"BusinessProcess",begin:"BusinessRole"},
         {end:"BusinessFunction",begin:"BusinessRole"},
         {end:"BusinessInteraction",begin:"BusinessRole"},
+
+
+        {end:"BusinessInteraction",begin:"BusinessCollaboration"},
+
         {end:"ApplicationInterface",begin:"ApplicationService"},
         {end:"ApplicationComponent",begin:"ApplicationFunction"},
         {end:"ApplicationComponent",begin:"ApplicationInteraction"},
@@ -4056,14 +4093,23 @@ this.configuration = {
       relates:[
         {end:"BusinessService", begin:"BusinessActor"},
         {end:"BusinessService", begin:"BusinessRole"},
+        {end:"BusinessRole", begin:"BusinessService"},
         {end:"BusinessService", begin:"BusinessProcess"},
+        {begin:"BusinessService", end:"BusinessProcess"},
         {end:"BusinessService",begin:"BusinessFunction"},
         {end:"BusinessService",begin:"BusinessInteraction"},
         {end:"BusinessInterface",begin:"BusinessActor"},
+        {end:"BusinessInterface",begin:"BusinessRole"},
+
+        {end:"ApplicationComponent",begin:"ApplicationComponent"},
+
+
 
         {end:"ApplicationService",begin:"ApplicationComponent"},
         {end:"ApplicationService",begin:"ApplicationFunction"},
         {end:"ApplicationService",begin:"ApplicationInteraction"},
+
+        {end:"InfrastructureService",begin:"ApplicationComponent"},
 
         {end:"InfrastructureInterface",begin:"Node"},
         {end:"InfrastructureService",begin:"InfrastructureFunction"},
@@ -4140,6 +4186,9 @@ this.configuration = {
         {end:"BusinessProcess", begin:"BusinessInteraction"},
         {end:"BusinessFunction", begin:"BusinessInteraction"},
         {end:"BusinessInteraction", begin:"BusinessInteraction"},
+        {end:"BusinessActor", begin:"BusinessActor"},
+        {end:"BusinessRole", begin:"BusinessFunction"},
+        {end:"BusinessFunction", begin:"BusinessRole"},
         /*Application*/
         {end:"ApplicationFunction", begin:"ApplicationFunction"},
         {end:"ApplicationFunction", begin:"ApplicationInteraction"},
@@ -4170,6 +4219,7 @@ this.configuration = {
         /*Business*/
         {end:"BusinessCollaboration",begin:"BusinessRole"},
         {end:"Contract",begin:"BusinessObject"},
+        {end:"BusinessObject",begin:"BusinessObject"},
         /*Application*/
         {end:"ApplicationCollaboration",begin:"ApplicationComponent"},
         {end:"Device",begin:"Node"},
@@ -4210,6 +4260,7 @@ this.configuration = {
         {end:"DataObject",begin:"ApplicationService"},
         {end:"DataObject",begin:"ApplicationFunction"},
         {end:"DataObject",begin:"ApplicationInteraction"},
+        {end:"DataObject",begin:"ApplicationComponent"},
         /*Technology*/
         {end:"Artifact",begin:"InfrastructureFunction"},
         {end:"Artifact",begin:"InfrastructureService"},
