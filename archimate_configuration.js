@@ -1,7 +1,7 @@
 //TODO: Configure stakeholder, driver, assessment, requirement, constraint, Work Package, Deliverable, Plateau, Gap
 //TODO: care for junctinos in the future
 //TODO: care for edge attribtues
-//TODO: double check for direction of edges
+
 this.configuration = {
 
   author:"Sebastian Bittmann",
@@ -3923,7 +3923,6 @@ this.configuration = {
 
 
         {end:"BusinessProcess", begin:"BusinessProcess"},
-        {end:"BusinessProcess", begin:"BusinessProcess"},
         {end:"BusinessFunction", begin:"BusinessRole"},
 
         {end:"BusinessActor", begin:"BusinessActor"},
@@ -4006,6 +4005,9 @@ this.configuration = {
         {end:"SystemSoftware",begin:"ApplicationComponent"},
         {end:"Device",begin:"ApplicationComponent"},
 
+        {end:"SystemSoftware",begin:"InfrastructureService"},
+        {end:"Device",begin:"InfrastructureService"},
+
 
       ],
       look:[
@@ -4027,10 +4029,11 @@ this.configuration = {
       relates:[
         {end:"Value", begin:"Product"},
         {end:"Value", begin:"BusinessService"},
+        {end:"Value", begin:"BusinessRole"},
         {end:"Meaning",begin:"BusinessObject"},
         {end:"Node",begin:"CommunicationPath"},
         {end:"Device",begin:"Network"},
-        {end:"Network",begin:"Node"},
+        {end:"Node",begin:"Network"},
         {end:"Stakeholder",begin:"MotivationalElement"},
         {end:"Goal",begin:"Driver"},
         {end:"Assesment",begin:"Driver"},
@@ -4058,8 +4061,9 @@ this.configuration = {
         {end:"Location", begin:"BusinessObject"},
         {end:"Location", begin:"Representations"},
         {end:"BusinessRole",begin:"BusinessActor"},
-        {end:"BusinessRole",begin:"BusinessEvent"},
+
         {end:"BusinessEvent",begin:"BusinessRole"},
+
         {end:"BusinessActor",begin:"Location"},
         {end:"BusinessProcess",begin:"BusinessRole"},
         {end:"BusinessFunction",begin:"BusinessRole"},
@@ -4091,23 +4095,28 @@ this.configuration = {
         return configuration.edge.new(xml,"UsedByRelationship","MyUsedByRelationship")
       },
       relates:[
-        {end:"BusinessService", begin:"BusinessActor"},
-        {end:"BusinessService", begin:"BusinessRole"},
+        /*Business*/
+        {end:"BusinessActor", begin:"BusinessService"},
         {end:"BusinessRole", begin:"BusinessService"},
+        {end:"BusinessService", begin:"BusinessRole"},
         {end:"BusinessService", begin:"BusinessProcess"},
-        {begin:"BusinessService", end:"BusinessProcess"},
+        {end:"BusinessProcess", begin:"BusinessService"},
+
         {end:"BusinessService",begin:"BusinessFunction"},
         {end:"BusinessService",begin:"BusinessInteraction"},
-        {end:"BusinessInterface",begin:"BusinessActor"},
-        {end:"BusinessInterface",begin:"BusinessRole"},
-
+        {end:"BusinessActor",begin:"BusinessInterface"},
+        {end:"BusinessRole",begin:"BusinessInterface"},
+        /*Application*/
         {end:"ApplicationComponent",begin:"ApplicationComponent"},
 
 
 
-        {end:"ApplicationService",begin:"ApplicationComponent"},
-        {end:"ApplicationService",begin:"ApplicationFunction"},
-        {end:"ApplicationService",begin:"ApplicationInteraction"},
+        {end:"ApplicationComponent",begin:"ApplicationService"},
+        {end:"ApplicationFunction",begin:"ApplicationService"},
+        {end:"ApplicationInteraction",begin:"ApplicationService"},
+
+        {end:"BusinessProcess",begin:"ApplicationService"},
+        {end:"BusinessInteraction",begin:"ApplicationService"},
 
         {end:"InfrastructureService",begin:"ApplicationComponent"},
 

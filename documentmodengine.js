@@ -269,7 +269,6 @@ deletenode:function(view,nodedata){
 					documentmodengine.deletenode(view,nodedataobject);
 					i -= 1;
 				}
-				//TODO: How do we delete relationsship from a hierarchy here.
 			}
 		}
 		if(edgeupdates.length>0){
@@ -807,7 +806,21 @@ deleteselection:function(viewid){
 				if(!found&&!first){
 					//d3.select(this).attr("selected","false");
 					if(configuration.addBendPoint){
+							var edgeid = configuration.edge.id(d3.select(this).data()[0]);
+							var bendpointid = d3.select(this).selectAll(".bendpointselector").size();
 							configuration.addBendPoint(d,x,y);
+							d3.selectAll(".hover.connection").remove();
+							d3.select(this)
+							.append("circle")
+							.attr("cx",x)
+							.attr("cy",y)
+							.attr("r",configuration.edgedistance)
+							.attr("fill","none")
+							.attr("stroke","black")
+							.attr("stroke-dasharray","2,2")
+							.attr("id","hover:"+edgeid+":"+bendpointid)
+							.classed("hover",true)
+							.classed("connection",true);
 					}else{
 						console.log("Configuration does not support bendpoints of edges");
 					}
@@ -1030,7 +1043,7 @@ deleteselection:function(viewid){
 										}
 									}
 
-									d3.selectAll(".hover.connection").remove();
+									//d3.selectAll(".hover.connection").remove();
 								});
 							}
 						}
@@ -1196,7 +1209,7 @@ deleteselection:function(viewid){
 				}
 
 				d3.selectAll("#selector").remove();
-				d3.selectAll(".hover.connection").remove();
+				//d3.selectAll(".hover.connection").remove();
 
 			})
 			.on('mousemove',
