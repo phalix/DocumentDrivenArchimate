@@ -135,6 +135,12 @@
 <dom-module id="model-editor">
   <template>
       <paper-menuattr-for-item-title="label">
+      <paper-submenu label="Model">
+        <paper-item class="menu-trigger">Model</paper-item>
+        <paper-menu class="menu-content sublist">
+            <paper-item id="Edit" on-click="editmodelattributes">Edit Attributes</paper-item>
+      </paper-menu>
+    </paper-submenu>
         <paper-submenu label="Views">
           <paper-item class="menu-trigger">Views</paper-item>
           <paper-menu class="menu-content sublist">
@@ -146,15 +152,15 @@
       </paper-submenu>
     <paper-submenu label="Nodes">
       <paper-item class="menu-trigger">Nodes</paper-item>
-      <paper-menu class="menu-content sublist" selected="{selectednode}">
+      <paper-menu class="menu-content sublist" selected="{{selectednode}}">
         <template is="dom-repeat" items="[[nodes]]">
           <paper-item id="[[item.name]]" on-click="nodeselected">[[item.name]]</paper-item>
         </template>
       </paper-menu>
     </paper-submenu>
-    <paper-submenu label="Connections">
-      <paper-item class="menu-trigger">Connections</paper-item>
-      <paper-menu class="menu-content sublist" selected="{selectededge}">
+    <paper-submenu label="Connections" visible="[[connectionsnovisible]]" disabled$="[[connectionsnovisible]]">
+      <paper-item class="menu-trigger" visible="[[connectionsnovisible]]" disabled$="[[connectionsnovisible]]">Connections</paper-item>
+      <paper-menu class="menu-content sublist" selected="{{selectededge}}">
           <template is="dom-repeat" items="[[edges]]">
             <paper-item id="[[item.name]]" on-click="edgeselected">[[item.name]]</paper-item>
           </template>
@@ -162,6 +168,7 @@
       </paper-submenu>
       <paper-item id="dropbutton" on-click="dropselection">Drop Selection</paper-item>
     </paper-menu>
+    <model-attribute-editor id="mae"></model-attribute-editor>
   </template>
   <script>
     Polymer({
@@ -171,7 +178,11 @@
         edges:Array,
         views:Array,
         selectededge:Number,
-        selectednode:Number
+        selectednode:Number,
+        connectionsnovisible:Boolean
+      },
+      editmodelattributes:function(e){
+        this.$.mae.startediting();
       },
       addview:function(e){
         documentmodengine.createNewView();
@@ -246,10 +257,16 @@
             }
           }
           this.sortedges();
-        }
 
+        }
+        if(this.edges.length>0){
+          this.connectionsnovisible = false;
+        }else{
+          this.connectionsnovisible = true;
+        }
       },
       ready:function(){
+        this.connectionsnovisible = true;
         if(window.done == 2){
           if(documentmodengine.usersettings.viewonly == true){
             $(this).hide();
@@ -286,6 +303,79 @@
     });
   </script>
 </dom-module>
+
+<!-- model attribute dialog -->
+<dom-module id="model-attribute-editor">
+  <template>
+    <paper-dialog id="dialog" style="width:70%;height:70%">
+      <div class="layout vertical">
+        <div class="layout horizontal">
+            <div>
+
+            </div>
+            <div class="flex">
+              Edit Model Attributes
+            </div>
+            <div>
+              <paper-icon-button icon="cancel" title="cancel" on-click="close"></paper-icon-button>
+            </div>
+        </div>
+        <div class="flex">
+          <paper-listbox id="list" selected = "{{selected}}" selectable="none">
+            <template is="dom-repeat" items="{{attributes}}">
+              <model-attribute setter={{item.setter}} getter={{item.getter}} object={{item.object}} name="{{item.attributename}}" disabled$="{{item.disabled}}" type="{{item.type}}" value="{{item.value}}"></model-attribute>
+            </template>
+          </paper-listbox>
+        </div>
+    </div>
+    </paper-dialog>
+  </template>
+  <script>
+    Polymer({
+      is: 'model-attribute-editor',
+      properties: {
+        attributes: Array
+      },
+      listeners: {
+
+      },
+      ready:function(){
+
+      },
+      build:function(){
+        this.attributes = [];
+        var model  = configuration.models(documentmodengine.xml)[0];
+        var attr = configuration.model.attributes;
+        for(var i in attr){
+            var actobject = attr[i];
+            var newattr = {};
+            newattr.object = model;
+            newattr.attributename = i;
+            newattr.disabled = false;
+            newattr.type = "modelattribute";
+            newattr.value = configuration.model.attributes[i].get(documentmodengine.xml,model);
+            newattr.setter = configuration.model.attributes[i].set
+            newattr.getter = configuration.model.attributes[i].get
+            this.attributes.push(newattr);
+        }
+        this.attributes = this.attributes.concat([]);
+
+      },
+      startediting:function(e){
+        this.build();
+        this.open();
+      },
+      open:function(e){
+        this.$.dialog.open();
+      },
+      close:function(e){
+        this.$.dialog.close();
+      }
+    });
+  </script>
+</dom-module>
+<!-- model attribute dialog -->
+
 
 <dom-module id="model-selection">
   <template>
@@ -707,7 +797,9 @@
         name: String,
         value: String,
         object: Object,
-        disabled: Boolean
+        disabled: Boolean,
+        setter: Function,
+        getter: Function
       },
       ready:function(){
         this.load();
@@ -725,6 +817,9 @@
           }
         }else if(this.object&&this.type=="viewattribute"){
           this.value = configuration.view.attributes[this.name].get(this.object);
+        }else if(this.object&&this.type=="modelattribute"){
+          //this.value = configuration.model.attributes[this.name].get(documentmodengine.xml,this.object);
+          this.value = this.getter(documentmodengine.xml,this.object);
         }
 
       },
@@ -739,6 +834,9 @@
         }else if(this.object&&this.type=="viewattribute"){
           configuration.view.attributes[this.name].set(this.object,this.value);
           menu.setupTabsAndPages();
+        }else if(this.object&&this.type=="modelattribute"){
+
+          this.setter(documentmodengine.xml,this.object,this.value);
         }
 
       }
@@ -859,6 +957,10 @@
             var data = a.detail.nodedata[0];
             var nodetype = configuration.modelelement.type(configuration.node.modelelement(documentmodengine.xml,data.self));
             nodetype = configuration.nodes[nodetype];
+            if(!nodetype){
+              nodetype = configuration.nodes[undefined];
+            }
+
             if(nodetype.attributes){
               for (var key in nodetype.attributes) {
                 if (nodetype.attributes.hasOwnProperty(key)) {

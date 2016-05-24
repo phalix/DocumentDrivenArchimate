@@ -96,6 +96,80 @@ this.configuration = {
     },
     relations:function(model){
       return $(model).find("relationship");
+    },
+    attributes:{
+      creator:{
+        get:function(xml,model){
+          return $(model).children("metadata").children("dc\\:creator").text();
+        },
+        set:function(xml,model,value){
+          return $(model).children("metadata").children("dc\\:creator").text(value);
+        },
+        type:"String"
+      },
+      title:{
+        get:function(xml,model){
+          return $(model).children("metadata").children("dc\\:title").text();
+        },
+        set:function(xml,model,value){
+          return $(model).children("metadata").children("dc\\:title").text(value);
+        },
+        type:"String"
+      },
+      subject:{
+        get:function(xml,model){
+          return $(model).children("metadata").children("dc\\:subject").text();
+        },
+        set:function(xml,model,value){
+          return $(model).children("metadata").children("dc\\:subject").text(value);
+        },
+        type:"String"
+      },
+      description:{
+        get:function(xml,model){
+          return $(model).children("metadata").children("dc\\:description").text();
+        },
+        set:function(xml,model,value){
+          return $(model).children("metadata").children("dc\\:description").text(value);
+        },
+        type:"String"
+      },
+      format:{
+        get:function(xml,model){
+          return $(model).children("metadata").children("dc\\:format").text();
+        },
+        set:function(xml,model,value){
+          return $(model).children("metadata").children("dc\\:format").text(value);
+        },
+        type:"String"
+      },
+      language:{
+        get:function(xml,model){
+          return $(model).children("metadata").children("dc\\:language").text();
+        },
+        set:function(xml,model,value){
+          return $(model).children("metadata").children("dc\\:language").text(value);
+        },
+        type:"String"
+      },
+      schema:{
+        get:function(xml,model){
+          return $(model).children("metadata").children("schema").text();
+        },
+        set:function(xml,model,value){
+          return $(model).children("metadata").children("schema").text(value);
+        },
+        type:"String"
+      },
+      schemaversion:{
+        get:function(xml,model){
+          return $(model).children("metadata").children("schemaversion").text();
+        },
+        set:function(xml,model,value){
+          return $(model).children("metadata").children("schemaversion").text(value);
+        },
+        type:"String"
+      },
     }
   },
   view:{
@@ -229,8 +303,28 @@ this.configuration = {
       if(data.parentNode.parentNode && tagnameofparent == "node"){
         $(data.parentNode.parentNode).append(data);
       }
-
     },
+    nodeupdates:function(xml,node){
+      var updates = [];
+      var nodes = $(node).children('node');
+      return nodes;
+    },
+    edgeupdates:function(xml,node){
+      var updates = [];
+      var edges = [];
+      var nodeid = configuration.node.id(node);
+      var edges_source = $(xml).find('[source="'+nodeid+'"]');
+      for(var i = 0;i< edges_source.size();i++){
+        edges.push(edges_source[i]);
+      }
+      var edges_target = $(xml).find('[target="'+nodeid+'"]');
+      for(var i = 0;i< edges_target.size();i++){
+        edges.push(edges_target[i]);
+      }
+      return edges;
+    },
+
+
     addNodeToGroup:function(xml,data1,data2){
       var actionrequired = !configuration.node.nodeBelongsToGroup(data1,data2);
       if(actionrequired){
@@ -4286,7 +4380,19 @@ this.configuration = {
       }
     },
     undefined:{
-      attributes:[],
+      attributes:{
+        name:{
+          type:"String",
+          get:function(xml,edge){
+            var relation = configuration.edge.relation(xml,edge);
+            return relation.children("label[xml:lang='"+configuration.usersettings.lang+"']").text();
+          },
+          set:function(xml,edge,value){
+            var relation = configuration.edge.relation(xml,edge);
+            return relation.children("label[xml:lang='"+configuration.usersettings.lang+"']").text(value);
+          }
+        }
+      },
       look:[
 
       ],

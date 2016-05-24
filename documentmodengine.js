@@ -246,57 +246,101 @@ addnewedge:function(type,viewid){
 
 },
 deletenode:function(view,nodedata){
+	var node = undefined;
+	if(nodedata.self){
+		node = nodedata.self;
+	}else{
+		node = nodedata;
+	}
+	var nodeupdates = undefined;
+	if(nodedata.updates){
+			nodeupdates = nodedata.updates;
+	}else{
+		nodeupdates = configuration.node.nodeupdates(documentmodengine.xml,node);
+	}
+	var edgeupdates = undefined;
+	if(nodedata.edgeupdates){
+			edgeupdates = nodedata.edgeupdates;
+	}else{
+			edgeupdates = configuration.node.edgeupdates(documentmodengine.xml,node);
+	}
 
-	var node = nodedata.self;
+	var viewid = configuration.view.id(view);
 
-	var nodeupdates = nodedata.updates;
-	var edgeupdates = nodedata.edgeupdates;
+	var nodes = configuration.view.nodes(documentmodengine.xml,viewid);
+	var edges = configuration.view.edges(documentmodengine.xml,viewid);
 
+
+
+	var selnodeid = configuration.node.id(node);
 	//var index = view.nodes.indexOf(nodedata);
 	var index = -1;
-	for(var i = 0;i<view.nodes.length;i++){
-		if(view.nodes[i].id == nodedata.id){
+	for(var i = 0;i<nodes.length;i++){
+		var curnodeid = configuration.node.id(nodes[i]);
+		if(selnodeid == curnodeid){
 			index  = i;
 		}
 	}
 	if(index>-1){
 		if(nodeupdates.length>0){
 			//delete associated nodes
-			for(var i = 0;i<view.nodes.length;i++){
-				var nodedataobject = view.nodes[i];
-				var nodeid = configuration.node.id(nodedataobject.self);
+			for(var i = 0;i<nodes.length;i++){
+				var nodedataobject = nodes[i];
+				var nodeid = configuration.node.id(nodedataobject);
 				if(nodeupdates.indexOf(nodeid)>-1){
 					documentmodengine.deletenode(view,nodedataobject);
-					i -= 1;
+					if(nodedata.self){
+							//i -= 1;
+					}
 				}
 			}
 		}
 		if(edgeupdates.length>0){
 			//delete associated edges
-			for(var i  = 0;i<view.edges.length;i++){
-				var edgedataobject = view.edges[i];
+			for(var i  = 0;i<edges.length;i++){
+				var edgedataobject = edges[i];
 				var edgeid = configuration.edge.id(edgedataobject);
-				if(edgeupdates.indexOf(edgeid)>-1){
-					var deletetrigger = false;
+				var deletetrigger = false;
+				if(nodedata.self){
+					if(edgeupdates.indexOf(edgeid)>-1){
+						deletetrigger = true;
+					}
+				}else{
+					for(var j = 0;j <edgeupdates.length;j++){
+						var curedgeid = configuration.edge.id(edgeupdates[j]);
+						if(edgeid == curedgeid){
+							deletetrigger = true;
+						}
+					}
+				}
+				if(deletetrigger){
 					configuration.edge.delete(documentmodengine.xml,view,edgedataobject);
 					var relation  = configuration.edge.relation(documentmodengine.xml,edgedataobject);
 					if(!configuration.relation.used(documentmodengine.xml,relation)){
 						configuration.relation.delete(documentmodengine.xml,relation);
-						i -= 1;
+						if(nodedata.self){
+								//i -= 1;
+						}
+
 					}
 
-					view.edges.splice(i,1);
+					edges.splice(i,1);
 				}
 			}
 		}
-
+		var modelelement = undefined;
+		if(nodedata.element){
+			modelelement = nodedata.element;
+		}else{
+			modelelement = configuration.node.modelelement(documentmodengine.xml,node);
+		}
 		//delete actual node
-		configuration.node.delete(documentmodengine.xml,view,nodedata.self);
-		if(!configuration.modelelement.used(documentmodengine.xml,nodedata.element)){
-			configuration.modelelement.delete(documentmodengine.xml,nodedata.element);
+		configuration.node.delete(documentmodengine.xml,view,node);
+		if(!configuration.modelelement.used(documentmodengine.xml,modelelement)){
+			configuration.modelelement.delete(documentmodengine.xml,modelelement);
 			documentmodengine.deletenotusedrelations();
 		}
-		view.nodes.splice(index,1);
+		nodes.splice(index,1);
 	}
 
 },
@@ -314,12 +358,14 @@ deletenotusedrelations:function(){
 	}
 },
 deleteselection:function(viewid){
-	var view = documentmodengine.viewsdata[viewid];
+	var view = configuration.view.byid(documentmodengine.xml,viewid);
 	var selected = documentmodengine.nodeselection();
+	var deletetrigger = false;
 	for(var element in selected.data){
 		var selection  = selected.data[element];
 		documentmodengine.deletenode(view,selection);
 		//documentmodengine.deletenode(view,selected.data[element]);
+		deletetrigger = true;
 		setTimeout(function(){
 
 		},0)
@@ -328,13 +374,18 @@ deleteselection:function(viewid){
 	var selected = documentmodengine.edgeselection();
 	for(var element in selected.data){
 		configuration.edge.delete(documentmodengine.xml,view,selected.data[element]);
-		if(!configuration.relation.used(documentmodengine.xml,edgedataobject.element)){
-			configuration.relation.delete(documentmodengine.xml,edgedataobject);
+		deletetrigger = true;
+		var relation = configuration.edge.relation(documentmodengine.xml,selected.data[element]);
+		if(!configuration.relation.used(documentmodengine.xml,relation)){
+			configuration.relation.delete(documentmodengine.xml,relation);
 		}
-		view.edges.splice(element,1);
+		//edges.splice(element,1);
 	}
 	//Refresh on Delete
-	documentmodengine.updateLoadedView(viewid,documentmodengine.usersettings.lang);
+	if(deletetrigger){
+			documentmodengine.updateLoadedView(viewid,documentmodengine.usersettings.lang);
+	}
+
 },
 
  buildModel_internal: function(lang){
@@ -453,8 +504,8 @@ deleteselection:function(viewid){
 	prepareViewData: function(byid,viewdata){
 		//prepare data structure
 
-
-		var nodes_ofview = configuration.view.nodes(documentmodengine.xml,byid)
+		viewdata.nodes = [];
+		var nodes_ofview = configuration.view.nodes(documentmodengine.xml,byid);
 		for(var j = 0;j< nodes_ofview.size();j++){
 			var nodedata = {};
 			if(configuration.node.id){
