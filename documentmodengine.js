@@ -217,6 +217,12 @@ addnewedge:function(type,viewid){
 			}
 		}
 	}else{
+		var ce = new CustomEvent("NotExactlyTwoNodesSelected",{
+			detail: {
+				loader: this
+			}});
+
+		document.dispatchEvent(ce);
 		throw "NotExactlyTwoNodesSelected";
 	}
 	if(done){
@@ -384,6 +390,13 @@ deleteselection:function(viewid){
 	//Refresh on Delete
 	if(deletetrigger){
 			documentmodengine.updateLoadedView(viewid,documentmodengine.usersettings.lang);
+	}else{
+		var ce = new CustomEvent("NothingForDeletion",{
+			detail: {
+				loader: this
+			}});
+
+		document.dispatchEvent(ce);
 	}
 
 },
@@ -1142,6 +1155,15 @@ deleteselection:function(viewid){
 			.on('mousedown',function(d,e){
 				documentmodengine.mousedown += 1;
 				documentmodengine.lastselection = documentmodengine.nodeselection();
+
+				if(d3.select("g[selected='true']").size()==0){
+					var ce = new CustomEvent("ViewSelected",{
+						detail: {
+
+						}});
+					document.dispatchEvent(ce);
+				}
+
 			})
 			.on('mouseup',function(d){
 				if(documentmodengine.mousedown<2){

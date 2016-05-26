@@ -1,6 +1,5 @@
 <!--
 //TODO: A fixed layout is required for better working with the tool.
-//TODO: The notifier "model-action-display" should react to more events of the documentmodenegine, node deleted, edge deleted and so on.
 -->
 <dom-module id="link-dialog">
   <template>
@@ -61,8 +60,8 @@
     <paper-toast text="Warning! You have not checked out the Model. Changes won't be saved." opened></paper-toast>
   -->
   <template is="dom-if" if="{{ active }}">
-    <paper-toast text="Please be patient. Model is loading." duration="0" opened="{{loading}}"></paper-toast>
-    <paper-toast text="Model has been loaded completely." duration="1500" opened="{{ !loading }}"></paper-toast>
+    <paper-toast text="{{ before }}" duration="{{ befored }}" opened$="{{loading}}"></paper-toast>
+    <paper-toast text="{{ after }}" duration="{{ afterd }}" opened$="{{ !loading }}"></paper-toast>
   </template>
 </template>
 <script>
@@ -78,7 +77,11 @@
         notify: true
       },
       currentview:Number,
-      maxview:Number
+      maxview:Number,
+      before:String,
+      after:String,
+      befored:Number,
+      afterd:Number
     },
     ready:function(event){
 
@@ -110,19 +113,56 @@
         }
       },false);
 
+      document.addEventListener("ViewCreated",function(e){
+        context.oneline("View was created");
+      });
 
+      document.addEventListener("ViewCreationFailed",function(e){
+        context.oneline("View Creation Failed");
+      });
+
+      document.addEventListener("ViewDropped",function(e){
+        context.oneline("View was dropped");
+      });
+      document.addEventListener("NothingForDeletion",function(e){
+        context.oneline("Nothing was selected");
+      });
+      document.addEventListener("NotExactlyTwoNodesSelected",function(e){
+        context.oneline("Please selected exactly two nodes.");
+      });
+
+
+
+      document.addEventListener("NodeCreated",function(e){
+        context.oneline("Node was created");
+      });
+
+      document.addEventListener("EdgeCreated",function(e){
+        context.oneline("Edge was created");
+      });
     },
     listeners:{
       //'loading-changed':'checkFinish'
 
     },
     done:function(event){
-      this.loading = false;
+      this.loading  = false;
+
     },
     start:function(event){
+      this.active   = true;
+      this.loading  = true;
+      this.before   = "Please be patient. Model is loading.";
+      this.after    = "Model has been loaded completely.";
+      this.befored = 0;
+      this.afterd = 3000;
+    },
+    oneline:function(text){
       this.active = true;
+      this.loading = false;
       this.loading = true;
-
+      this.befored = 1500;
+      this.before = text;
     }
 
   })
@@ -165,7 +205,7 @@
           </template>
         </paper-menu>
       </paper-submenu>
-      <paper-item id="dropbutton" on-click="dropselection">Drop Selection</paper-item>
+      <paper-item id="dropbutton" on-click="dropselection" disabled$="[[nthselected]]">Drop Selection</paper-item>
     </paper-menu>
     <model-attribute-editor id="mae"></model-attribute-editor>
   </template>
@@ -178,7 +218,8 @@
         views:Array,
         selectededge:Number,
         selectednode:Number,
-        connectionsnovisible:Boolean
+        connectionsnovisible:Boolean,
+        nthselected:Boolean
       },
       editmodelattributes:function(e){
         this.$.mae.startediting();
@@ -233,6 +274,14 @@
           }
         });
       },
+      checkDrop:function(e){
+        if(documentmodengine.nodeselection().nodes.length==0 &&
+          documentmodengine.edgeselection().edges.length==0){
+          this.nthselected = true;
+        }else{
+          this.nthselected = false;
+        }
+      },
       changeedges:function(e){
         this.edges = [];
         if(e.detail.node.length == 2){
@@ -266,6 +315,7 @@
       },
       ready:function(){
         this.connectionsnovisible = true;
+        this.nthselected = true;
         if(window.done == 2){
           if(documentmodengine.usersettings.viewonly == true){
             $(this).hide();
@@ -289,7 +339,9 @@
 
           if(documentmodengine){
             var context = this;
-            document.addEventListener('NodeSelected', function(e){context.changeedges(e)}, false);
+            document.addEventListener('NodeSelected', function(e){context.changeedges(e);context.checkDrop(e);}, false);
+            document.addEventListener('EdgeSelected', function(e){context.checkDrop(e);}, false);
+            document.addEventListener('ViewSelected', function(e){context.checkDrop(e);}, false);
           }else{
             console.log("documentmodengine not available");
           }
@@ -989,7 +1041,6 @@
             this.label = $(data).attr("id");
             var edgetype = configuration.relation.type(configuration.edge.relation(documentmodengine.xml,data))
             this.addinfo = edgetype;
-            //TODO
             edgetype = configuration.edges[edgetype];
             if(!edgetype){
               edgetype = configuration.edges[undefined];
