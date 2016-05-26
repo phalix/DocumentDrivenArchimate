@@ -398,21 +398,25 @@ this.configuration = {
     new:function(xml,type,name,linecolorr,linecolorg,linecolorb){
       //Fetch current selection
       var selected_nodes = documentmodengine.nodeselection().data;
-      var source = selected_nodes[0];
-      var target = selected_nodes[1];
+      var source = selected_nodes[0].self;
+      var target = selected_nodes[1].self;
+
+      var sourcemelement = configuration.node.modelelement(documentmodengine.xml,source);
+      var targetmelement = configuration.node.modelelement(documentmodengine.xml,target);
+
 
       //Create Element Data
       var element = {};
       var relations = configuration.edges[type].relates;
-      var elementidsource = $(source.element).attr("identifier");
-      var nodeidsource = $(source.self).attr("identifier");
+      var elementidsource = $(sourcemelement).attr("identifier");
+      var nodeidsource = $(source).attr("identifier");
 
-      var elementidtarget = $(target.element).attr("identifier");
-      var nodeidtarget = $(target.self).attr("identifier");
-      element.source = source.element;
-      element.target = target.element;
-      element.source_node = source.self;
-      element.target_node = target.self;
+      var elementidtarget = $(targetmelement).attr("identifier");
+      var nodeidtarget = $(target).attr("identifier");
+      element.source = sourcemelement;
+      element.target = targetmelement;
+      element.source_node = source;
+      element.target_node = target;
 
       var relationship = configuration.relation.new(xml,type,source,target)
       var relationsshipid = relationship.attr("identifier");
@@ -4051,7 +4055,33 @@ this.configuration = {
       "style":function(xml,data){return "marker-start:url(#AggregationRelationshipStart);"},
       points:function(xml,data){
         return configuration.edges[undefined].points(xml,data);
-      }
+      },
+      attributes:{
+        Linecolor:{
+          get:function(xml,data){
+            return "r:"+$(data).children("style").children("lineColor").attr("r")+","+
+            "g:"+$(data).children("style").children("lineColor").attr("g")+","+
+            "b:"+$(data).children("style").children("lineColor").attr("b")
+
+          },
+          set:function(xml,data,value){
+            var newvalues = value.split(",");
+            for(var val in newvalues){
+              var vallist = newvalues[val].split(":");
+              if(vallist[0]=="r"){
+                  $(data).children("style").children("lineColor").attr("r",vallist[1]);
+              }else
+              if(vallist[0]=="g"){
+                  $(data).children("style").children("lineColor").attr("g",vallist[1]);
+              }else
+              if(vallist[0]=="b"){
+                  $(data).children("style").children("lineColor").attr("b",vallist[1]);
+              }
+            }
+          },
+          type:"String"
+        }
+      },
     },
     CompositionRelationship:{
       new:function(xml){
@@ -4076,7 +4106,33 @@ this.configuration = {
       "style":function(xml,data){return "marker-start:url(#CompositionRelationshipStart);"},
       points:function(xml,data){
         return configuration.edges[undefined].points(xml,data);
-      }
+      },
+      attributes:{
+        Linecolor:{
+          get:function(xml,data){
+            return "r:"+$(data).children("style").children("lineColor").attr("r")+","+
+            "g:"+$(data).children("style").children("lineColor").attr("g")+","+
+            "b:"+$(data).children("style").children("lineColor").attr("b")
+
+          },
+          set:function(xml,data,value){
+            var newvalues = value.split(",");
+            for(var val in newvalues){
+              var vallist = newvalues[val].split(":");
+              if(vallist[0]=="r"){
+                  $(data).children("style").children("lineColor").attr("r",vallist[1]);
+              }else
+              if(vallist[0]=="g"){
+                  $(data).children("style").children("lineColor").attr("g",vallist[1]);
+              }else
+              if(vallist[0]=="b"){
+                  $(data).children("style").children("lineColor").attr("b",vallist[1]);
+              }
+            }
+          },
+          type:"String"
+        }
+      },
     },
     RealisationRelationship:{
       new:function(xml){
@@ -4114,7 +4170,33 @@ this.configuration = {
       "stroke-dasharray":"5,5",
       points:function(xml,data){
         return configuration.edges[undefined].points(xml,data);
-      }
+      },
+      attributes:{
+        Linecolor:{
+          get:function(xml,data){
+            return "r:"+$(data).children("style").children("lineColor").attr("r")+","+
+            "g:"+$(data).children("style").children("lineColor").attr("g")+","+
+            "b:"+$(data).children("style").children("lineColor").attr("b")
+
+          },
+          set:function(xml,data,value){
+            var newvalues = value.split(",");
+            for(var val in newvalues){
+              var vallist = newvalues[val].split(":");
+              if(vallist[0]=="r"){
+                  $(data).children("style").children("lineColor").attr("r",vallist[1]);
+              }else
+              if(vallist[0]=="g"){
+                  $(data).children("style").children("lineColor").attr("g",vallist[1]);
+              }else
+              if(vallist[0]=="b"){
+                  $(data).children("style").children("lineColor").attr("b",vallist[1]);
+              }
+            }
+          },
+          type:"String"
+        }
+      },
     },
     AssociationRelationship:{
       new:function(xml){
@@ -4145,7 +4227,33 @@ this.configuration = {
       "style":function(xml,data){return ""},
       points:function(xml,data){
         return configuration.edges[undefined].points(xml,data);
-      }
+      },
+      attributes:{
+        Linecolor:{
+          get:function(xml,data){
+            return "r:"+$(data).children("style").children("lineColor").attr("r")+","+
+            "g:"+$(data).children("style").children("lineColor").attr("g")+","+
+            "b:"+$(data).children("style").children("lineColor").attr("b")
+
+          },
+          set:function(xml,data,value){
+            var newvalues = value.split(",");
+            for(var val in newvalues){
+              var vallist = newvalues[val].split(":");
+              if(vallist[0]=="r"){
+                  $(data).children("style").children("lineColor").attr("r",vallist[1]);
+              }else
+              if(vallist[0]=="g"){
+                  $(data).children("style").children("lineColor").attr("g",vallist[1]);
+              }else
+              if(vallist[0]=="b"){
+                  $(data).children("style").children("lineColor").attr("b",vallist[1]);
+              }
+            }
+          },
+          type:"String"
+        }
+      },
     },
     AssignmentRelationship:{
       new:function(xml){
@@ -4182,41 +4290,67 @@ this.configuration = {
       "style":function(xml,data){return "marker-start:url(#AssignmentRelationshipStartEnd);marker-end:url(#AssignmentRelationshipStartEnd);"},
       points:function(xml,data){
         return configuration.edges[undefined].points(xml,data);
-      }
+      },
+      attributes:{
+        Linecolor:{
+          get:function(xml,data){
+            return "r:"+$(data).children("style").children("lineColor").attr("r")+","+
+            "g:"+$(data).children("style").children("lineColor").attr("g")+","+
+            "b:"+$(data).children("style").children("lineColor").attr("b")
+
+          },
+          set:function(xml,data,value){
+            var newvalues = value.split(",");
+            for(var val in newvalues){
+              var vallist = newvalues[val].split(":");
+              if(vallist[0]=="r"){
+                  $(data).children("style").children("lineColor").attr("r",vallist[1]);
+              }else
+              if(vallist[0]=="g"){
+                  $(data).children("style").children("lineColor").attr("g",vallist[1]);
+              }else
+              if(vallist[0]=="b"){
+                  $(data).children("style").children("lineColor").attr("b",vallist[1]);
+              }
+            }
+          },
+          type:"String"
+        }
+      },
     },
     UsedByRelationship:{
       new:function(xml){
         return configuration.edge.new(xml,"UsedByRelationship","MyUsedByRelationship")
       },
       relates:[
+        /*Begin uses End*/
         /*Business*/
-        {end:"BusinessActor", begin:"BusinessService"},
-        {end:"BusinessRole", begin:"BusinessService"},
-        {end:"BusinessService", begin:"BusinessRole"},
-        {end:"BusinessService", begin:"BusinessProcess"},
-        {end:"BusinessProcess", begin:"BusinessService"},
+        {begin:"BusinessService", end:"BusinessActor"},
+        {begin:"BusinessService", end:"BusinessRole"},
+        {begin:"BusinessInterface",end:"BusinessActor"},
+        {begin:"BusinessInterface",end:"BusinessRole"},
+        {begin:"BusinessProcess", end:"BusinessService"},
+        {begin:"BusinessService", end:"BusinessProcess"},
+        {begin:"BusinessService",end:"BusinessFunction"},
+        {begin:"BusinessService",end:"BusinessInteraction"},
 
-        {end:"BusinessService",begin:"BusinessFunction"},
-        {end:"BusinessService",begin:"BusinessInteraction"},
-        {end:"BusinessActor",begin:"BusinessInterface"},
-        {end:"BusinessRole",begin:"BusinessInterface"},
         /*Application*/
-        {end:"ApplicationComponent",begin:"ApplicationComponent"},
+        {begin:"ApplicationComponent",end:"ApplicationComponent"},
+        {begin:"ApplicationService",end:"ApplicationComponent"},
+        {begin:"ApplicationService",end:"ApplicationFunction"},
+        {begin:"ApplicationService",end:"ApplicationInteraction"},
 
+        /*Technology*/
+        {begin:"InfrastructureInterface",end:"Node"},
+        {begin:"InfrastructureService",end:"InfrastructureFunction"},
+        {begin:"InfrastructureService",end:"Node"},
 
+        /* Business -> Application */
+        {begin:"ApplicationService",end:"BusinessProcess"},
+        {begin:"ApplicationService",end:"BusinessInteraction"},
+        /* Application -> Technology */
+        {begin:"InfrastructureService",end:"ApplicationComponent"},
 
-        {end:"ApplicationComponent",begin:"ApplicationService"},
-        {end:"ApplicationFunction",begin:"ApplicationService"},
-        {end:"ApplicationInteraction",begin:"ApplicationService"},
-
-        {end:"BusinessProcess",begin:"ApplicationService"},
-        {end:"BusinessInteraction",begin:"ApplicationService"},
-
-        {end:"InfrastructureService",begin:"ApplicationComponent"},
-
-        {end:"InfrastructureInterface",begin:"Node"},
-        {end:"InfrastructureService",begin:"InfrastructureFunction"},
-        {end:"InfrastructureService",begin:"Node"}
 
       ],
       look:[
@@ -4227,7 +4361,33 @@ this.configuration = {
       "style":function(xml,data){return "marker-end:url(#UsedByRelationshipEnd);"},
       points:function(xml,data){
         return configuration.edges[undefined].points(xml,data);
-      }
+      },
+      attributes:{
+        Linecolor:{
+          get:function(xml,data){
+            return "r:"+$(data).children("style").children("lineColor").attr("r")+","+
+            "g:"+$(data).children("style").children("lineColor").attr("g")+","+
+            "b:"+$(data).children("style").children("lineColor").attr("b")
+
+          },
+          set:function(xml,data,value){
+            var newvalues = value.split(",");
+            for(var val in newvalues){
+              var vallist = newvalues[val].split(":");
+              if(vallist[0]=="r"){
+                  $(data).children("style").children("lineColor").attr("r",vallist[1]);
+              }else
+              if(vallist[0]=="g"){
+                  $(data).children("style").children("lineColor").attr("g",vallist[1]);
+              }else
+              if(vallist[0]=="b"){
+                  $(data).children("style").children("lineColor").attr("b",vallist[1]);
+              }
+            }
+          },
+          type:"String"
+        }
+      },
     },
     TriggeringRelationship:{
       new:function(xml){
@@ -4272,7 +4432,33 @@ this.configuration = {
       "style":function(xml,data){return "marker-end:url(#TriggeringRelationshipEnd);"},
       points:function(xml,data){
         return configuration.edges[undefined].points(xml,data);
-      }
+      },
+      attributes:{
+        Linecolor:{
+          get:function(xml,data){
+            return "r:"+$(data).children("style").children("lineColor").attr("r")+","+
+            "g:"+$(data).children("style").children("lineColor").attr("g")+","+
+            "b:"+$(data).children("style").children("lineColor").attr("b")
+
+          },
+          set:function(xml,data,value){
+            var newvalues = value.split(",");
+            for(var val in newvalues){
+              var vallist = newvalues[val].split(":");
+              if(vallist[0]=="r"){
+                  $(data).children("style").children("lineColor").attr("r",vallist[1]);
+              }else
+              if(vallist[0]=="g"){
+                  $(data).children("style").children("lineColor").attr("g",vallist[1]);
+              }else
+              if(vallist[0]=="b"){
+                  $(data).children("style").children("lineColor").attr("b",vallist[1]);
+              }
+            }
+          },
+          type:"String"
+        }
+      },
     },
     FlowRelationship:{
       new:function(xml){
@@ -4312,7 +4498,33 @@ this.configuration = {
       "stroke-dasharray":"5,5",
       points:function(xml,data){
         return configuration.edges[undefined].points(xml,data);
-      }
+      },
+      attributes:{
+        Linecolor:{
+          get:function(xml,data){
+            return "r:"+$(data).children("style").children("lineColor").attr("r")+","+
+            "g:"+$(data).children("style").children("lineColor").attr("g")+","+
+            "b:"+$(data).children("style").children("lineColor").attr("b")
+
+          },
+          set:function(xml,data,value){
+            var newvalues = value.split(",");
+            for(var val in newvalues){
+              var vallist = newvalues[val].split(":");
+              if(vallist[0]=="r"){
+                  $(data).children("style").children("lineColor").attr("r",vallist[1]);
+              }else
+              if(vallist[0]=="g"){
+                  $(data).children("style").children("lineColor").attr("g",vallist[1]);
+              }else
+              if(vallist[0]=="b"){
+                  $(data).children("style").children("lineColor").attr("b",vallist[1]);
+              }
+            }
+          },
+          type:"String"
+        }
+      },
     },
     SpecialisationRelationship:{
       new:function(xml){
@@ -4346,7 +4558,33 @@ this.configuration = {
       "style":function(xml,data){return "marker-end:url(#RealisationRelationshipEnd);"},
       points:function(xml,data){
         return configuration.edges[undefined].points(xml,data);
-      }
+      },
+      attributes:{
+        Linecolor:{
+          get:function(xml,data){
+            return "r:"+$(data).children("style").children("lineColor").attr("r")+","+
+            "g:"+$(data).children("style").children("lineColor").attr("g")+","+
+            "b:"+$(data).children("style").children("lineColor").attr("b")
+
+          },
+          set:function(xml,data,value){
+            var newvalues = value.split(",");
+            for(var val in newvalues){
+              var vallist = newvalues[val].split(":");
+              if(vallist[0]=="r"){
+                  $(data).children("style").children("lineColor").attr("r",vallist[1]);
+              }else
+              if(vallist[0]=="g"){
+                  $(data).children("style").children("lineColor").attr("g",vallist[1]);
+              }else
+              if(vallist[0]=="b"){
+                  $(data).children("style").children("lineColor").attr("b",vallist[1]);
+              }
+            }
+          },
+          type:"String"
+        }
+      },
     },
     AccessRelationship:{
       new:function(xml){
@@ -4377,7 +4615,33 @@ this.configuration = {
       "style":function(xml,data){return "marker-end:url(#AccessRelationshipEnd);"},
       points:function(xml,data){
         return configuration.edges[undefined].points(xml,data);
-      }
+      },
+      attributes:{
+        Linecolor:{
+          get:function(xml,data){
+            return "r:"+$(data).children("style").children("lineColor").attr("r")+","+
+            "g:"+$(data).children("style").children("lineColor").attr("g")+","+
+            "b:"+$(data).children("style").children("lineColor").attr("b")
+
+          },
+          set:function(xml,data,value){
+            var newvalues = value.split(",");
+            for(var val in newvalues){
+              var vallist = newvalues[val].split(":");
+              if(vallist[0]=="r"){
+                  $(data).children("style").children("lineColor").attr("r",vallist[1]);
+              }else
+              if(vallist[0]=="g"){
+                  $(data).children("style").children("lineColor").attr("g",vallist[1]);
+              }else
+              if(vallist[0]=="b"){
+                  $(data).children("style").children("lineColor").attr("b",vallist[1]);
+              }
+            }
+          },
+          type:"String"
+        }
+      },
     },
     undefined:{
       attributes:{
@@ -4385,11 +4649,11 @@ this.configuration = {
           type:"String",
           get:function(xml,edge){
             var relation = configuration.edge.relation(xml,edge);
-            return relation.children("label[xml:lang='"+configuration.usersettings.lang+"']").text();
+            return relation.children("label[xml:lang='"+documentmodengine.usersettings.lang+"']").text();
           },
           set:function(xml,edge,value){
             var relation = configuration.edge.relation(xml,edge);
-            return relation.children("label[xml:lang='"+configuration.usersettings.lang+"']").text(value);
+            return relation.children("label[xml:lang='"+documentmodengine.usersettings.lang+"']").text(value);
           }
         }
       },

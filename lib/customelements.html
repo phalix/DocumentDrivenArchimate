@@ -1,6 +1,5 @@
 <!--
 //TODO: A fixed layout is required for better working with the tool.
-//TODO: sort nodes and connections
 //TODO: The notifier "model-action-display" should react to more events of the documentmodenegine, node deleted, edge deleted and so on.
 -->
 <dom-module id="link-dialog">
@@ -820,6 +819,8 @@
         }else if(this.object&&this.type=="modelattribute"){
           //this.value = configuration.model.attributes[this.name].get(documentmodengine.xml,this.object);
           this.value = this.getter(documentmodengine.xml,this.object);
+        }else if(this.object&&this.type=="edgeattribute"){
+          this.value = this.getter(documentmodengine.xml,this.object);
         }
 
       },
@@ -835,8 +836,12 @@
           configuration.view.attributes[this.name].set(this.object,this.value);
           menu.setupTabsAndPages();
         }else if(this.object&&this.type=="modelattribute"){
-
           this.setter(documentmodengine.xml,this.object,this.value);
+        }else if(this.object&&this.type=="edgeattribute"){
+          this.setter(documentmodengine.xml,this.object,this.value);
+          var int         = menu.$.menuTabs.selectedItem.id.substr(3);
+          var viewid      = $(documentmodengine.svg).find("g.view").eq(int).attr("id");
+          documentmodengine.updateLoadedView(viewid,documentmodengine.usersettings.lang);
         }
 
       }
@@ -918,7 +923,7 @@
     <paper-listbox vertical-align="bottom" style="height:100%;padding-left:5%;padding-right:5%" selectable="none">
       <iron-label>{{label}} {{addinfo}}</iron-label>
       <template is="dom-repeat" items="{{attributes}}">
-        <model-attribute object={{item.object}} name="{{item.attributename}}" disabled$="{{item.disabled}}" type="{{item.type}}" value="{{item.value}}"></model-attribute>
+        <model-attribute object={{item.object}} name="{{item.attributename}}" disabled$="{{item.disabled}}" type="{{item.type}}" value="{{item.value}}" getter="{{item.getter}}" setter="{{item.setter}}"></model-attribute>
       </template>
       <template is="dom-repeat" items="{{links}}">
         <model-reference label="{{item.label}}" link="{{item.link}}" disabled$="[[item.disabled]]"></model-reference>
@@ -980,10 +985,28 @@
               mr.links = mr.links.concat(window.links[mr.label]);
             }
           }else if(a.detail&&a.detail.edge&&a.detail.edge[0]){
-            this.label = $(a.detail.edge[0]).attr("id");
-            this.addinfo = configuration.relation.type(configuration.edge.relation(documentmodengine.xml,a.detail.edgedata[0].self))
+            var data = a.detail.edgedata[0];
+            this.label = $(data).attr("id");
+            var edgetype = configuration.relation.type(configuration.edge.relation(documentmodengine.xml,data))
+            this.addinfo = edgetype;
             //TODO
+            edgetype = configuration.edges[edgetype];
+            if(!edgetype){
+              edgetype = configuration.edges[undefined];
+            }
             this.attributes = [];
+            if(edgetype.attributes){
+              for(var key in edgetype.attributes){
+                var attr = {};
+                attr.object = data;
+                attr.attributename = key;
+                attr.type = "edgeattribute";
+                attr.disabled = false;
+                attr.setter = edgetype.attributes[key].set;
+                attr.getter = edgetype.attributes[key].get;
+                this.attributes.push(attr);
+              }
+            }
             this.attributes = this.attributes.concat([]);
 
           }else if(a){
