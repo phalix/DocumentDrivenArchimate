@@ -23,6 +23,11 @@ However, for a fully functional modeler certain elements are missing.
 3. Run index.html in your webbrowser.
 4. Drag an Archimate XML into the Drop-Into Window
 
+## Some Visuals
+<img width="1233" alt="screenshot 2018-07-08 22 10 49" src="https://user-images.githubusercontent.com/2444534/42423517-e4150246-82fb-11e8-87f4-0c52e09e5087.png">
+<img width="1233" alt="screenshot 2018-07-08 22 10 37" src="https://user-images.githubusercontent.com/2444534/42423521-e9e1583c-82fb-11e8-9000-cdc4cd0d5308.png">
+<img width="1232" alt="screenshot 2018-07-08 22 10 57" src="https://user-images.githubusercontent.com/2444534/42423523-ebb413ca-82fb-11e8-88d0-3ebd01b22bba.png">
+
 
 ## TODOS
 3. realize: stakeholder, driver, assessment, requirement, constraint, Work Package, Deliverable, Plateau, Gap
